@@ -329,11 +329,17 @@ struct DispatchScan:
                 num_tiles);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Get SM occupancy for scan_kernel
             int scan_sm_occupancy;
@@ -367,10 +373,17 @@ struct DispatchScan:
                     num_items);
 
                 // Check for failure to launch
-                if (CubDebug(error = cudaPeekAtLastError())) break;
+                if (CubDebug(error = cudaPeekAtLastError()))
+                {
+                    break;
+                }
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
         }
         while (0);

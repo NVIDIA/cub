@@ -605,12 +605,10 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
   }
 
@@ -666,12 +664,10 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
   }
 
@@ -1632,13 +1628,12 @@ private:
     return error;                                                              \
   }                                                                            \
                                                                                \
-  if (debug_synchronous)                                                       \
+  error = detail::DebugSyncStream(stream, debug_synchronous);                  \
+  if (CubDebug(error))                                                         \
   {                                                                            \
-    if (CubDebug(error = SyncStream(stream)))                                  \
-    {                                                                          \
-      return error;                                                            \
-    }                                                                          \
+    return error;                                                              \
   }
+
 #endif // CUB_RDC_ENABLED
 
     // Clang format mangles some of this NV_IF_TARGET block
@@ -1737,12 +1732,10 @@ private:
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
 
     return error;

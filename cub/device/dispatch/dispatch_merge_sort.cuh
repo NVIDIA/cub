@@ -704,12 +704,10 @@ struct DispatchMergeSort : SelectedPolicy
 
       block_sort_launcher.launch();
 
-      if (debug_synchronous)
+      error = detail::DebugSyncStream(stream, debug_synchronous);
+      if (CubDebug(error))
       {
-        if (CubDebug(error = SyncStream(stream)))
-        {
-          break;
-        }
+        break;
       }
 
       // Check for failure to launch
@@ -769,12 +767,10 @@ struct DispatchMergeSort : SelectedPolicy
                 target_merged_tiles_number,
                 tile_size);
 
-        if (debug_synchronous)
+        error = detail::DebugSyncStream(stream, debug_synchronous);
+        if (CubDebug(error))
         {
-          if (CubDebug(error = SyncStream(stream)))
-          {
-            break;
-          }
+          break;
         }
 
         // Check for failure to launch
@@ -786,12 +782,10 @@ struct DispatchMergeSort : SelectedPolicy
         // Merge
         merge_launcher.launch(ping, target_merged_tiles_number);
 
-        if (debug_synchronous)
+        error = detail::DebugSyncStream(stream, debug_synchronous);
+        if (CubDebug(error))
         {
-          if (CubDebug(error = SyncStream(stream)))
-          {
-            break;
-          }
+          break;
         }
 
         // Check for failure to launch

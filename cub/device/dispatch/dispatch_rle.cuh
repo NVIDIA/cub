@@ -302,14 +302,23 @@ struct DeviceRleDispatch
                 d_num_runs_out);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Return if empty problem
             if (num_items == 0)
+            {
                 break;
+            }
 
             // Get SM occupancy for device_rle_sweep_kernel
             int device_rle_kernel_sm_occupancy;
@@ -346,11 +355,17 @@ struct DeviceRleDispatch
                 num_tiles);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while (0);
 

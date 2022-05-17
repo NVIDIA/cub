@@ -301,14 +301,23 @@ struct DispatchReduceByKey
                 d_num_runs_out);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Return if empty problem
             if (num_items == 0)
+            {
                 break;
+            }
 
             // Get SM occupancy for reduce_by_key_kernel
             int reduce_by_key_sm_occupancy;
@@ -346,10 +355,17 @@ struct DispatchReduceByKey
                     num_items);
 
                 // Check for failure to launch
-                if (CubDebug(error = cudaPeekAtLastError())) break;
+                if (CubDebug(error = cudaPeekAtLastError()))
+                {
+                    break;
+                }
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
         }
         while (0);

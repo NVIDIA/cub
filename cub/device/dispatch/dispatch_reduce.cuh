@@ -414,10 +414,17 @@ struct DispatchReduce :
                 init);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while (0);
 
@@ -501,10 +508,17 @@ struct DispatchReduce :
                 reduction_op);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Log single_reduce_sweep_kernel configuration
             if (debug_synchronous) _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
@@ -523,10 +537,17 @@ struct DispatchReduce :
                 init);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while (0);
 
@@ -734,10 +755,17 @@ struct DispatchSegmentedReduce :
                 init);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while (0);
 

@@ -517,6 +517,44 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SyncStream(cudaStream_t stream)
   return result;
 }
 
+namespace detail
+{
+
+/**
+ * Same as SyncStream, but intended for use with the debug_synchronous flags
+ * in device algorithms. This should not be used if synchronization is required
+ * for correctness.
+ *
+ * If `debug_synchronous` is false, this function will immediately return
+ * cudaSuccess. If true, one of the following will occur:
+ *
+ * If synchronization is supported by the current compilation target and
+ * settings, the sync is performed and the sync result is returned.
+ *
+ * If syncs are not supported then no sync is performed, but a message is logged
+ * via _CubLog and cudaSuccess is returned.
+ */
+CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream,
+                                                        bool debug_synchronous)
+{
+  if (!debug_synchronous)
+  {
+    return cudaSuccess;
+  }
+
+#if 1 // All valid targets currently support device-side synchronization
+  _CubLog("%s\n", "Synchronizing...");
+  return SyncStream(stream);
+#else
+  (void)stream;
+  _CubLog("%s\n",
+          "WARNING: Skipping CUB `debug_synchronous` synchronization "
+          "(unsupported target).");
+  return cudaSuccess;
+#endif
+}
+
+} // namespace detail
 
 /**
  * \brief Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer \p kernel_ptr on the current device with \p block_threads per thread block.

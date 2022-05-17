@@ -282,7 +282,11 @@ struct DispatchUniqueByKey: SelectedPolicy
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Return if empty problem
             if (num_items == 0) break;
@@ -341,7 +345,11 @@ struct DispatchUniqueByKey: SelectedPolicy
             }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while(0);
 

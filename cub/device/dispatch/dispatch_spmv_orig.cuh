@@ -525,10 +525,17 @@ struct DispatchSpmv
                     spmv_params);
 
                 // Check for failure to launch
-                if (CubDebug(error = cudaPeekAtLastError())) break;
+                if (CubDebug(error = cudaPeekAtLastError()))
+                {
+                    break;
+                }
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
 
                 break;
             }
@@ -633,7 +640,11 @@ struct DispatchSpmv
                 if (CubDebug(error = cudaPeekAtLastError())) break;
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
 
             // Log spmv_kernel configuration
@@ -655,7 +666,11 @@ struct DispatchSpmv
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
@@ -679,7 +694,11 @@ struct DispatchSpmv
                 if (CubDebug(error = cudaPeekAtLastError())) break;
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
         }
         while (0);
