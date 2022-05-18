@@ -1333,6 +1333,17 @@ struct DispatchRadixSort :
             if (CubDebug(error = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
                 &histo_blocks_per_sm, histogram_kernel, HISTO_BLOCK_THREADS, 0))) break;
 
+            // log histogram_kernel configuration
+            if (debug_synchronous)
+            {
+                _CubLog("Invoking histogram_kernel<<<%d, %d, 0, %lld>>>(), %d items per iteration, "
+                        "%d SM occupancy, bit_grain %d\n",
+                        histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS,
+                        reinterpret_cast<long long>(stream),
+                        ActivePolicyT::HistogramPolicy::ITEMS_PER_THREAD, histo_blocks_per_sm,
+                        ActivePolicyT::HistogramPolicy::RADIX_BITS);
+            }
+
             error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
               histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS, 0, stream
             ).doit(histogram_kernel,
@@ -1341,9 +1352,25 @@ struct DispatchRadixSort :
             {
                 break;
             }
-
+            if (debug_synchronous)
+            {
+                if (CubDebug(error = SyncStream(stream)))
+                {
+                    break;
+                }
+            }
+            
             // exclusive sums to determine starts
             const int SCAN_BLOCK_THREADS = ActivePolicyT::ExclusiveSumPolicy::BLOCK_THREADS;
+
+            // log exclusive_sum_kernel configuration
+            if (debug_synchronous)
+            {
+                _CubLog("Invoking exclusive_sum_kernel<<<%d, %d, 0, %lld>>>(), bit_grain %d\n",
+                        num_passes, SCAN_BLOCK_THREADS, reinterpret_cast<long long>(stream),
+                        ActivePolicyT::ExclusiveSumPolicy::RADIX_BITS);
+            }
+
             error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                       num_passes, SCAN_BLOCK_THREADS, 0, stream
                       ).doit(DeviceRadixSortExclusiveSumKernel<MaxPolicyT, OffsetT>,
@@ -1351,6 +1378,13 @@ struct DispatchRadixSort :
             if (CubDebug(error))
             {
               break;
+            }
+            if (debug_synchronous)
+            {
+                if (CubDebug(error = SyncStream(stream)))
+                {
+                    break;
+                }
             }
 
             // use the other buffer if no overwrite is allowed
@@ -1377,6 +1411,17 @@ struct DispatchRadixSort :
                     if (CubDebug(error = cudaMemsetAsync(
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
+
+                    // log onesweep_kernel configuration
+                    if (debug_synchronous)
+                    {
+                        _CubLog("Invoking onesweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, "
+                                "current bit %d, bit_grain %d, portion %d/%d\n",
+                                num_blocks, ONESWEEP_BLOCK_THREADS, reinterpret_cast<long long>(stream),
+                                ActivePolicyT::OnesweepPolicy::ITEMS_PER_THREAD, current_bit,
+                                num_bits, static_cast<int>(portion), static_cast<int>(num_portions));
+                    }
+
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
                         MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, PortionOffsetT>;
 
@@ -1396,8 +1441,16 @@ struct DispatchRadixSort :
                     {
                       break;
                     }
+
+                    if (debug_synchronous)
+                    {
+                        if (CubDebug(error = SyncStream(stream)))
+                        {
+                            break;
+                        }
+                    }
                 }
-                
+
                 // use the temporary buffers if no overwrite is allowed
                 if (!is_overwrite_okay && pass == 0)
                 {
