@@ -104,7 +104,7 @@ struct BlockRadixRankEmptyCallback
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
- * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH      <b>[optional]</b> Unused.
  *
  * \par Overview
  * Blah...
@@ -138,12 +138,12 @@ template <
     int                     BLOCK_DIM_X,
     int                     RADIX_BITS,
     bool                    IS_DESCENDING,
-    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    bool                    MEMOIZE_OUTER_SCAN      = true,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte,
     int                     BLOCK_DIM_Y             = 1,
     int                     BLOCK_DIM_Z             = 1,
-    int                     PTX_ARCH                = CUB_PTX_ARCH>
+    int                     LEGACY_PTX_ARCH         = 0>
 class BlockRadixRank
 {
 private:
@@ -168,7 +168,7 @@ private:
 
         RADIX_DIGITS                = 1 << RADIX_BITS,
 
-        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),
+        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(0),
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
@@ -203,8 +203,7 @@ private:
             BLOCK_DIM_X,
             INNER_SCAN_ALGORITHM,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z,
-            PTX_ARCH>
+            BLOCK_DIM_Z>
         BlockScan;
 
 
@@ -508,7 +507,7 @@ template <
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     int                     BLOCK_DIM_Y             = 1,
     int                     BLOCK_DIM_Z             = 1,
-    int                     PTX_ARCH                = CUB_PTX_ARCH>
+    int                     LEGACY_PTX_ARCH         = 0>
 class BlockRadixRankMatch
 {
 private:
@@ -527,7 +526,7 @@ private:
 
         RADIX_DIGITS                = 1 << RADIX_BITS,
 
-        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),
+        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(0),
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
@@ -558,8 +557,7 @@ private:
             BLOCK_THREADS,
             INNER_SCAN_ALGORITHM,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z,
-            PTX_ARCH>
+            BLOCK_DIM_Z>
         BlockScanT;
 
 

@@ -61,26 +61,6 @@ bool g_verbose = false;
 /// Default grid size
 int g_grid_size = 1;
 
-// The following templated variables are helpers to get the shared memory
-// This requires C++ 14 (template variables and constexpr max)
-// but it's possible to work around these constructs for older C++ versions.
-// we use default arguments from cub's block reduce for most parameters
-template <typename T, int BLOCK_THREADS, int ARCH>
-constexpr std::size_t arch_bytes_size = sizeof(
-    typename cub::BlockReduce<
-        T,
-        BLOCK_THREADS,
-        BLOCK_REDUCE_WARP_REDUCTIONS /* ALGORITHM */,
-        1 /* BLOCK_DIM_Y */,
-        1 /* BLOCK_DIM_Z */,
-        ARCH>::TempStorage
-);
-template <typename T, int BLOCK_THREADS, int... Archs>
-constexpr auto archs_max_bytes = (std::max)(
-    {arch_bytes_size<T, BLOCK_THREADS, Archs>...,});
-
-
-
 //---------------------------------------------------------------------
 // Kernels
 //---------------------------------------------------------------------
@@ -181,9 +161,9 @@ void Test()
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * BLOCK_THREADS, cudaMemcpyHostToDevice);
 
-    // determine necessary storage for a few architectures
-    auto block_reduce_temp_bytes = archs_max_bytes<
-        int, BLOCK_THREADS, 600, 700, 800>;
+    // determine necessary storage size:
+    auto block_reduce_temp_bytes =
+      sizeof(typename cub::BlockReduce<int, BLOCK_THREADS>::TempStorage);
     // finally, we need to make sure that we can hold at least one integer
     // needed in the kernel to exchange data after reduction
     auto smem_size = (std::max)(1 * sizeof(int), block_reduce_temp_bytes);
