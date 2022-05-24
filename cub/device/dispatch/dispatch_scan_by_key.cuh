@@ -63,10 +63,12 @@ template <
     typename EqualityOp,                  ///< Equality functor type
     typename ScanOpT,                     ///< Scan functor type
     typename InitValueT,                  ///< The init_value element for ScanOpT type (cub::NullType for inclusive scan)
-    typename OffsetT>                     ///< Signed integer type for global offsets
+    typename OffsetT,                     ///< Signed integer type for global offsets
+    typename KeyT = cub::detail::value_t<KeysInputIteratorT>>
 __launch_bounds__ (int(ChainedPolicyT::ActivePolicy::ScanByKeyPolicyT::BLOCK_THREADS))
 __global__ void DeviceScanByKeyKernel(
     KeysInputIteratorT    d_keys_in,          ///< Input keys data
+    KeyT                 *d_keys_prev_in,     ///< Predecessor items for each tile
     ValuesInputIteratorT  d_values_in,        ///< Input values data
     ValuesOutputIteratorT d_values_out,       ///< Output values data
     ScanByKeyTileStateT   tile_state,         ///< Tile status interface
@@ -96,6 +98,7 @@ __global__ void DeviceScanByKeyKernel(
     AgentScanByKeyT(
         temp_storage,
         d_keys_in,
+        d_keys_prev_in,
         d_values_in,
         d_values_out,
         equality_op,
@@ -107,6 +110,25 @@ __global__ void DeviceScanByKeyKernel(
         start_tile);
 }
 
+template <typename ScanTileStateT, typename KeysInputIteratorT>
+__global__ void DeviceScanByKeyInitKernel(
+  ScanTileStateT tile_state,
+  KeysInputIteratorT d_keys_in,
+  cub::detail::value_t<KeysInputIteratorT> *d_keys_prev_in,
+  unsigned items_per_tile,
+  int num_tiles)
+{
+  // Initialize tile status
+  tile_state.InitializeStatus(num_tiles);
+
+  const unsigned tid       = threadIdx.x + blockDim.x * blockIdx.x;
+  const unsigned tile_base = tid * items_per_tile;
+
+  if (tid > 0 && tid < num_tiles)
+  {
+    d_keys_prev_in[tid] = d_keys_in[tile_base - 1];
+  }
+}
 
 /******************************************************************************
  * Policy
@@ -138,7 +160,7 @@ struct DeviceScanByKeyPolicy
         typedef AgentScanByKeyPolicy<
                 128, ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_LDG,
+                LOAD_CA,
                 BLOCK_SCAN_WARP_SCANS,
                 BLOCK_STORE_WARP_TRANSPOSE>
             ScanByKeyPolicyT;
@@ -158,7 +180,7 @@ struct DeviceScanByKeyPolicy
         typedef AgentScanByKeyPolicy<
                 256, ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_LDG,
+                LOAD_CA,
                 BLOCK_SCAN_WARP_SCANS,
                 BLOCK_STORE_WARP_TRANSPOSE>
             ScanByKeyPolicyT;
@@ -283,11 +305,13 @@ struct DispatchScanByKey:
             int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
 
             // Specify temporary storage allocation requirements
-            size_t  allocation_sizes[1];
+            size_t  allocation_sizes[2];
             if (CubDebug(error = ScanByKeyTileStateT::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
 
+            allocation_sizes[1] = sizeof(KeyT) * (num_tiles + 1);
+
             // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
-            void* allocations[1] = {};
+            void* allocations[2] = {};
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -298,6 +322,8 @@ struct DispatchScanByKey:
             // Return if empty problem
             if (num_items == 0)
                 break;
+
+            KeyT *d_keys_prev_in = reinterpret_cast<KeyT*>(allocations[1]);
 
             // Construct the tile status interface
             ScanByKeyTileStateT tile_state;
@@ -310,14 +336,13 @@ struct DispatchScanByKey:
             // Invoke init_kernel to initialize tile descriptors
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 init_grid_size, INIT_KERNEL_THREADS, 0, stream
-            ).doit(init_kernel, tile_state, num_tiles);
+            ).doit(init_kernel, tile_state, d_keys_in, d_keys_prev_in, tile_size, num_tiles);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
 
             // Get SM occupancy for scan_kernel
             int scan_sm_occupancy;
@@ -344,6 +369,7 @@ struct DispatchScanByKey:
                 ).doit(
                     scan_kernel,
                     d_keys_in,
+                    d_keys_prev_in,
                     d_values_in,
                     d_values_out,
                     tile_state,
@@ -375,7 +401,7 @@ struct DispatchScanByKey:
         typedef ReduceByKeyScanTileState<OutputT, OffsetT> ScanByKeyTileStateT;
         // Ensure kernels are instantiated.
         return Invoke<ActivePolicyT>(
-            DeviceScanInitKernel<ScanByKeyTileStateT>,
+            DeviceScanByKeyInitKernel<ScanByKeyTileStateT, KeysInputIteratorT>,
             DeviceScanByKeyKernel<
                 MaxPolicyT, KeysInputIteratorT, ValuesInputIteratorT, ValuesOutputIteratorT,
                 ScanByKeyTileStateT, EqualityOp, ScanOpT, InitValueT, OffsetT>

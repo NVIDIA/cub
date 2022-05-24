@@ -156,7 +156,7 @@ struct DeviceScanPolicy
                 128, 12,                                        ///< Threads per block, items per thread
                 OutputT,
                 BLOCK_LOAD_DIRECT,
-                LOAD_LDG,
+                LOAD_CA,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
                 BLOCK_SCAN_RAKING>
             ScanPolicyT;
@@ -170,7 +170,7 @@ struct DeviceScanPolicy
                 128, 12,                                        ///< Threads per block, items per thread
                 OutputT,
                 BLOCK_LOAD_DIRECT,
-                LOAD_LDG,
+                LOAD_CA,
                 ScanTransposedStore,
                 BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
@@ -288,6 +288,12 @@ struct DispatchScan:
 
         typedef typename ActivePolicyT::ScanPolicyT Policy;
         typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
+
+        // `LOAD_LDG` makes in-place execution UB and doesn't lead to better
+        // performance. 
+        static_assert(
+          Policy::LOAD_MODIFIER != CacheLoadModifier::LOAD_LDG,
+          "The memory consistency model does not apply to texture accesses");
 
         cudaError error = cudaSuccess;
         do
