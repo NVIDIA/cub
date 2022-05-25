@@ -106,7 +106,7 @@ DeviceAdjacentDifferenceDifferenceKernel(InputIteratorT input,
   agent.Process(tile_idx, tile_base);
 }
 
-template <typename InputIteratorT>
+template <typename InputIteratorT, bool MayAlias = true>
 struct DeviceAdjacentDifferencePolicy
 {
   using ValueT = typename std::iterator_traits<InputIteratorT>::value_type;
@@ -131,7 +131,7 @@ struct DeviceAdjacentDifferencePolicy
       AgentAdjacentDifferencePolicy<128,
                                     Nominal8BItemsToItems<ValueT>(7),
                                     BLOCK_LOAD_WARP_TRANSPOSE,
-                                    LOAD_LDG,
+                                    MayAlias ? LOAD_CA : LOAD_LDG,
                                     BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
@@ -145,7 +145,7 @@ template <typename InputIteratorT,
           bool MayAlias,
           bool ReadLeft,
           typename SelectedPolicy =
-            DeviceAdjacentDifferencePolicy<InputIteratorT>>
+            DeviceAdjacentDifferencePolicy<InputIteratorT, MayAlias>>
 struct DispatchAdjacentDifference : public SelectedPolicy
 {
   using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
