@@ -73,6 +73,9 @@ struct DeviceHistogram
    * - The number of histogram bins is (`num_levels - 1`)
    * - All bins comprise the same width of sample values: 
    *   `(upper_level - lower_level) / (num_levels - 1)`
+   * - The ranges `[d_samples, d_samples + num_samples)` and 
+   *   `[d_histogram, d_histogram + num_levels - 1)` shall not overlap 
+   *   in any way.
    * - @devicestorage
    *
    * @par Snippet
@@ -215,6 +218,11 @@ struct DeviceHistogram
    * - The number of histogram bins is (`num_levels - 1`)
    * - All bins comprise the same width of sample values:
    *   `(upper_level - lower_level) / (num_levels - 1)`
+   * - For a given row `r` in `[0, num_rows)`, let 
+   *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)` and 
+   *   `row_end = row_begin + num_row_samples`. The ranges
+   *   `[row_begin, row_end)` and `[d_histogram, d_histogram + num_levels - 1)` 
+   *   shall not overlap in any way.
    * - @devicestorage
    *
    * @par Snippet
@@ -369,6 +377,10 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
    *   have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
+   * - For a given channel `c` in `[0, NUM_ACTIVE_CHANNELS)`, the ranges 
+   *   `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` and 
+   *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap 
+   *   in any way.
    * - @devicestorage
    *
    * @par Snippet
@@ -537,6 +549,15 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram 
    *   bins have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
+   * - For a given row `r` in `[0, num_rows)`, and sample `s` in 
+   *   `[0, num_row_pixels)`, let 
+   *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)`, 
+   *   `sample_begin = row_begin + s * NUM_CHANNELS`, and
+   *   `sample_end = sample_begin + NUM_ACTIVE_CHANNELS`. For a given channel
+   *    `c` in `[0, NUM_ACTIVE_CHANNELS)`, the ranges 
+   *   `[sample_begin, sample_end)` and 
+   *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap 
+   *   in any way.
    * - @devicestorage
    *
    * @par Snippet
@@ -740,6 +761,11 @@ struct DeviceHistogram
    * @par
    * - The number of histogram bins is (`num_levels - 1`)
    * - The value range for bin<sub><em>i</em></sub> is `[level[i], level[i+1])`
+   * - The range `[d_histogram, d_histogram + num_levels - 1)` shall not 
+   *   overlap `[d_samples, d_samples + num_samples)` nor 
+   *   `[d_levels, d_levels + num_levels)` in any way. The ranges 
+   *   `[d_levels, d_levels + num_levels)` and 
+   *   `[d_samples, d_samples + num_samples)` may overlap.
    * - @devicestorage
    *
    * @par Snippet
@@ -875,6 +901,13 @@ struct DeviceHistogram
    *   size, i.e., `(row_stride_bytes % sizeof(SampleT)) == 0`.
    * - The number of histogram bins is (`num_levels - 1`)
    * - The value range for bin<sub><em>i</em></sub> is `[level[i], level[i+1])`
+   * - For a given row `r` in `[0, num_rows)`, let 
+   *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)` and 
+   *   `row_end = row_begin + num_row_samples`. The range
+   *   `[d_histogram, d_histogram + num_levels - 1)` shall not overlap
+   *   `[row_begin, row_end)` nor `[d_levels, d_levels + num_levels)`.
+   *   The ranges `[d_levels, d_levels + num_levels)` and `[row_begin, row_end)`
+   *   may overlap.
    * - @devicestorage
    *
    * @par Snippet
@@ -1025,6 +1058,12 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram 
    *   bins have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
+   * - For given channels `c1` and `c2` in `[0, NUM_ACTIVE_CHANNELS)`, the 
+   *   range `[d_histogram[c1], d_histogram[c1] + num_levels[c1] - 1)` shall 
+   *   not overlap `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` nor
+   *   `[d_levels[c2], d_levels[c2] + num_levels[c2])` in any way.
+   *   The ranges `[d_levels[c2], d_levels[c2] + num_levels[c2])` and
+   *   `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` may overlap.
    * - @devicestorage
    *
    * @par Snippet
@@ -1189,6 +1228,17 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram 
    *   bins have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
+   * - For a given row `r` in `[0, num_rows)`, and sample `s` in 
+   *   `[0, num_row_pixels)`, let 
+   *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)`, 
+   *   `sample_begin = row_begin + s * NUM_CHANNELS`, and
+   *   `sample_end = sample_begin + NUM_ACTIVE_CHANNELS`. For given channels
+   *    `c1` and `c2` in `[0, NUM_ACTIVE_CHANNELS)`, the range
+   *   `[d_histogram[c1], d_histogram[c1] + num_levels[c1] - 1)` shall not 
+   *   overlap `[sample_begin, sample_end)` nor
+   *   `[d_levels[c2], d_levels[c2] + num_levels[c2])` in any way. The ranges
+   *   `[d_levels[c2], d_levels[c2] + num_levels[c2])` and 
+   *   `[sample_begin, sample_end)` may overlap.
    * - @devicestorage
    *
    * @par Snippet
