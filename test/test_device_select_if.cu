@@ -43,6 +43,7 @@
 
 #include <thrust/count.h>
 #include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/iterator/transform_output_iterator.h>
@@ -764,6 +765,64 @@ void TestFlagsNormalization()
                            thrust::make_counting_iterator(0)));
 }
 
+void TestFlagsAliasingInPartition()
+{
+  int h_items[]{0, 1, 0, 2, 0, 3, 0, 4, 0, 5};
+  constexpr int num_items = sizeof(h_items) / sizeof(h_items[0]);
+
+  int *d_in{};
+  int *d_out{};
+
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_in, sizeof(h_items)));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_out, sizeof(h_items)));
+
+  CubDebugExit(
+    cudaMemcpy(d_in, h_items, sizeof(h_items), cudaMemcpyHostToDevice));
+
+  // alias flags and keys
+  int *d_flags = d_in;
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+
+  CubDebugExit(
+    cub::DevicePartition::Flagged(d_tmp_storage,
+                                  tmp_storage_size,
+                                  d_in,
+                                  d_flags,
+                                  d_out,
+                                  thrust::make_discard_iterator(), // num_out
+                                  num_items,
+                                  0,
+                                  true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  CubDebugExit(
+    cub::DevicePartition::Flagged(d_tmp_storage,
+                                  tmp_storage_size,
+                                  d_in,
+                                  d_flags,
+                                  d_out,
+                                  thrust::make_discard_iterator(), // num_out
+                                  num_items,
+                                  0,
+                                  true));
+
+  AssertTrue(thrust::equal(thrust::device,
+                           d_out,
+                           d_out + num_items / 2,
+                           thrust::make_counting_iterator(1)));
+
+  AssertEquals(
+    thrust::count(thrust::device, d_out + num_items / 2, d_out + num_items, 0),
+    num_items / 2);
+
+  CubDebugExit(g_allocator.DeviceFree(d_out));
+  CubDebugExit(g_allocator.DeviceFree(d_in));
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -801,6 +860,8 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
+
+    TestFlagsAliasingInPartition();
 
     Test<unsigned char>(num_items);
     Test<unsigned short>(num_items);
