@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2011-2021, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -131,6 +131,10 @@ struct DeviceSegmentedSort
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -275,6 +279,10 @@ struct DeviceSegmentedSort
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -426,6 +434,11 @@ struct DeviceSegmentedSort
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -578,6 +591,11 @@ struct DeviceSegmentedSort
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -724,6 +742,10 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -857,6 +879,10 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -998,6 +1024,11 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1138,6 +1169,11 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1278,6 +1314,11 @@ struct DeviceSegmentedSort
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1442,6 +1483,11 @@ struct DeviceSegmentedSort
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1615,6 +1661,12 @@ struct DeviceSegmentedSort
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1782,6 +1834,12 @@ struct DeviceSegmentedSort
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
    *   preserved by sort.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -1941,6 +1999,11 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -2098,6 +2161,11 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -2264,6 +2332,12 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
@@ -2425,6 +2499,12 @@ struct DeviceSegmentedSort
    *   @p x precedes @p y, and if the two elements are equivalent (neither
    *   @p x < @p y nor @p y < @p x) then a postcondition of stable sort is that
    *   @p x still precedes @p y.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the batched sorting of three segments
