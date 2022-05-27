@@ -1091,7 +1091,7 @@ public:
             (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set output for remaining items
-        Iterate:FlagTails(linear_tid, output, input, flag_op);
+        Iterate::FlagTails(linear_tid, output, input, flag_op);
     }
 
 
