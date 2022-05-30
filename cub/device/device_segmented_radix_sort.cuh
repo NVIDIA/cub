@@ -88,6 +88,11 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
    * - @devicestorage
@@ -274,6 +279,12 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and yield 
    *   a corresponding performance improvement.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageP
    * - @devicestorage
    *
@@ -443,6 +454,11 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - Let `in` be one of `{d_keys_in, d_values_in}` and `out` be any of
+   *   `{d_keys_out, d_values_out}`. The range `[out, out + num_items)` shall 
+   *   not overlap `[in, in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
    * - @devicestorage
@@ -629,6 +645,12 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - Let `cur` be one of `{d_keys.Current(), d_values.Current()}` and `alt` 
+   *   be any of `{d_keys.Alternate(), d_values.Alternate()}`. The range 
+   *   `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageP
    * - @devicestorage
    *
@@ -804,6 +826,10 @@ struct DeviceSegmentedRadixSort
    *   `segment_offsets` (of length `num_segments + 1`) can be aliased for both 
    *   the `d_begin_offsets` and `d_end_offsets` parameters (where the latter 
    *   is specified as `segment_offsets + 1`).
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
    * - @devicestorage
@@ -966,6 +992,11 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageP
    * - @devicestorage
    *
@@ -1123,6 +1154,10 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - The range `[d_keys_out, d_keys_out + num_items)` shall not overlap
+   *   `[d_keys_in, d_keys_in + num_items)`, 
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
    * - @devicestorage
@@ -1290,6 +1325,11 @@ struct DeviceSegmentedRadixSort
    * - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
    *   bits can be specified. This can reduce overall sorting overhead and 
    *   yield a corresponding performance improvement.
+   * - Let `cur = d_keys.Current()` and `alt = d_keys.Alternate()`.
+   *   The range `[cur, cur + num_items)` shall not overlap 
+   *   `[alt, alt + num_items)`. Both ranges shall not overlap
+   *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
+   *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageP
    * - @devicestorage
    *
