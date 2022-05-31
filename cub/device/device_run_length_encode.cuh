@@ -85,6 +85,12 @@ struct DeviceRunLengthEncode
    * - The total number of runs encountered is written to `d_num_runs_out`.
    * - The `==` equality operator is used to determine whether values are 
    *   equivalent
+   * - In-place operations are not supported. There must be no overlap between
+   *   any of the provided ranges:
+   *   - `[d_unique_out, d_unique_out + *d_num_runs_out)`
+   *   - `[d_counts_out, d_counts_out + *d_num_runs_out)`
+   *   - `[d_num_runs_out, d_num_runs_out + 1)`
+   *   - `[d_in, d_in + num_items)`
    * - @devicestorage
    *
    * @par Performance
@@ -249,6 +255,12 @@ struct DeviceRunLengthEncode
    * - The total number of runs encountered is written to `d_num_runs_out`.
    * - The `==` equality operator is used to determine whether values are 
    *   equivalent
+   * - In-place operations are not supported. There must be no overlap between
+   *   any of the provided ranges:
+   *   - `[d_offsets_out, d_offsets_out + *d_num_runs_out)`
+   *   - `[d_lengths_out, d_lengths_out + *d_num_runs_out)`
+   *   - `[d_num_runs_out, d_num_runs_out + 1)`
+   *   - `[d_in, d_in + num_items)` 
    * - @devicestorage
    *
    * @par Performance
