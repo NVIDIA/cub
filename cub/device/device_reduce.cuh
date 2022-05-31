@@ -93,6 +93,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Snippet
@@ -230,6 +231,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Performance
@@ -345,6 +347,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Snippet
@@ -459,6 +462,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Snippet
@@ -588,6 +592,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Snippet
@@ -702,6 +707,7 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - The range `[d_in, d_in + num_items)` shall not overlap `d_out`.
    * - @devicestorage
    *
    * @par Snippet
@@ -844,6 +850,12 @@ struct DeviceReduce
    *   However, results for pseudo-associative reduction may be inconsistent
    *   from one device to a another device of a different compute-capability
    *   because CUB can employ different tile-sizing for different architectures.
+   * - Let `out` be any of 
+   *   `[d_unique_out, d_unique_out + *d_num_runs_out)`
+   *   `[d_aggregates_out, d_aggregates_out + *d_num_runs_out)`
+   *   `d_num_runs_out`. The ranges represented by `out` shall not overlap 
+   *   `[d_keys_in, d_keys_in + num_items)`,
+   *   `[d_values_in, d_values_in + num_items)` nor `out` in any way.
    * - @devicestorage
    *
    * @par Performance
