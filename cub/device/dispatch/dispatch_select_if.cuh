@@ -123,7 +123,8 @@ template <
     typename    SelectOpT,                      ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    EqualityOpT,                    ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    OffsetT,                        ///< Signed integer type for global offsets
-    bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
+    bool        KEEP_REJECTS,                   ///< Whether or not we push rejected items to the back of the output
+    bool        MayAlias = false>                   
 struct DispatchSelectIf
 {
     /******************************************************************************
@@ -161,7 +162,7 @@ struct DispatchSelectIf
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
-                LOAD_LDG,
+                MayAlias ? LOAD_CA : LOAD_LDG,
                 BLOCK_SCAN_WARP_SCANS>
             SelectIfPolicyT;
     };
