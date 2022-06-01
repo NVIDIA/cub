@@ -105,15 +105,17 @@ template <
     typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
     typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOpT,               ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename                OutputT>                     ///< Data element type that is convertible to the \p value type of \p OutputIteratorT
+    typename                InitValT>                     ///< Data element type that is convertible to the \p value type of \p OutputIteratorT
 __launch_bounds__ (int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1)
 __global__ void DeviceReduceSingleTileKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
     OffsetT                 num_items,                  ///< [in] Total number of input data items
     ReductionOpT            reduction_op,               ///< [in] Binary reduction functor
-    OutputT                  init)                       ///< [in] The initial value of the reduction
+    InitValT                  init)                       ///< [in] The initial value of the reduction
 {
+    using RealInitValT = typename InitValT::value_type;
+    RealInitValT real_init = init;
     // Thread block type for reducing input tiles
     typedef AgentReduce<
             typename ChainedPolicyT::ActivePolicy::SingleTilePolicy,
@@ -130,18 +132,18 @@ __global__ void DeviceReduceSingleTileKernel(
     if (num_items == 0)
     {
         if (threadIdx.x == 0)
-            *d_out = init;
+            *d_out = real_init;
         return;
     }
 
     // Consume input tiles
-    OutputT block_aggregate = AgentReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
+    RealInitValT block_aggregate = AgentReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
         OffsetT(0),
         num_items);
 
     // Output result
     if (threadIdx.x == 0)
-        *d_out = reduction_op(init, block_aggregate);
+        *d_out = reduction_op(real_init, block_aggregate);
 }
 
 
@@ -317,6 +319,7 @@ template <
     typename OutputIteratorT,   ///< Output iterator type for recording the reduced aggregate \iterator
     typename OffsetT,           ///< Signed integer type for global offsets
     typename ReductionOpT,      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename InitValT,
     typename OutputT =          ///< Data type of the output iterator
         cub::detail::non_void_value_t<
           OutputIteratorT,
@@ -339,7 +342,7 @@ struct DispatchReduce :
     OutputIteratorT     d_out;                          ///< [out] Pointer to the output aggregate
     OffsetT             num_items;                      ///< [in] Total number of input items (i.e., length of \p d_in)
     ReductionOpT        reduction_op;                   ///< [in] Binary reduction functor
-    OutputT             init;                           ///< [in] The initial value of the reduction
+    InitValT init;                   ///< [in] The initial value of the reduction
     cudaStream_t        stream;                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                debug_synchronous;              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                 ptx_version;                    ///< [in] PTX version
@@ -357,7 +360,7 @@ struct DispatchReduce :
         OutputIteratorT         d_out,
         OffsetT                 num_items,
         ReductionOpT            reduction_op,
-        OutputT                 init,
+        InitValT                init,
         cudaStream_t            stream,
         bool                    debug_synchronous,
         int                     ptx_version)
@@ -570,14 +573,14 @@ struct DispatchReduce :
         {
             // Small, single tile size
             return InvokeSingleTile<ActivePolicyT>(
-                DeviceReduceSingleTileKernel<MaxPolicyT, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, OutputT>);
+                DeviceReduceSingleTileKernel<MaxPolicyT, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, InitValT>);
         }
         else
         {
             // Regular size
             return InvokePasses<ActivePolicyT>(
                 DeviceReduceKernel<typename DispatchReduce::MaxPolicy, InputIteratorT, OutputT*, OffsetT, ReductionOpT>,
-                DeviceReduceSingleTileKernel<MaxPolicyT, OutputT*, OutputIteratorT, OffsetT, ReductionOpT, OutputT>);
+                DeviceReduceSingleTileKernel<MaxPolicyT, OutputT*, OutputIteratorT, OffsetT, ReductionOpT, InitValT>);
         }
     }
 
@@ -597,7 +600,7 @@ struct DispatchReduce :
         OutputIteratorT d_out,                              ///< [out] Pointer to the output aggregate
         OffsetT         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         ReductionOpT    reduction_op,                       ///< [in] Binary reduction functor
-        OutputT         init,                               ///< [in] The initial value of the reduction
+        InitValT        init,                               ///< [in] The initial value of the reduction
         cudaStream_t    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {

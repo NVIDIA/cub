@@ -155,14 +155,45 @@ struct DeviceReduce
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT>::Dispatch(
+        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, detail::InputValue<T>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             num_items,
             reduction_op,
-            init,
+            detail::InputValue<T>(init),
+            stream,
+            debug_synchronous);
+    }
+
+    template <
+        typename InputIteratorT,
+        typename OutputIteratorT,
+        typename ReductionOpT,
+        typename InitValueT,
+        typename InitValueIterT = InitValueT *>
+    CUB_RUNTIME_FUNCTION static cudaError_t Reduce(
+        void *d_temp_storage,                         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t &temp_storage_bytes,                   ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIteratorT d_in,                          ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT d_out,                        ///< [out] Pointer to the output aggregate
+        int num_items,                                ///< [in] Total number of input items (i.e., length of \p d_in)
+        ReductionOpT reduction_op,                    ///< [in] Binary reduction functor
+        FutureValue<InitValueT> init, ///< [in] Initial value of the reduction
+        cudaStream_t stream = 0,                      ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool debug_synchronous = false)               ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, detail::InputValue<InitValueT>>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op,
+            detail::InputValue<InitValueT>(init),
             stream,
             debug_synchronous);
     }
@@ -239,14 +270,14 @@ struct DeviceReduce
           cub::detail::non_void_value_t<OutputIteratorT,
                                         cub::detail::value_t<InputIteratorT>>;
 
-        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum>::Dispatch(
+        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum, detail::InputValue<OutputT>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             num_items,
             cub::Sum(),
-            OutputT(),            // zero-initialize
+            detail::InputValue<OutputT>(OutputT{}),            // zero-initialize
             stream,
             debug_synchronous);
     }
@@ -314,14 +345,15 @@ struct DeviceReduce
         // The input value type
         using InputT = cub::detail::value_t<InputIteratorT>;
 
-        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min>::Dispatch(
+        auto init_val = Traits<InputT>::Max();
+        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min, detail::InputValue<InputT>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             num_items,
             cub::Min(),
-            Traits<InputT>::Max(), // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+            detail::InputValue<InputT>(init_val), // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -407,15 +439,15 @@ struct DeviceReduce
 
         // Initial value
         OutputTupleT initial_value(1, Traits<InputValueT>::Max());   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
-
-        return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
+        
+        return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin, detail::InputValue<OutputTupleT>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_indexed_in,
             d_out,
             num_items,
             cub::ArgMin(),
-            initial_value,
+            detail::InputValue<OutputTupleT>(initial_value),
             stream,
             debug_synchronous);
     }
@@ -483,14 +515,15 @@ struct DeviceReduce
         // The input value type
         using InputT = cub::detail::value_t<InputIteratorT>;
 
-        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max>::Dispatch(
+        auto init_val = Traits<InputT>::Lowest();
+        return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max, detail::InputValue<InputT>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             num_items,
             cub::Max(),
-            Traits<InputT>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+            detail::InputValue<InputT>(init_val),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -577,14 +610,14 @@ struct DeviceReduce
         // Initial value
         OutputTupleT initial_value(1, Traits<InputValueT>::Lowest());     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
-        return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
+        return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax, detail::InputValue<OutputTupleT>>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_indexed_in,
             d_out,
             num_items,
             cub::ArgMax(),
-            initial_value,
+            detail::InputValue<OutputTupleT>(initial_value),
             stream,
             debug_synchronous);
     }
