@@ -29,6 +29,8 @@ a future CUB release. See NVIDIA/cub#471 for details.
   0 or 1.
 - NVIDIA/cub#468: Fixed overflow issues in `DeviceRadixSort` given `num_items`
   close to 2^32. Thanks to @canonizer for this contribution.
+- NVIDIA/cub#498: Fixed compiler regression in `BlockAdjacentDifference`.
+  Thanks to @MKKnorr for this contribution.
 
 ## Other Enhancements
 
