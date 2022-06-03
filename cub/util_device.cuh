@@ -139,6 +139,7 @@ CUB_RUNTIME_FUNCTION inline int CurrentDevice()
  *        specified device on construction and switches to the saved device on
  *        destruction.
  */
+#ifndef __CUDACC_RTC__  // cudaSetDevice is an undefined symbol on the device side
 struct SwitchDevice
 {
 private:
@@ -158,6 +159,7 @@ public:
             CubDebug(cudaSetDevice(old_device));
     }
 };
+#endif  // ifndef __CUDACC_RTC__
 
 /**
  * \brief Returns the number of CUDA devices available or -1 if an error
