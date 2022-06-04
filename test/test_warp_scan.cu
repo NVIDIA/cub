@@ -78,7 +78,7 @@ struct WrapperFunctor
     template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
-        return op(a, b);
+        return static_cast<T>(op(a, b));
     }
 };
 
@@ -329,14 +329,14 @@ void Initialize(
 
         T warp_aggregate   = h_in[i];
         h_reference[i]      = initial_value;
-        T inclusive         = scan_op(initial_value, h_in[i]);
+        T inclusive         = static_cast<T>(scan_op(initial_value, h_in[i]));
 
         for (i = i + 1; i < base_idx + logical_warp_items; ++i)
         {
             InitValue(gen_mode, h_in[i], i);
             h_reference[i] = inclusive;
-            inclusive = scan_op(inclusive, h_in[i]);
-            warp_aggregate = scan_op(warp_aggregate, h_in[i]);
+            inclusive = static_cast<T>(scan_op(inclusive, h_in[i]));
+            warp_aggregate = static_cast<T>(scan_op(warp_aggregate, h_in[i]));
         }
 
         warp_aggregates[w] = warp_aggregate;
@@ -374,8 +374,8 @@ void Initialize(
         for (i = i + 1; i < base_idx + logical_warp_items; ++i)
         {
             InitValue(gen_mode, h_in[i], i);
-            inclusive = scan_op(inclusive, h_in[i]);
-            warp_aggregate = scan_op(warp_aggregate, h_in[i]);
+            inclusive = static_cast<T>(scan_op(inclusive, h_in[i]));
+            warp_aggregate = static_cast<T>(scan_op(warp_aggregate, h_in[i]));
             h_reference[i] = inclusive;
         }
 
