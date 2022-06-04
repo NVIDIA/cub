@@ -50,3 +50,9 @@
 #define B0 CUB_MACRO_CHECK("B0", termios.h)
 
 #include <cub/${header}>
+
+#if defined(CUB_DISABLE_BF16_SUPPORT)
+#if defined(__CUDA_BF16_TYPES_EXIST__)
+#error CUB should not include cuda_bf16.h when BF16 support is disabled
+#endif
+#endif

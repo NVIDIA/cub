@@ -20,19 +20,27 @@ foreach (header IN LISTS headers)
   list(APPEND headertest_srcs "${headertest_src}")
 endforeach()
 
-foreach(cub_target IN LISTS CUB_TARGETS)
-  cub_get_target_property(config_prefix ${cub_target} PREFIX)
+function(cub_add_header_test label definitions)
+  foreach(cub_target IN LISTS CUB_TARGETS)
+    cub_get_target_property(config_prefix ${cub_target} PREFIX)
 
-  set(headertest_target ${config_prefix}.headers)
-  add_library(${headertest_target} OBJECT ${headertest_srcs})
-  target_link_libraries(${headertest_target} PUBLIC ${cub_target})
-  # Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
-  target_compile_definitions(${headertest_target} PRIVATE
-    "THRUST_WRAPPED_NAMESPACE=wrapped_thrust"
-    "CUB_WRAPPED_NAMESPACE=wrapped_cub"
-  )
-  cub_clone_target_properties(${headertest_target} ${cub_target})
+    set(headertest_target ${config_prefix}.headers.${label})
+    add_library(${headertest_target} OBJECT ${headertest_srcs})
+    target_link_libraries(${headertest_target} PUBLIC ${cub_target})
+    target_compile_definitions(${headertest_target} PRIVATE ${definitions})
+    cub_clone_target_properties(${headertest_target} ${cub_target})
 
-  add_dependencies(cub.all.headers ${headertest_target})
-  add_dependencies(${config_prefix}.all ${headertest_target})
-endforeach()
+    add_dependencies(cub.all.headers ${headertest_target})
+    add_dependencies(${config_prefix}.all ${headertest_target})
+  endforeach()
+endfunction()
+
+# Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
+set(header_definitions 
+  "THRUST_WRAPPED_NAMESPACE=wrapped_thrust" 
+  "CUB_WRAPPED_NAMESPACE=wrapped_cub")
+cub_add_header_test(base "${header_definitions}")
+
+list(APPEND header_definitions "CUB_DISABLE_BF16_SUPPORT")
+cub_add_header_test(bf16 "${header_definitions}")
+
