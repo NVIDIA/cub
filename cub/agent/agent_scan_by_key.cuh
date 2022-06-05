@@ -32,15 +32,16 @@
 
 #pragma once
 
-#include <iterator>
+#include <cub/agent/single_pass_scan_operators.cuh>
+#include <cub/block/block_discontinuity.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_scan.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/config.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+#include <cub/util_type.cuh>
 
-#include "single_pass_scan_operators.cuh"
-#include "../block/block_load.cuh"
-#include "../block/block_store.cuh"
-#include "../block/block_scan.cuh"
-#include "../block/block_discontinuity.cuh"
-#include "../config.cuh"
-#include "../iterator/cache_modified_input_iterator.cuh"
+#include <iterator>
 
 
 CUB_NAMESPACE_BEGIN
@@ -138,7 +139,7 @@ struct AgentScanByKey
     using TilePrefixCallbackT = TilePrefixCallbackOp<SizeValuePairT, ReduceBySegmentOpT, ScanTileStateT>;
     using BlockScanT = BlockScan<SizeValuePairT, BLOCK_THREADS, AgentScanByKeyPolicyT::SCAN_ALGORITHM, 1, 1>;
 
-    union TempStorage
+    union TempStorage_
     {
         struct ScanStorage
         {
@@ -152,12 +153,15 @@ struct AgentScanByKey
         typename BlockStoreValuesT::TempStorage store_values;
     };
 
+    struct TempStorage : cub::Uninitialized<TempStorage_> {};
+
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    TempStorage &                 storage;
+    TempStorage_                 &storage;
     WrappedKeysInputIteratorT     d_keys_in;
+    KeyT*                         d_keys_prev_in;
     WrappedValuesInputIteratorT   d_values_in;
     ValuesOutputIteratorT         d_values_out;
     InequalityWrapper<EqualityOp> inequality_op;
@@ -364,19 +368,27 @@ struct AgentScanByKey
         }
         else
         {
-            KeyT tile_pred_key = (threadIdx.x == 0) ? d_keys_in[tile_base - 1] : KeyT();
-            BlockDiscontinuityKeysT(storage.scan_storage.discontinuity)
-                .FlagHeads(segment_flags, keys, inequality_op, tile_pred_key);
+          KeyT tile_pred_key = (threadIdx.x == 0) ? d_keys_prev_in[tile_idx]
+                                                  : KeyT();
 
-            // Zip values and segment_flags
-            ZipValuesAndFlags<IS_LAST_TILE>(num_remaining,
-                                            values,
-                                            segment_flags,
-                                            scan_items);
+          BlockDiscontinuityKeysT(storage.scan_storage.discontinuity)
+            .FlagHeads(segment_flags, keys, inequality_op, tile_pred_key);
 
-            SizeValuePairT  tile_aggregate;
-            TilePrefixCallbackT prefix_op(tile_state, storage.scan_storage.prefix, pair_scan_op, tile_idx);
-            ScanTile(scan_items, tile_aggregate, prefix_op, Int2Type<IS_INCLUSIVE>());
+          // Zip values and segment_flags
+          ZipValuesAndFlags<IS_LAST_TILE>(num_remaining,
+                                          values,
+                                          segment_flags,
+                                          scan_items);
+
+          SizeValuePairT tile_aggregate;
+          TilePrefixCallbackT prefix_op(tile_state,
+                                        storage.scan_storage.prefix,
+                                        pair_scan_op,
+                                        tile_idx);
+          ScanTile(scan_items,
+                   tile_aggregate,
+                   prefix_op,
+                   Int2Type<IS_INCLUSIVE>());
         }
 
         CTA_SYNC();
@@ -408,14 +420,16 @@ struct AgentScanByKey
     AgentScanByKey(
         TempStorage &         storage,
         KeysInputIteratorT    d_keys_in,
+        KeyT *                d_keys_prev_in,
         ValuesInputIteratorT  d_values_in,
         ValuesOutputIteratorT d_values_out,
         EqualityOp            equality_op,
         ScanOpT               scan_op,
         InitValueT            init_value)
     : 
-        storage(storage),
+        storage(storage.Alias()),
         d_keys_in(d_keys_in),
+        d_keys_prev_in(d_keys_prev_in),
         d_values_in(d_values_in),
         d_values_out(d_values_out),
         inequality_op(equality_op),

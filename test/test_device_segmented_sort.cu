@@ -29,6 +29,9 @@
 #define CUB_STDERR
 
 #include <cub/device/device_segmented_sort.cuh>
+
+#include <nv/target>
+
 #include <test_util.h>
 
 #include <thrust/count.h>
@@ -1500,61 +1503,56 @@ struct EdgeTestDispatch
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
-    if (CUB_IS_HOST_CODE)
-    {
-      #if CUB_INCLUDE_HOST_CODE
-      using SmallAndMediumPolicyT =
-        typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
-      using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
+    NV_IF_TARGET(NV_IS_HOST,
+      (using SmallAndMediumPolicyT =
+         typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
+       using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
 
-      const int small_segment_max_segment_size =
-        SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_TILE;
+       const int small_segment_max_segment_size =
+         SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_TILE;
 
-      const int items_per_small_segment =
-        SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_THREAD;
+       const int items_per_small_segment =
+         SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_THREAD;
 
-      const int medium_segment_max_segment_size =
-        SmallAndMediumPolicyT::MediumPolicyT::ITEMS_PER_TILE;
+       const int medium_segment_max_segment_size =
+         SmallAndMediumPolicyT::MediumPolicyT::ITEMS_PER_TILE;
 
-      const int single_thread_segment_size = items_per_small_segment;
+       const int single_thread_segment_size = items_per_small_segment;
 
-      const int large_cached_segment_max_segment_size =
-        LargeSegmentPolicyT::BLOCK_THREADS *
-        LargeSegmentPolicyT::ITEMS_PER_THREAD;
+       const int large_cached_segment_max_segment_size =
+         LargeSegmentPolicyT::BLOCK_THREADS *
+         LargeSegmentPolicyT::ITEMS_PER_THREAD;
 
-      for (bool sort_descending : {ascending, descending})
-      {
-        Input<KeyT, ValueT> edge_cases =
-          InputDescription<KeyT>()
-            .add({a_lot_of, empty_short_circuit_segment_size})
-            .add({a_lot_of, copy_short_circuit_segment_size})
-            .add({a_lot_of, swap_short_circuit_segment_size})
-            .add({a_lot_of, swap_short_circuit_segment_size + 1})
-            .add({a_lot_of, swap_short_circuit_segment_size + 1})
-            .add({a_lot_of, single_thread_segment_size - 1})
-            .add({a_lot_of, single_thread_segment_size })
-            .add({a_lot_of, single_thread_segment_size + 1 })
-            .add({a_lot_of, single_thread_segment_size * 2 - 1 })
-            .add({a_lot_of, single_thread_segment_size * 2 })
-            .add({a_lot_of, single_thread_segment_size * 2 + 1 })
-            .add({a_bunch_of, small_segment_max_segment_size - 1})
-            .add({a_bunch_of, small_segment_max_segment_size})
-            .add({a_bunch_of, small_segment_max_segment_size + 1})
-            .add({a_bunch_of, medium_segment_max_segment_size - 1})
-            .add({a_bunch_of, medium_segment_max_segment_size})
-            .add({a_bunch_of, medium_segment_max_segment_size + 1})
-            .add({a_bunch_of, large_cached_segment_max_segment_size - 1})
-            .add({a_bunch_of, large_cached_segment_max_segment_size})
-            .add({a_bunch_of, large_cached_segment_max_segment_size + 1})
-            .add({a_few, large_cached_segment_max_segment_size * 2})
-            .add({a_few, large_cached_segment_max_segment_size * 3})
-            .add({a_few, large_cached_segment_max_segment_size * 5})
-            .template gen<ValueT>(sort_descending);
+       for (bool sort_descending : {ascending, descending}) {
+         Input<KeyT, ValueT> edge_cases =
+           InputDescription<KeyT>()
+             .add({a_lot_of, empty_short_circuit_segment_size})
+             .add({a_lot_of, copy_short_circuit_segment_size})
+             .add({a_lot_of, swap_short_circuit_segment_size})
+             .add({a_lot_of, swap_short_circuit_segment_size + 1})
+             .add({a_lot_of, swap_short_circuit_segment_size + 1})
+             .add({a_lot_of, single_thread_segment_size - 1})
+             .add({a_lot_of, single_thread_segment_size})
+             .add({a_lot_of, single_thread_segment_size + 1})
+             .add({a_lot_of, single_thread_segment_size * 2 - 1})
+             .add({a_lot_of, single_thread_segment_size * 2})
+             .add({a_lot_of, single_thread_segment_size * 2 + 1})
+             .add({a_bunch_of, small_segment_max_segment_size - 1})
+             .add({a_bunch_of, small_segment_max_segment_size})
+             .add({a_bunch_of, small_segment_max_segment_size + 1})
+             .add({a_bunch_of, medium_segment_max_segment_size - 1})
+             .add({a_bunch_of, medium_segment_max_segment_size})
+             .add({a_bunch_of, medium_segment_max_segment_size + 1})
+             .add({a_bunch_of, large_cached_segment_max_segment_size - 1})
+             .add({a_bunch_of, large_cached_segment_max_segment_size})
+             .add({a_bunch_of, large_cached_segment_max_segment_size + 1})
+             .add({a_few, large_cached_segment_max_segment_size * 2})
+             .add({a_few, large_cached_segment_max_segment_size * 3})
+             .add({a_few, large_cached_segment_max_segment_size * 5})
+             .template gen<ValueT>(sort_descending);
 
-        InputTest<KeyT, ValueT>(sort_descending, edge_cases);
-      }
-      #endif
-    }
+         InputTest<KeyT, ValueT>(sort_descending, edge_cases);
+       }));
 
     return cudaSuccess;
   }

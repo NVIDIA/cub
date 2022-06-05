@@ -47,7 +47,7 @@ template <
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
     int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
-    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0> ///< The PTX compute capability for which to to specialize this collective
 struct BlockScanWarpScans
 {
     //---------------------------------------------------------------------
@@ -61,7 +61,7 @@ struct BlockScanWarpScans
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
         /// Number of warp threads
-        INNER_WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+        INNER_WARP_THREADS = CUB_WARP_THREADS(0),
         OUTER_WARP_THREADS = BLOCK_THREADS / INNER_WARP_THREADS,
 
         /// Number of outer scan warps
@@ -69,10 +69,10 @@ struct BlockScanWarpScans
     };
 
     ///  Outer WarpScan utility type
-    typedef WarpScan<T, OUTER_WARP_THREADS, PTX_ARCH> OuterWarpScanT;
+    typedef WarpScan<T, OUTER_WARP_THREADS> OuterWarpScanT;
 
     ///  Inner WarpScan utility type
-    typedef WarpScan<T, INNER_WARP_THREADS, PTX_ARCH> InnerWarpScanT;
+    typedef WarpScan<T, INNER_WARP_THREADS> InnerWarpScanT;
 
     typedef typename OuterWarpScanT::TempStorage OuterScanArray[OUTER_WARPS];
 

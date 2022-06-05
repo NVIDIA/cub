@@ -45,8 +45,7 @@ void Test()
 
   for (unsigned int warp_id = 0; warp_id < warps; warp_id++)
   {
-    const unsigned int warp_mask =
-      cub::WarpMask<LOGICAL_WARP_THREADS, 860>(warp_id);
+    const unsigned int warp_mask = cub::WarpMask<LOGICAL_WARP_THREADS>(warp_id);
 
     const unsigned int warp_begin = LOGICAL_WARP_THREADS * warp_id;
     const unsigned int warp_end = warp_begin + LOGICAL_WARP_THREADS;

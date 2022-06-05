@@ -1286,6 +1286,83 @@ void TestChannels(LevelT /*max_level*/,
                   TestExtraChannels)
 {}
 
+void TestLevelsAliasing()
+{
+  constexpr int num_levels = 7;
+
+  int h_histogram[num_levels - 1]{};
+  int h_samples[]{
+    0,  2,  4,  6,  8,  10, 12, // levels
+    1,                          // bin 0
+    3,  3,                      // bin 1
+    5,  5,  5,                  // bin 2
+    7,  7,  7,  7,              // bin 3
+    9,  9,  9,  9,  9,          // bin 4
+    11, 11, 11, 11, 11, 11      // bin 5
+  };
+
+  constexpr int num_samples = sizeof(h_samples) / sizeof(h_samples[0]);
+
+  int *d_histogram{};
+  int *d_samples{};
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_histogram, sizeof(h_histogram)));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_samples, sizeof(h_samples)));
+
+  CubDebugExit(
+    cudaMemcpy(d_samples, h_samples, sizeof(h_samples), cudaMemcpyHostToDevice));
+
+  // Alias levels with samples (fancy way to `d_histogram[bin]++`).
+  int *d_levels = d_samples;
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  cudaStream_t stream = 0;
+
+  CubDebugExit(cub::DeviceHistogram::HistogramRange(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_samples,
+                                                    d_histogram,
+                                                    num_levels,
+                                                    d_levels,
+                                                    num_samples,
+                                                    stream,
+                                                    true));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
+
+  CubDebugExit(cub::DeviceHistogram::HistogramRange(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_samples,
+                                                    d_histogram,
+                                                    num_levels,
+                                                    d_levels,
+                                                    num_samples,
+                                                    stream,
+                                                    true));
+
+  CubDebugExit(cudaMemcpy(h_histogram,
+                          d_histogram,
+                          sizeof(h_histogram),
+                          cudaMemcpyDeviceToHost));
+
+  for (int bin = 0; bin < num_levels - 1; bin++)
+  {
+    // Each bin should contain `bin + 1` samples. Since samples also contain
+    // levels, they contribute one extra item to each bin.
+    AssertEquals(bin + 2, h_histogram[bin]);
+  }
+
+  CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
+  CubDebugExit(g_allocator.DeviceFree(d_histogram));
+  CubDebugExit(g_allocator.DeviceFree(d_levels));
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -1319,6 +1396,8 @@ int main(int argc, char** argv)
 
     using true_t = Int2Type<true>;
     using false_t = Int2Type<false>;
+
+    TestLevelsAliasing();
 
     TestChannels <signed char,      int, int,   int>(256,   256 + 1,  true_t{}, true_t{});
     TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, true_t{}, false_t{});

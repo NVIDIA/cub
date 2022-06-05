@@ -43,10 +43,14 @@
 
 #include <thrust/count.h>
 #include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/iterator/transform_output_iterator.h>
 #include <thrust/iterator/zip_iterator.h>
+#include <thrust/random.h>
+#include <thrust/sequence.h>
+#include <thrust/shuffle.h>
 
 #include "test_util.h"
 
@@ -764,6 +768,280 @@ void TestFlagsNormalization()
                            thrust::make_counting_iterator(0)));
 }
 
+void TestFlagsAliasingInPartition()
+{
+  int h_items[]{0, 1, 0, 2, 0, 3, 0, 4, 0, 5};
+  constexpr int num_items = sizeof(h_items) / sizeof(h_items[0]);
+
+  int *d_in{};
+  int *d_out{};
+
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_in, sizeof(h_items)));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_out, sizeof(h_items)));
+
+  CubDebugExit(
+    cudaMemcpy(d_in, h_items, sizeof(h_items), cudaMemcpyHostToDevice));
+
+  // alias flags and keys
+  int *d_flags = d_in;
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+
+  CubDebugExit(
+    cub::DevicePartition::Flagged(d_tmp_storage,
+                                  tmp_storage_size,
+                                  d_in,
+                                  d_flags,
+                                  d_out,
+                                  thrust::make_discard_iterator(), // num_out
+                                  num_items,
+                                  0,
+                                  true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  CubDebugExit(
+    cub::DevicePartition::Flagged(d_tmp_storage,
+                                  tmp_storage_size,
+                                  d_in,
+                                  d_flags,
+                                  d_out,
+                                  thrust::make_discard_iterator(), // num_out
+                                  num_items,
+                                  0,
+                                  true));
+
+  AssertTrue(thrust::equal(thrust::device,
+                           d_out,
+                           d_out + num_items / 2,
+                           thrust::make_counting_iterator(1)));
+
+  AssertEquals(
+    thrust::count(thrust::device, d_out + num_items / 2, d_out + num_items, 0),
+    num_items / 2);
+
+  CubDebugExit(g_allocator.DeviceFree(d_out));
+  CubDebugExit(g_allocator.DeviceFree(d_in));
+}
+
+struct Odd
+{
+  __host__ __device__ bool operator()(int v) const { return v % 2; }
+};
+
+void TestIfInPlace()
+{
+  const int num_items = 4 * 1024 * 1024;
+  const int num_iters = 42;
+
+  thrust::device_vector<int> num_out(1);
+  thrust::device_vector<int> data(num_items);
+  thrust::device_vector<int> reference(num_items);
+  thrust::device_vector<int> reference_out(1);
+
+  thrust::sequence(data.begin(), data.end());
+
+  Odd op{};
+
+  int *d_num_out = thrust::raw_pointer_cast(num_out.data());
+  int *d_data = thrust::raw_pointer_cast(data.data());
+  int *d_reference = thrust::raw_pointer_cast(reference.data());
+  int *d_reference_out = thrust::raw_pointer_cast(reference_out.data());
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+
+  CubDebugExit(
+    cub::DeviceSelect::If(d_tmp_storage,
+                          tmp_storage_size,
+                          d_data,
+                          d_num_out,
+                          num_items,
+                          op,
+                          0,
+                          true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  thrust::default_random_engine g{};
+
+  for (int iter = 0; iter < num_iters; iter++)
+  {
+    thrust::shuffle(data.begin(), data.end(), g);
+
+    CubDebugExit(
+      cub::DeviceSelect::If(d_tmp_storage,
+                            tmp_storage_size,
+                            d_data,
+                            d_reference,
+                            d_reference_out,
+                            num_items,
+                            op,
+                            0,
+                            true));
+
+    CubDebugExit(
+      cub::DeviceSelect::If(d_tmp_storage,
+                            tmp_storage_size,
+                            d_data,
+                            d_num_out,
+                            num_items,
+                            op,
+                            0,
+                            true));
+
+    AssertEquals(num_out, reference_out);
+    const int num_selected = num_out[0];
+
+    const bool match_reference = thrust::equal(reference.begin(),
+                                               reference.begin() + num_selected,
+                                               data.begin());
+    AssertTrue(match_reference);
+  }
+}
+
+void TestFlaggedInPlace()
+{
+  const int num_items = 4 * 1024 * 1024;
+  const int num_iters = 42;
+
+  thrust::device_vector<int> num_out(1);
+  thrust::device_vector<int> data(num_items);
+  thrust::device_vector<bool> flags(num_items);
+
+  int h_num_out{};
+  int *d_num_out = thrust::raw_pointer_cast(num_out.data());
+  int *d_data = thrust::raw_pointer_cast(data.data());
+  bool *d_flags = thrust::raw_pointer_cast(flags.data());
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+
+  CubDebugExit(
+    cub::DeviceSelect::Flagged(d_tmp_storage,
+                               tmp_storage_size,
+                               d_data,
+                               d_flags,
+                               d_num_out,
+                               num_items,
+                               0,
+                               true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  thrust::default_random_engine g{};
+
+  for (int iter = 0; iter < num_iters; iter++)
+  {
+    const int num_selected = RandomValue(num_items);
+
+    thrust::sequence(data.begin(), data.end());
+    thrust::fill(flags.begin(), flags.begin() + num_selected, true);
+    thrust::fill(flags.begin() + num_selected, flags.end(), false);
+    thrust::shuffle(flags.begin(), flags.end(), g);
+
+    CubDebugExit(
+      cub::DeviceSelect::Flagged(d_tmp_storage,
+                                 tmp_storage_size,
+                                 d_data,
+                                 d_flags,
+                                 d_num_out,
+                                 num_items,
+                                 0,
+                                 true));
+
+    cudaMemcpy(&h_num_out, d_num_out, sizeof(int), cudaMemcpyDeviceToHost);
+
+    AssertEquals(num_selected, h_num_out);
+
+    auto selection_perm_begin = thrust::make_permutation_iterator(flags.begin(),
+                                                                  data.begin());
+    auto selection_perm_end = selection_perm_begin + num_selected;
+
+    AssertEquals(num_selected,
+                 thrust::count(selection_perm_begin, selection_perm_end, true));
+  }
+}
+
+void TestFlaggedInPlaceWithAliasedFlags()
+{
+  const int num_items = 1024 * 1024;
+  const int num_iters = 42;
+
+  thrust::device_vector<int> num_out(1);
+  thrust::device_vector<int> data(num_items);
+  thrust::device_vector<int> reference(num_items);
+  thrust::device_vector<int> flags(num_items);
+
+  int h_num_out{};
+  int *d_num_out = thrust::raw_pointer_cast(num_out.data());
+  int *d_data = thrust::raw_pointer_cast(data.data());
+  int *d_flags = d_data; // alias
+  int *d_allocated_flags = thrust::raw_pointer_cast(data.data()); 
+  int *d_reference = thrust::raw_pointer_cast(reference.data()); 
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+
+  CubDebugExit(
+    cub::DeviceSelect::Flagged(d_tmp_storage,
+                               tmp_storage_size,
+                               d_data,
+                               d_flags,
+                               d_num_out,
+                               num_items,
+                               0,
+                               true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  thrust::default_random_engine g{};
+
+  for (int iter = 0; iter < num_iters; iter++)
+  {
+    const int num_selected = RandomValue(num_items);
+
+    thrust::sequence(data.begin(), data.begin() + num_selected, 1);
+    thrust::fill(data.begin() + num_selected, data.end(), 0);
+    thrust::shuffle(data.begin(), data.end(), g);
+
+    CubDebugExit(
+      cub::DeviceSelect::Flagged(d_tmp_storage,
+                                 tmp_storage_size,
+                                 d_data,      // in
+                                 d_allocated_flags,
+                                 d_reference, // out
+                                 d_num_out,
+                                 num_items,
+                                 0,
+                                 true));
+
+    CubDebugExit(
+      cub::DeviceSelect::Flagged(d_tmp_storage,
+                                 tmp_storage_size,
+                                 d_data,
+                                 d_flags,
+                                 d_num_out,
+                                 num_items,
+                                 0,
+                                 true));
+
+    cudaMemcpy(&h_num_out, d_num_out, sizeof(int), cudaMemcpyDeviceToHost);
+
+    AssertEquals(num_selected, h_num_out);
+
+    const bool match_reference = thrust::equal(reference.begin(),
+                                               reference.begin() + num_selected,
+                                               data.begin());
+    AssertTrue(match_reference);
+  }
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -801,6 +1079,12 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
+
+    TestFlagsAliasingInPartition();
+
+    TestFlaggedInPlace();
+    TestFlaggedInPlaceWithAliasedFlags();
+    TestIfInPlace();
 
     Test<unsigned char>(num_items);
     Test<unsigned short>(num_items);

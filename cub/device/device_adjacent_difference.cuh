@@ -99,7 +99,7 @@ CUB_NAMESPACE_BEGIN
 struct DeviceAdjacentDifference
 {
 private:
-  template <bool in_place,
+  template <bool may_alias,
             bool read_left,
             typename NumItemsT,
             typename InputIteratorT,
@@ -121,7 +121,7 @@ private:
                                                  OutputIteratorT,
                                                  DifferenceOpT,
                                                  OffsetT,
-                                                 in_place,
+                                                 may_alias,
                                                  read_left>;
 
     return DispatchT::Dispatch(d_temp_storage,
@@ -255,17 +255,17 @@ public:
                    cudaStream_t stream         = 0,
                    bool debug_synchronous      = false)
   {
-    constexpr bool in_place = false;
+    constexpr bool may_alias = false;
     constexpr bool read_left = true;
 
-    return AdjacentDifference<in_place, read_left>(d_temp_storage,
-                                                   temp_storage_bytes,
-                                                   d_input,
-                                                   d_output,
-                                                   num_items,
-                                                   difference_op,
-                                                   stream,
-                                                   debug_synchronous);
+    return AdjacentDifference<may_alias, read_left>(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_input,
+                                                    d_output,
+                                                    num_items,
+                                                    difference_op,
+                                                    stream,
+                                                    debug_synchronous);
   }
 
   /**
@@ -372,17 +372,17 @@ public:
                cudaStream_t stream         = 0,
                bool debug_synchronous      = false)
   {
-    constexpr bool in_place = true;
+    constexpr bool may_alias = true;
     constexpr bool read_left = true;
 
-    return AdjacentDifference<in_place, read_left>(d_temp_storage,
-                                                   temp_storage_bytes,
-                                                   d_input,
-                                                   d_input,
-                                                   num_items,
-                                                   difference_op,
-                                                   stream,
-                                                   debug_synchronous);
+    return AdjacentDifference<may_alias, read_left>(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_input,
+                                                    d_input,
+                                                    num_items,
+                                                    difference_op,
+                                                    stream,
+                                                    debug_synchronous);
   }
 
   /**
@@ -504,17 +504,17 @@ public:
                     cudaStream_t stream         = 0,
                     bool debug_synchronous      = false)
   {
-    constexpr bool in_place  = false;
+    constexpr bool may_alias  = false;
     constexpr bool read_left = false;
 
-    return AdjacentDifference<in_place, read_left>(d_temp_storage,
-                                                   temp_storage_bytes,
-                                                   d_input,
-                                                   d_output,
-                                                   num_items,
-                                                   difference_op,
-                                                   stream,
-                                                   debug_synchronous);
+    return AdjacentDifference<may_alias, read_left>(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_input,
+                                                    d_output,
+                                                    num_items,
+                                                    difference_op,
+                                                    stream,
+                                                    debug_synchronous);
   }
 
   /**
@@ -611,17 +611,17 @@ public:
                 cudaStream_t stream         = 0,
                 bool debug_synchronous      = false)
   {
-    constexpr bool in_place = true;
+    constexpr bool may_alias = true;
     constexpr bool read_left = false;
 
-    return AdjacentDifference<in_place, read_left>(d_temp_storage,
-                                                   temp_storage_bytes,
-                                                   d_input,
-                                                   d_input,
-                                                   num_items,
-                                                   difference_op,
-                                                   stream,
-                                                   debug_synchronous);
+    return AdjacentDifference<may_alias, read_left>(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_input,
+                                                    d_input,
+                                                    num_items,
+                                                    difference_op,
+                                                    stream,
+                                                    debug_synchronous);
   }
 };
 

@@ -34,21 +34,23 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <iterator>
+#include <cub/agent/agent_segment_fixup.cuh>
+#include <cub/agent/agent_spmv_orig.cuh>
+#include <cub/agent/single_pass_scan_operators.cuh>
+#include <cub/config.cuh>
+#include <cub/grid/grid_queue.cuh>
+#include <cub/thread/thread_search.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
+#include <cub/util_type.cuh>
 
-#include "../../agent/single_pass_scan_operators.cuh"
-#include "../../agent/agent_segment_fixup.cuh"
-#include "../../agent/agent_spmv_orig.cuh"
-#include "../../util_type.cuh"
-#include "../../util_debug.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
-#include "../../thread/thread_search.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../config.cuh"
+#include <nv/target>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <cstdio>
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -401,40 +403,33 @@ struct DispatchSpmv
         KernelConfig    &spmv_config,
         KernelConfig    &segment_fixup_config)
     {
-        if (CUB_IS_DEVICE_CODE)
-        {
-            #if CUB_INCLUDE_DEVICE_CODE
-                // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-                spmv_config.template Init<PtxSpmvPolicyT>();
-                segment_fixup_config.template Init<PtxSegmentFixupPolicy>();
-            #endif
-        }
-        else
-        {
-            #if CUB_INCLUDE_HOST_CODE
-                // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 600)
-                {
-                    spmv_config.template            Init<typename Policy600::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy600::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 500)
-                {
-                    spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy500::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 370)
-                {
-                    spmv_config.template            Init<typename Policy370::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy370::SegmentFixupPolicyT>();
-                }
-                else
-                {
-                    spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy350::SegmentFixupPolicyT>();
-                }
-            #endif
-        }
+      NV_IF_TARGET(
+        NV_IS_DEVICE,
+        ( // We're on the device, so initialize the kernel dispatch
+          // configurations with the current PTX policy
+          spmv_config.template Init<PtxSpmvPolicyT>();
+          segment_fixup_config.template Init<PtxSegmentFixupPolicy>();),
+        (
+          // We're on the host, so lookup and initialize the kernel dispatch
+          // configurations with the policies that match the device's PTX
+          // version
+          if (ptx_version >= 600) {
+            spmv_config.template Init<typename Policy600::SpmvPolicyT>();
+            segment_fixup_config
+              .template Init<typename Policy600::SegmentFixupPolicyT>();
+          } else if (ptx_version >= 500) {
+            spmv_config.template Init<typename Policy500::SpmvPolicyT>();
+            segment_fixup_config
+              .template Init<typename Policy500::SegmentFixupPolicyT>();
+          } else if (ptx_version >= 370) {
+            spmv_config.template Init<typename Policy370::SpmvPolicyT>();
+            segment_fixup_config
+              .template Init<typename Policy370::SegmentFixupPolicyT>();
+          } else {
+            spmv_config.template Init<typename Policy350::SpmvPolicyT>();
+            segment_fixup_config
+              .template Init<typename Policy350::SegmentFixupPolicyT>();
+          }));
     }
 
 

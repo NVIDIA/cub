@@ -64,6 +64,14 @@ enum Backend
 };
 
 
+enum AliasMode
+{
+  AliasNone,  // output is allocated
+  AliasKeys,  // output is an alias of input keys
+  AliasValues // output is an alias of input values
+};
+
+
 /**
  * \brief WrapperFunctor (for precluding test-specialized dispatch to *Sum variants)
  */
@@ -473,7 +481,7 @@ struct AllocateOutput {
 
 template<typename OutputT>
 struct AllocateOutput<OutputT, OutputT *, true> {
-    static void run(OutputT *&d_out, OutputT *d_in, int num_items) {
+    static void run(OutputT *&d_out, OutputT *d_in, int /* num_items */) {
         d_out = d_in;
     }
 };
@@ -489,7 +497,7 @@ template <
     typename            ScanOpT,
     typename            InitialValueT,
     typename            EqualityOpT,
-    bool                InPlace=false>
+    AliasMode           Mode=AliasNone>
 void Test(
     KeysInputIteratorT      d_keys_in,
     ValuesInputIteratorT    d_values_in,
@@ -504,7 +512,21 @@ void Test(
 
     // Allocate device output array
     OutputT *d_values_out = NULL;
-    AllocateOutput<OutputT, ValuesInputIteratorT, InPlace>::run(d_values_out, d_values_in, num_items);
+
+    if (Mode == AliasKeys)
+    {
+      AllocateOutput<OutputT, KeysInputIteratorT, Mode == AliasKeys>::run(
+        d_values_out,
+        d_keys_in,
+        num_items);
+    }
+    else
+    {
+      AllocateOutput<OutputT, ValuesInputIteratorT, Mode == AliasValues>::run(
+        d_values_out,
+        d_values_in,
+        num_items);
+    }
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
@@ -535,7 +557,10 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
-    CubDebugExit(cudaMemset(d_values_out, 0, sizeof(OutputT) * num_items));
+    if (Mode == AliasNone)
+    {
+      CubDebugExit(cudaMemset(d_values_out, 0, sizeof(OutputT) * num_items));
+    }
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(
@@ -557,38 +582,43 @@ void Test(
         true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_values_out, num_items, true, g_verbose);
+    const int compare = CompareDeviceResults(h_reference,
+                                             d_values_out,
+                                             num_items,
+                                             true,
+                                             g_verbose);
+
     printf("\t%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
     fflush(stderr);
 
-    // Performance
-    GpuTimer gpu_timer;
-    gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(),
-        Int2Type<Traits<OutputT>::PRIMITIVE>(),
-        g_timing_iterations,
-        d_temp_storage_bytes,
-        d_cdp_error,
-        d_temp_storage,
-        temp_storage_bytes,
-        d_keys_in,
-        d_values_in,
-        d_values_out,
-        scan_op,
-        initial_value,
-        num_items,
-        equality_op,
-        0,
-        false));
-    gpu_timer.Stop();
-    float elapsed_millis = gpu_timer.ElapsedMillis();
-
     // Display performance
     if (g_timing_iterations > 0)
     {
+      // Performance
+      GpuTimer gpu_timer;
+      gpu_timer.Start();
+      CubDebugExit(Dispatch(Int2Type<BACKEND>(),
+          Int2Type<Traits<OutputT>::PRIMITIVE>(),
+          g_timing_iterations,
+          d_temp_storage_bytes,
+          d_cdp_error,
+          d_temp_storage,
+          temp_storage_bytes,
+          d_keys_in,
+          d_values_in,
+          d_values_out,
+          scan_op,
+          initial_value,
+          num_items,
+          equality_op,
+          0,
+          false));
+
+      gpu_timer.Stop();
+      float elapsed_millis = gpu_timer.ElapsedMillis();
         float avg_millis = elapsed_millis / g_timing_iterations;
         float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * (sizeof(InputT) + sizeof(OutputT));
@@ -599,7 +629,14 @@ void Test(
     printf("\n\n");
 
     // Cleanup
-    if (d_values_out) CubDebugExit(g_allocator.DeviceFree(d_values_out));
+    if (Mode == AliasNone)
+    {
+      if (d_values_out) 
+      {
+        CubDebugExit(g_allocator.DeviceFree(d_values_out));
+      }
+    }
+
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
@@ -608,45 +645,97 @@ void Test(
     AssertEquals(0, compare);
 }
 
-template <
-    Backend             BACKEND,
-    typename            KeysInputIteratorT,
-    typename            ValuesInputIteratorT,
-    typename            OutputT,
-    typename            ScanOpT,
-    typename            InitialValueT,
-    typename            EqualityOpT>
-auto TestInplace(
-    KeysInputIteratorT      d_keys_in,
-    ValuesInputIteratorT    d_values_in,
-    OutputT                 *h_reference,
-    int                     num_items,
-    ScanOpT                 scan_op,
-    InitialValueT           initial_value,
-    EqualityOpT             equality_op) -> typename std::enable_if<std::is_same<decltype(*d_values_in), OutputT>::value>::type
+template <Backend BACKEND,
+          typename KeysInputIteratorT,
+          typename OutputT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename EqualityOpT>
+void TestInplaceValues(KeysInputIteratorT d_keys_in,
+                       OutputT *d_values_in,
+                       OutputT *h_reference,
+                       int num_items,
+                       ScanOpT scan_op,
+                       InitialValueT initial_value,
+                       EqualityOpT equality_op)
 {
-    Test<BACKEND, KeysInputIteratorT, ValuesInputIteratorT, OutputT, ScanOpT, InitialValueT, true>(d_keys_in, d_values_in, h_reference, num_items, scan_op, initial_value, equality_op);
+  Test<BACKEND,
+       KeysInputIteratorT,
+       OutputT *,
+       OutputT,
+       ScanOpT,
+       InitialValueT,
+       EqualityOpT,
+       AliasValues>(d_keys_in,
+                    d_values_in,
+                    h_reference,
+                    num_items,
+                    scan_op,
+                    initial_value,
+                    equality_op);
 }
 
-template <
-    Backend             BACKEND,
-    typename            KeysInputIteratorT,
-    typename            ValuesInputIteratorT,
-    typename            OutputT,
-    typename            ScanOpT,
-    typename            InitialValueT,
-    typename            EqualityOpT>
-auto TestInplace(
-    KeysInputIteratorT,
-    ValuesInputIteratorT d_values_in,
-    OutputT *,
-    int,
-    ScanOpT,
-    InitialValueT,
-    EqualityOpT) -> typename std::enable_if<!std::is_same<decltype(*d_values_in), OutputT>::value>::type
+template <Backend BACKEND,
+          typename KeysInputIteratorT,
+          typename ValuesInputIteratorT,
+          typename OutputT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename EqualityOpT>
+void TestInplaceValues(KeysInputIteratorT,
+                       ValuesInputIteratorT,
+                       OutputT *,
+                       int,
+                       ScanOpT,
+                       InitialValueT,
+                       EqualityOpT)
+{}
+
+template <Backend BACKEND,
+          typename T,
+          typename ValuesInputIteratorT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename EqualityOpT>
+void TestInplaceKeys(T *d_keys_in,
+                     ValuesInputIteratorT d_values_in,
+                     T *h_reference,
+                     int num_items,
+                     ScanOpT scan_op,
+                     InitialValueT initial_value,
+                     EqualityOpT equality_op)
 {
-  (void)d_values_in;
+  Test<BACKEND,
+       T *,
+       ValuesInputIteratorT,
+       T,
+       ScanOpT,
+       InitialValueT,
+       EqualityOpT,
+       AliasKeys>(d_keys_in,
+                  d_values_in,
+                  h_reference,
+                  num_items,
+                  scan_op,
+                  initial_value,
+                  equality_op);
 }
+
+template <Backend BACKEND,
+          typename KeysInputIteratorT,
+          typename ValuesInputIteratorT,
+          typename OutputT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename EqualityOpT>
+void TestInplaceKeys(KeysInputIteratorT,
+                     ValuesInputIteratorT,
+                     OutputT *,
+                     int,
+                     ScanOpT,
+                     InitialValueT,
+                     EqualityOpT)
+{}
 
 /**
  * Test DeviceScan on pointer type
@@ -676,7 +765,7 @@ void TestPointer(
     fflush(stdout);
 
     // Allocate host arrays
-    KeyT*     h_keys_in   = new KeyT[num_items];
+    KeyT*       h_keys_in   = new KeyT[num_items];
     InputT*     h_values_in = new InputT[num_items];
     OutputT*    h_reference = new OutputT[num_items];
 
@@ -711,8 +800,33 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_values_in, h_values_in, sizeof(InputT) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_keys_in, d_values_in, h_reference, num_items, scan_op, initial_value, equality_op);
-    TestInplace<BACKEND>(d_keys_in, d_values_in, h_reference, num_items, scan_op, initial_value, equality_op);
+    Test<BACKEND>(d_keys_in,
+                  d_values_in,
+                  h_reference,
+                  num_items,
+                  scan_op,
+                  initial_value,
+                  equality_op);
+
+    // Test in/out values aliasing
+    TestInplaceValues<BACKEND>(d_keys_in,
+                               d_values_in, 
+                               h_reference,
+                               num_items,
+                               scan_op,
+                               initial_value,
+                               equality_op);
+
+    CubDebugExit(cudaMemcpy(d_values_in, h_values_in, sizeof(InputT) * num_items, cudaMemcpyHostToDevice));
+
+    // Test keys/values aliasing (should go last, changes keys)
+    TestInplaceKeys<BACKEND>(d_keys_in,
+                             d_values_in,
+                             h_reference,
+                             num_items,
+                             scan_op,
+                             initial_value,
+                             equality_op);
 
     // Cleanup
     if (h_keys_in) delete[] h_keys_in;
@@ -850,7 +964,7 @@ void TestKeyTAndEqualityOp(
     OutputT         initial_value)
 {
     TestOp<bool, InputT>(num_items, identity, initial_value, Equality());
-    TestOp<int, InputT>( num_items, identity, initial_value, Mod2Equality());
+    TestOp<unsigned int, InputT>( num_items, identity, initial_value, Mod2Equality());
 }
 
 /**
@@ -933,7 +1047,6 @@ int main(int argc, char** argv)
     TestSize<unsigned long long>(num_items,
                                  (unsigned long long)0,
                                  (unsigned long long)99);
-
 #elif TEST_VALUE_TYPES == 2
 
     TestSize<uchar2>(num_items, make_uchar2(0, 0), make_uchar2(17, 21));

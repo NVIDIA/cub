@@ -28,23 +28,25 @@
 #pragma once
 
 #include <cub/agent/agent_segmented_radix_sort.cuh>
-#include <cub/detail/temporary_storage.cuh>
-#include <cub/detail/device_double_buffer.cuh>
 #include <cub/agent/agent_sub_warp_merge_sort.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_merge_sort.cuh>
 #include <cub/block/block_radix_rank.cuh>
 #include <cub/block/block_scan.cuh>
+#include <cub/detail/device_double_buffer.cuh>
 #include <cub/device/device_partition.cuh>
+#include <cub/detail/temporary_storage.cuh>
 #include <cub/thread/thread_sort.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 #include <cub/util_namespace.cuh>
 #include <cub/warp/warp_merge_sort.cuh>
 
-#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/reverse_iterator.h>
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <nv/target>
 
 #include <type_traits>
 
@@ -1591,92 +1593,94 @@ private:
       return error;
     }
 
-    if (CUB_IS_HOST_CODE)
-    {
-      #if CUB_INCLUDE_HOST_CODE
-      unsigned int h_group_sizes[num_selected_groups];
+#ifdef CUB_RUNTIME_ENABLED
+#define CUB_TMP_DEVICE_CODE                                                    \
+  using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;                \
+  THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)     \
+    .doit(DeviceSegmentedSortContinuationKernel<MaxPolicyT,                    \
+                                                LargeKernelT,                  \
+                                                SmallKernelT,                  \
+                                                KeyT,                          \
+                                                ValueT,                        \
+                                                BeginOffsetIteratorT,          \
+                                                EndOffsetIteratorT>,           \
+          large_kernel,                                                        \
+          small_kernel,                                                        \
+          num_segments,                                                        \
+          d_keys.Current(),                                                    \
+          GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),       \
+          d_keys_double_buffer,                                                \
+          d_values.Current(),                                                  \
+          GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values),   \
+          d_values_double_buffer,                                              \
+          d_begin_offsets,                                                     \
+          d_end_offsets,                                                       \
+          group_sizes.get(),                                                   \
+          large_and_medium_segments_indices.get(),                             \
+          small_segments_indices.get(),                                        \
+          debug_synchronous);                                                  \
+                                                                               \
+  if (CubDebug(error = cudaPeekAtLastError()))                                 \
+  {                                                                            \
+    return error;                                                              \
+  }                                                                            \
+                                                                               \
+  if (debug_synchronous)                                                       \
+  {                                                                            \
+    if (CubDebug(error = SyncStream(stream)))                                  \
+    {                                                                          \
+      return error;                                                            \
+    }                                                                          \
+  }
+#else
+#define CUB_TMP_DEVICE_CODE error = CubDebug(cudaErrorNotSupported);
+#endif
 
-      if (CubDebug(
-            error = cudaMemcpyAsync(h_group_sizes,
-                                    group_sizes.get(),
-                                    num_selected_groups * sizeof(unsigned int),
-                                    cudaMemcpyDeviceToHost,
-                                    stream)))
-      {
-        return error;
-      }
+    // Clang format mangles some of this NV_IF_TARGET block
+    // clang-format off
+    NV_IF_TARGET(
+      NV_IS_HOST,
+      (
+        unsigned int h_group_sizes[num_selected_groups];
 
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+        if (CubDebug(error = cudaMemcpyAsync(h_group_sizes,
+                                             group_sizes.get(),
+                                             num_selected_groups *
+                                               sizeof(unsigned int),
+                                             cudaMemcpyDeviceToHost,
+                                             stream)))
+        {
+            return error;
+        }
 
-      error = DeviceSegmentedSortContinuation<LargeSegmentPolicyT,
-                                              SmallAndMediumPolicyT>(
-        large_kernel,
-        small_kernel,
-        num_segments,
-        d_keys.Current(),
-        GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),
-        d_keys_double_buffer,
-        d_values.Current(),
-        GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values),
-        d_values_double_buffer,
-        d_begin_offsets,
-        d_end_offsets,
-        h_group_sizes,
-        large_and_medium_segments_indices.get(),
-        small_segments_indices.get(),
-        stream,
-        debug_synchronous);
-      #endif
-    }
-    else
-    {
-      #if CUB_INCLUDE_DEVICE_CODE
-      #ifdef CUB_RUNTIME_ENABLED
-      using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
-      THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
-        .doit(DeviceSegmentedSortContinuationKernel<MaxPolicyT,
-                                                    LargeKernelT,
-                                                    SmallKernelT,
-                                                    KeyT,
-                                                    ValueT,
-                                                    BeginOffsetIteratorT,
-                                                    EndOffsetIteratorT>,
-              large_kernel,
-              small_kernel,
-              num_segments,
-              d_keys.Current(),
-              GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),
-              d_keys_double_buffer,
-              d_values.Current(),
-              GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values),
-              d_values_double_buffer,
-              d_begin_offsets,
-              d_end_offsets,
-              group_sizes.get(),
-              large_and_medium_segments_indices.get(),
-              small_segments_indices.get(),
-              debug_synchronous);
-
-      if (CubDebug(error = cudaPeekAtLastError()))
-      {
-        return error;
-      }
-
-      if (debug_synchronous)
-      {
         if (CubDebug(error = SyncStream(stream)))
         {
           return error;
         }
-      }
-      #else
-      error = CubDebug(cudaErrorNotSupported);
-      #endif
-      #endif
-    }
+
+        error = DeviceSegmentedSortContinuation<LargeSegmentPolicyT,
+                                                SmallAndMediumPolicyT>(
+          large_kernel,
+          small_kernel,
+          num_segments,
+          d_keys.Current(),
+          GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),
+          d_keys_double_buffer,
+          d_values.Current(),
+          GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values),
+          d_values_double_buffer,
+          d_begin_offsets,
+          d_end_offsets,
+          h_group_sizes,
+          large_and_medium_segments_indices.get(),
+          small_segments_indices.get(),
+          stream,
+          debug_synchronous);),
+      // NV_IS_DEVICE:
+      (CUB_TMP_DEVICE_CODE));
+    // clang-format on
+
+#undef CUB_TMP_DEVICE_CODE
 
     return error;
   }

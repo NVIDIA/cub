@@ -37,6 +37,8 @@
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
+#include <nv/target>
+
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 CUB_NAMESPACE_BEGIN
@@ -204,25 +206,18 @@ struct DispatchThreeWayPartitionIf
     int             ptx_version,
     KernelConfig    &select_if_config)
   {
-    if (CUB_IS_DEVICE_CODE)
-    {
-#if CUB_INCLUDE_DEVICE_CODE
-      (void)ptx_version;
-      // We're on the device, so initialize the kernel dispatch configurations
-      // with the current PTX policy
-      select_if_config.template Init<PtxThreeWayPartitionPolicyT>();
-#endif
-    }
-    else
-    {
-#if CUB_INCLUDE_HOST_CODE
-      // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-
-      // (There's only one policy right now)
-      (void)ptx_version;
-      select_if_config.template Init<typename Policy350::ThreeWayPartitionPolicy>();
-#endif
-    }
+    NV_IF_TARGET(
+      NV_IS_DEVICE,
+      ((void)ptx_version;
+       // We're on the device, so initialize the kernel dispatch configurations
+       // with the current PTX policy
+       select_if_config.template Init<PtxThreeWayPartitionPolicyT>();),
+      (// We're on the host, so lookup and initialize the kernel dispatch
+       // configurations with the policies that match the device's PTX version
+       // (There's only one policy right now)
+       (void)ptx_version;
+       select_if_config
+         .template Init<typename Policy350::ThreeWayPartitionPolicy>();));
   }
 
 

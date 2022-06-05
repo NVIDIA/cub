@@ -52,7 +52,7 @@ CUB_NAMESPACE_BEGIN
  *
  * \tparam T                        The reduction input/output element type
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
- * \tparam PTX_ARCH                 <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH          <b>[optional]</b> Unused.
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
@@ -132,7 +132,7 @@ CUB_NAMESPACE_BEGIN
 template <
     typename    T,
     int         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS,
-    int         PTX_ARCH                = CUB_PTX_ARCH>
+    int         LEGACY_PTX_ARCH         = 0>
 class WarpReduce
 {
 private:
@@ -144,7 +144,7 @@ private:
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(0)),
 
         /// Whether the logical warp size is a power-of-two
         IS_POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
@@ -152,14 +152,14 @@ private:
 
 public:
 
-    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /// Internal specialization.
     /// Use SHFL-based reduction if LOGICAL_WARP_THREADS is a power-of-two
     using InternalWarpReduce = cub::detail::conditional_t<
       IS_POW_OF_TWO,
-      WarpReduceShfl<T, LOGICAL_WARP_THREADS, PTX_ARCH>,
-      WarpReduceSmem<T, LOGICAL_WARP_THREADS, PTX_ARCH>>;
+      WarpReduceShfl<T, LOGICAL_WARP_THREADS>,
+      WarpReduceSmem<T, LOGICAL_WARP_THREADS>>;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

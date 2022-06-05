@@ -42,8 +42,9 @@
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
     #include <cuda_fp16.h>
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
-    #include <cuda_bf16.h>
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
+  !defined(CUB_DISABLE_BF16_SUPPORT)
+#include <cuda_bf16.h>
 #endif
 
 #include <cub/util_arch.cuh>
@@ -445,13 +446,8 @@ template <>
 struct UnitWord <float2>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef float       VolatileWord;
-    typedef uint2       DeviceWord;
-#else
     typedef unsigned long long   VolatileWord;
     typedef unsigned long long   DeviceWord;
-#endif
     typedef float2      TextureWord;
 };
 
@@ -460,13 +456,8 @@ template <>
 struct UnitWord <float4>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef float               VolatileWord;
-    typedef uint4               DeviceWord;
-#else
     typedef unsigned long long  VolatileWord;
     typedef ulonglong2          DeviceWord;
-#endif
     typedef float4              TextureWord;
 };
 
@@ -476,13 +467,8 @@ template <>
 struct UnitWord <char2>
 {
     typedef unsigned short      ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef unsigned short      VolatileWord;
-    typedef short               DeviceWord;
-#else
     typedef unsigned short      VolatileWord;
     typedef unsigned short      DeviceWord;
-#endif
     typedef unsigned short      TextureWord;
 };
 
@@ -1120,7 +1106,8 @@ struct FpLimits<__half>
 };
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
+  !defined(CUB_DISABLE_BF16_SUPPORT)
 template <>
 struct FpLimits<__nv_bfloat16>
 {
@@ -1203,7 +1190,8 @@ template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POIN
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
     template <> struct NumericTraits<__half> :          BaseTraits<FLOATING_POINT, true, false, unsigned short, __half> {};
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
+  !defined(CUB_DISABLE_BF16_SUPPORT)
     template <> struct NumericTraits<__nv_bfloat16> :   BaseTraits<FLOATING_POINT, true, false, unsigned short, __nv_bfloat16> {};
 #endif
 
