@@ -51,6 +51,7 @@ endif()
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
+option(CUB_ENABLE_DOXYGEN "Build CUB doxygen documentation." ON)
 # This is needed for NVCXX QA, which requires a static set of executable names.
 # Only a single dialect may be enabled when this is off.
 option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
@@ -66,6 +67,22 @@ if (NOT CUB_IN_THRUST)
     "Suppress warnings about deprecated Thrust/CUB API."
     OFF
   )
+endif()
+
+# Documentation targets for CUB
+if (CUB_ENABLE_DOXYGEN)
+  if(CUB_DOXYGEN_OUTPUT_DIR)
+    message("doxygen output files will be written to ${CUB_DOXYGEN_OUTPUT_DIR}")
+  else()
+    set(CUB_DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/docs")
+  endif()
+  add_custom_target(
+    cub.docs
+    COMMAND rm -rf "${CUB_DOXYGEN_OUTPUT_DIR}"
+    COMMAND mkdir -p "${CUB_DOXYGEN_OUTPUT_DIR}"
+    COMMAND { cat "${CMAKE_SOURCE_DIR}/docs/Doxyfile" \; echo OUTPUT_DIRECTORY = ${CUB_DOXYGEN_OUTPUT_DIR}\; } | doxygen -
+    COMMENT "Custom command for building CUB doxygen docs."
+    )
 endif()
 
 # Check if we're actually building anything before continuing. If not, no need
@@ -117,15 +134,4 @@ endif()
 
 if (CUB_ENABLE_EXAMPLES)
   add_subdirectory(examples)
-endif()
-
-# Documentation targets for CUB
-if (CUB_TOPLEVEL_PROJECT)
-  add_custom_target(
-    docs
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/docs"
-    COMMAND rm -rf "${CMAKE_SOURCE_DIR}/docs/html"
-    COMMAND doxygen Doxyfile
-    COMMENT "Custom command for building CUB doxygen docs."
-    )
 endif()
