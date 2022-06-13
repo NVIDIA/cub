@@ -312,7 +312,7 @@ struct InputValue
         if (m_is_future) {
             m_future_value = other.m_future_value;
         } else {
-            m_immediate_value = other.m_immediate_value;
+            new (&m_immediate_value) T(other.m_immediate_value);
         }
     }
 

@@ -738,7 +738,7 @@ struct TilePrefixCallbackOp
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
-            temp_storage.block_aggregate = block_aggregate;
+            new (&temp_storage.block_aggregate) T(block_aggregate);
             tile_status.SetPartial(tile_idx, block_aggregate);
         }
 
@@ -768,8 +768,8 @@ struct TilePrefixCallbackOp
             inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
             tile_status.SetInclusive(tile_idx, inclusive_prefix);
 
-            temp_storage.exclusive_prefix = exclusive_prefix;
-            temp_storage.inclusive_prefix = inclusive_prefix;
+            new (&temp_storage.exclusive_prefix) T(exclusive_prefix);
+            new (&temp_storage.inclusive_prefix) T(inclusive_prefix);
         }
 
         // Return exclusive_prefix

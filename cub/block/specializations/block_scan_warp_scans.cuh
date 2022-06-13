@@ -151,7 +151,9 @@ struct BlockScanWarpScans
     {
         // Last lane in each warp shares its warp-aggregate
         if (lane_id == WARP_THREADS - 1)
-            temp_storage.warp_aggregates[warp_id] = warp_aggregate;
+        {
+          new (temp_storage.warp_aggregates + warp_id) T(warp_aggregate);
+        }
 
         CTA_SYNC();
 
@@ -294,7 +296,7 @@ struct BlockScanWarpScans
             if (lane_id == 0)
             {
                 // Share the prefix with all threads
-                temp_storage.block_prefix = block_prefix;
+                new (&temp_storage.block_prefix) T(block_prefix);
                 exclusive_output = block_prefix;                // The block prefix is the exclusive output for tid0
             }
         }
@@ -367,7 +369,7 @@ struct BlockScanWarpScans
             if (lane_id == 0)
             {
                 // Share the prefix with all threads
-                temp_storage.block_prefix = block_prefix;
+                new(&temp_storage.block_prefix) T(block_prefix);
             }
         }
 

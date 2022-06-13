@@ -160,7 +160,8 @@ template <typename ChainedPolicyT,
           typename ScanTileStateT,
           typename ScanOpT,
           typename InitValueT,
-          typename OffsetT>
+          typename OffsetT,
+          typename AccumT>
 __launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
   __global__ void DeviceScanKernel(InputIteratorT d_in,
                                    OutputIteratorT d_out,
@@ -179,7 +180,8 @@ __launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
                     OutputIteratorT,
                     ScanOpT,
                     RealInitValueT,
-                    OffsetT>
+                    OffsetT,
+                    AccumT>
     AgentScanT;
 
   // Shared memory for AgentScan
@@ -196,11 +198,11 @@ __launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
  * Policy
  ******************************************************************************/
 
-template <typename OutputT> ///< Data type
+template <typename AccumT> ///< Data type
 struct DeviceScanPolicy
 {
   // For large values, use timesliced loads/stores to fit shared memory.
-  static constexpr bool LargeValues = sizeof(OutputT) > 128;
+  static constexpr bool LargeValues = sizeof(AccumT) > 128;
   static constexpr BlockLoadAlgorithm ScanTransposedLoad =
     LargeValues ? BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED
                 : BLOCK_LOAD_WARP_TRANSPOSE;
@@ -214,7 +216,7 @@ struct DeviceScanPolicy
     // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
     typedef AgentScanPolicy<128,
                             12, ///< Threads per block, items per thread
-                            OutputT,
+                            AccumT,
                             BLOCK_LOAD_DIRECT,
                             LOAD_CA,
                             BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
@@ -228,7 +230,7 @@ struct DeviceScanPolicy
     // Titan X: 32.47B items/s @ 48M 32-bit T
     typedef AgentScanPolicy<128,
                             12, ///< Threads per block, items per thread
-                            OutputT,
+                            AccumT,
                             BLOCK_LOAD_DIRECT,
                             LOAD_CA,
                             ScanTransposedStore,
@@ -241,7 +243,7 @@ struct DeviceScanPolicy
   {
     typedef AgentScanPolicy<128,
                             15, ///< Threads per block, items per thread
-                            OutputT,
+                            AccumT,
                             ScanTransposedLoad,
                             LOAD_DEFAULT,
                             ScanTransposedStore,
@@ -283,11 +285,15 @@ template <typename InputIteratorT,
           typename ScanOpT,
           typename InitValueT,
           typename OffsetT,
-          typename SelectedPolicy = DeviceScanPolicy<
-            // Accumulator type.
-            cub::detail::conditional_t<std::is_same<InitValueT, NullType>::value,
-                                       cub::detail::value_t<InputIteratorT>,
-                                       typename InitValueT::value_type>>>
+          typename AccumT = 
+            detail::accumulator_t<
+              ScanOpT, 
+              cub::detail::conditional_t<
+                std::is_same<InitValueT, NullType>::value,
+                cub::detail::value_t<InputIteratorT>,
+                typename InitValueT::value_type>,
+              cub::detail::value_t<InputIteratorT>>,
+          typename SelectedPolicy = DeviceScanPolicy<AccumT>>
 struct DispatchScan : SelectedPolicy
 {
   //---------------------------------------------------------------------
@@ -298,14 +304,6 @@ struct DispatchScan : SelectedPolicy
 
   // The input value type
   using InputT = cub::detail::value_t<InputIteratorT>;
-
-  // The output value type -- used as the intermediate accumulator
-  // Per https://wg21.link/P0571, use InitValueT::value_type if provided,
-  // otherwise the input iterator's value type.
-  using OutputT =
-    cub::detail::conditional_t<std::is_same<InitValueT, NullType>::value,
-                               InputT,
-                               typename InitValueT::value_type>;
 
   /// Device-accessible allocation of temporary storage.  When NULL, the
   /// required allocation size is written to \p temp_storage_bytes and no work
@@ -402,7 +400,7 @@ struct DispatchScan : SelectedPolicy
 #else
 
     typedef typename ActivePolicyT::ScanPolicyT Policy;
-    typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
+    typedef typename cub::ScanTileState<AccumT> ScanTileStateT;
 
     // `LOAD_LDG` makes in-place execution UB and doesn't lead to better
     // performance.
@@ -577,7 +575,7 @@ struct DispatchScan : SelectedPolicy
   CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
   {
     typedef typename DispatchScan::MaxPolicy MaxPolicyT;
-    typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
+    typedef typename cub::ScanTileState<AccumT> ScanTileStateT;
     // Ensure kernels are instantiated.
     return Invoke<ActivePolicyT>(DeviceScanInitKernel<ScanTileStateT>,
                                  DeviceScanKernel<MaxPolicyT,
@@ -586,7 +584,8 @@ struct DispatchScan : SelectedPolicy
                                                   ScanTileStateT,
                                                   ScanOpT,
                                                   InitValueT,
-                                                  OffsetT>);
+                                                  OffsetT,
+                                                  AccumT>);
   }
 
   /**
