@@ -320,9 +320,11 @@ int Solve(
     ReductionOpT            reduction_op,
     int                     num_items)
 {
+    using AccumT = cub::detail::accumulator_t<ReductionOpT, ValueT, ValueT>;
+
     // First item
     KeyT previous        = h_keys_in[0];
-    ValueT aggregate     = h_values_in[0];
+    AccumT aggregate     = h_values_in[0];
     int num_segments    = 0;
 
     // Subsequent items
@@ -331,7 +333,7 @@ int Solve(
         if (!equality_op(previous, h_keys_in[i]))
         {
             h_keys_reference[num_segments] = previous;
-            h_values_reference[num_segments] = aggregate;
+            h_values_reference[num_segments] = static_cast<ValueT>(aggregate);
             num_segments++;
             aggregate = h_values_in[i];
         }
@@ -343,7 +345,7 @@ int Solve(
     }
 
     h_keys_reference[num_segments] = previous;
-    h_values_reference[num_segments] = aggregate;
+    h_values_reference[num_segments] = static_cast<ValueT>(aggregate);
     num_segments++;
 
     return num_segments;

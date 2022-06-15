@@ -134,7 +134,8 @@ template <typename AgentReduceByKeyPolicyT,
           typename NumRunsOutputIteratorT,
           typename EqualityOpT,
           typename ReductionOpT,
-          typename OffsetT>
+          typename OffsetT,
+          typename AccumT>
 struct AgentReduceByKey
 {
   //---------------------------------------------------------------------
@@ -151,19 +152,15 @@ struct AgentReduceByKey
   // The input values type
   using ValueInputT = cub::detail::value_t<ValuesInputIteratorT>;
 
-  // The output values type
-  using ValueOutputT =
-    cub::detail::non_void_value_t<AggregatesOutputIteratorT, ValueInputT>;
-
   // Tuple type for scanning (pairs accumulated segment-value with
   // segment-index)
-  using OffsetValuePairT = KeyValuePair<OffsetT, ValueOutputT>;
+  using OffsetValuePairT = KeyValuePair<OffsetT, AccumT>;
 
   // Tuple type for pairing keys and values
-  using KeyValuePairT = KeyValuePair<KeyOutputT, ValueOutputT>;
+  using KeyValuePairT = KeyValuePair<KeyOutputT, AccumT>;
 
   // Tile status descriptor interface type
-  using ScanTileStateT = ReduceByKeyScanTileState<ValueOutputT, OffsetT>;
+  using ScanTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
 
   // Guarded inequality functor
   template <typename _EqualityOpT>
@@ -209,7 +206,7 @@ struct AgentReduceByKey
   // if we're performing addition on a primitive type)
   static constexpr int HAS_IDENTITY_ZERO =
     (std::is_same<ReductionOpT, cub::Sum>::value) &&
-    (Traits<ValueOutputT>::PRIMITIVE);
+    (Traits<AccumT>::PRIMITIVE);
 
   // Cache-modified Input iterator wrapper type (for applying cache modifier)
   // for keys Wrap the native input pointer with
@@ -254,7 +251,7 @@ struct AgentReduceByKey
                                    AgentReduceByKeyPolicyT::LOAD_ALGORITHM>;
 
   // Parameterized BlockLoad type for values
-  using BlockLoadValuesT = BlockLoad<ValueOutputT,
+  using BlockLoadValuesT = BlockLoad<AccumT,
                                      BLOCK_THREADS,
                                      ITEMS_PER_THREAD,
                                      AgentReduceByKeyPolicyT::LOAD_ALGORITHM>;
@@ -273,7 +270,7 @@ struct AgentReduceByKey
 
   // Key and value exchange types
   typedef KeyOutputT KeyExchangeT[TILE_ITEMS + 1];
-  typedef ValueOutputT ValueExchangeT[TILE_ITEMS + 1];
+  typedef AccumT ValueExchangeT[TILE_ITEMS + 1];
 
   // Shared memory type for this thread block
   union _TempStorage
@@ -509,7 +506,7 @@ struct AgentReduceByKey
     KeyOutputT prev_keys[ITEMS_PER_THREAD];
 
     // Tile values
-    ValueOutputT values[ITEMS_PER_THREAD];
+    AccumT values[ITEMS_PER_THREAD];
 
     // Segment head flags
     OffsetT head_flags[ITEMS_PER_THREAD];

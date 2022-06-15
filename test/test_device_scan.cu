@@ -1152,9 +1152,7 @@ void TestAccumulatorTypes()
                                               d_out,
                                               cub::Sum{},
                                               init,
-                                              num_items,
-                                              0,
-                                              true));
+                                              num_items));
 
   CubDebugExit(
     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
@@ -1166,9 +1164,7 @@ void TestAccumulatorTypes()
                                               d_out,
                                               cub::Sum{},
                                               init,
-                                              num_items,
-                                              0,
-                                              true));
+                                              num_items));
 
   int ok{};
   CubDebugExit(cudaMemcpy(&ok, d_ok_count, sizeof(int), cudaMemcpyDeviceToHost));
