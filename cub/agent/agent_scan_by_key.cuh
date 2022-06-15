@@ -109,29 +109,21 @@ template <typename AgentScanByKeyPolicyT,
           typename EqualityOp,
           typename ScanOpT,
           typename InitValueT,
-          typename OffsetT>
+          typename OffsetT,
+          typename AccumT>
 struct AgentScanByKey
 {
   //---------------------------------------------------------------------
   // Types and constants
   //---------------------------------------------------------------------
 
-  using KeyT   = cub::detail::value_t<KeysInputIteratorT>;
-  using InputT = cub::detail::value_t<ValuesInputIteratorT>;
-
-  // The output value type -- used as the intermediate accumulator
-  // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
-  // input iterator's value type.
-  using OutputT =
-    cub::detail::conditional_t<std::is_same<InitValueT, NullType>::value,
-                               InputT,
-                               InitValueT>;
-
-  using SizeValuePairT     = KeyValuePair<OffsetT, OutputT>;
-  using KeyValuePairT      = KeyValuePair<KeyT, OutputT>;
+  using KeyT               = cub::detail::value_t<KeysInputIteratorT>;
+  using InputT             = cub::detail::value_t<ValuesInputIteratorT>;
+  using SizeValuePairT     = KeyValuePair<OffsetT, AccumT>;
+  using KeyValuePairT      = KeyValuePair<KeyT, AccumT>;
   using ReduceBySegmentOpT = ReduceBySegmentOp<ScanOpT>;
 
-  using ScanTileStateT = ReduceByKeyScanTileState<OutputT, OffsetT>;
+  using ScanTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
 
   // Constants
   // Inclusive scan if no init_value type is provided
@@ -158,12 +150,12 @@ struct AgentScanByKey
                                    ITEMS_PER_THREAD,
                                    AgentScanByKeyPolicyT::LOAD_ALGORITHM>;
 
-  using BlockLoadValuesT = BlockLoad<OutputT,
+  using BlockLoadValuesT = BlockLoad<AccumT,
                                      BLOCK_THREADS,
                                      ITEMS_PER_THREAD,
                                      AgentScanByKeyPolicyT::LOAD_ALGORITHM>;
 
-  using BlockStoreValuesT = BlockStore<OutputT,
+  using BlockStoreValuesT = BlockStore<AccumT,
                                        BLOCK_THREADS,
                                        ITEMS_PER_THREAD,
                                        AgentScanByKeyPolicyT::STORE_ALGORITHM>;
@@ -269,7 +261,7 @@ struct AgentScanByKey
   template <bool IS_LAST_TILE>
   __device__ __forceinline__ void
   ZipValuesAndFlags(OffsetT num_remaining,
-                    OutputT (&values)[ITEMS_PER_THREAD],
+                    AccumT  (&values)[ITEMS_PER_THREAD],
                     OffsetT (&segment_flags)[ITEMS_PER_THREAD],
                     SizeValuePairT (&scan_items)[ITEMS_PER_THREAD])
   {
@@ -290,7 +282,7 @@ struct AgentScanByKey
   }
 
   __device__ __forceinline__ void
-  UnzipValues(OutputT (&values)[ITEMS_PER_THREAD],
+  UnzipValues(AccumT         (&values)[ITEMS_PER_THREAD],
               SizeValuePairT (&scan_items)[ITEMS_PER_THREAD])
   {
 // Zip values and segment_flags
@@ -304,7 +296,7 @@ struct AgentScanByKey
   template <bool IsNull = std::is_same<InitValueT, NullType>::value,
             typename std::enable_if<!IsNull, int>::type = 0>
   __device__ __forceinline__ void
-  AddInitToScan(OutputT (&items)[ITEMS_PER_THREAD],
+  AddInitToScan(AccumT  (&items)[ITEMS_PER_THREAD],
                 OffsetT (&flags)[ITEMS_PER_THREAD])
   {
 #pragma unroll
@@ -317,7 +309,7 @@ struct AgentScanByKey
   template <bool IsNull = std::is_same<InitValueT, NullType>::value,
             typename std::enable_if<IsNull, int>::type = 0>
   __device__ __forceinline__ void
-  AddInitToScan(OutputT (&/*items*/)[ITEMS_PER_THREAD],
+  AddInitToScan(AccumT  (&/*items*/)[ITEMS_PER_THREAD],
                 OffsetT (&/*flags*/)[ITEMS_PER_THREAD])
   {}
 
@@ -336,7 +328,7 @@ struct AgentScanByKey
   {
     // Load items
     KeyT keys[ITEMS_PER_THREAD];
-    OutputT values[ITEMS_PER_THREAD];
+    AccumT  values[ITEMS_PER_THREAD];
     OffsetT segment_flags[ITEMS_PER_THREAD];
     SizeValuePairT scan_items[ITEMS_PER_THREAD];
 
