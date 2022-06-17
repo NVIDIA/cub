@@ -33,9 +33,10 @@
 
 #pragma once
 
-#include "../../warp/warp_reduce.cuh"
-#include "../../config.cuh"
-#include "../../util_ptx.cuh"
+#include <cub/config.cuh>
+#include <cub/detail/uninitialized_copy.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/warp/warp_reduce.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -143,7 +144,8 @@ struct BlockReduceWarpReductions
         // Share lane aggregates
         if (lane_id == 0)
         {
-            new (temp_storage.warp_aggregates + warp_id) T(warp_aggregate);
+          detail::uninitialized_copy(temp_storage.warp_aggregates + warp_id,
+                                     warp_aggregate);
         }
 
         CTA_SYNC();

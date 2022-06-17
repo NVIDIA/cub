@@ -33,9 +33,9 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
+#include <cub/config.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_type.cuh>
 
 CUB_NAMESPACE_BEGIN
 

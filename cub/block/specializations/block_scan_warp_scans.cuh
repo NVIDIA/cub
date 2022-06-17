@@ -33,9 +33,10 @@
 
 #pragma once
 
-#include "../../config.cuh"
-#include "../../util_ptx.cuh"
-#include "../../warp/warp_scan.cuh"
+#include <cub/config.cuh>
+#include <cub/detail/uninitialized_copy.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/warp/warp_scan.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -152,7 +153,8 @@ struct BlockScanWarpScans
         // Last lane in each warp shares its warp-aggregate
         if (lane_id == WARP_THREADS - 1)
         {
-          new (temp_storage.warp_aggregates + warp_id) T(warp_aggregate);
+          detail::uninitialized_copy(temp_storage.warp_aggregates + warp_id,
+                                     warp_aggregate);
         }
 
         CTA_SYNC();
@@ -295,9 +297,11 @@ struct BlockScanWarpScans
             T block_prefix = block_prefix_callback_op(block_aggregate);
             if (lane_id == 0)
             {
-                // Share the prefix with all threads
-                new (&temp_storage.block_prefix) T(block_prefix);
-                exclusive_output = block_prefix;                // The block prefix is the exclusive output for tid0
+              // Share the prefix with all threads
+              detail::uninitialized_copy(&temp_storage.block_prefix,
+                                         block_prefix);
+
+              exclusive_output = block_prefix; // The block prefix is the exclusive output for tid0
             }
         }
 
@@ -369,7 +373,8 @@ struct BlockScanWarpScans
             if (lane_id == 0)
             {
                 // Share the prefix with all threads
-                new(&temp_storage.block_prefix) T(block_prefix);
+                detail::uninitialized_copy(&temp_storage.block_prefix,
+                                           block_prefix);
             }
         }
 

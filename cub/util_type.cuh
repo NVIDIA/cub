@@ -47,11 +47,11 @@
 #include <cuda_bf16.h>
 #endif
 
+#include <cub/detail/uninitialized_copy.cuh>
 #include <cub/util_arch.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_macro.cuh>
 #include <cub/util_namespace.cuh>
-
 
 CUB_NAMESPACE_BEGIN
 
@@ -312,7 +312,8 @@ struct InputValue
         if (m_is_future) {
             m_future_value = other.m_future_value;
         } else {
-            new (&m_immediate_value) T(other.m_immediate_value);
+          detail::uninitialized_copy(&m_immediate_value,
+                                     other.m_immediate_value);
         }
     }
 

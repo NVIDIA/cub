@@ -35,11 +35,12 @@
 
 #include <iterator>
 
-#include "../thread/thread_load.cuh"
-#include "../thread/thread_store.cuh"
-#include "../warp/warp_reduce.cuh"
-#include "../config.cuh"
-#include "../util_device.cuh"
+#include <cub/config.cuh>
+#include <cub/detail/uninitialized_copy.cuh>
+#include <cub/thread/thread_load.cuh>
+#include <cub/thread/thread_store.cuh>
+#include <cub/util_device.cuh>
+#include <cub/warp/warp_reduce.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -738,8 +739,10 @@ struct TilePrefixCallbackOp
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
-            new (&temp_storage.block_aggregate) T(block_aggregate);
-            tile_status.SetPartial(tile_idx, block_aggregate);
+          detail::uninitialized_copy(&temp_storage.block_aggregate,
+                                     block_aggregate);
+
+          tile_status.SetPartial(tile_idx, block_aggregate);
         }
 
         int         predecessor_idx = tile_idx - threadIdx.x - 1;
@@ -768,8 +771,11 @@ struct TilePrefixCallbackOp
             inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
             tile_status.SetInclusive(tile_idx, inclusive_prefix);
 
-            new (&temp_storage.exclusive_prefix) T(exclusive_prefix);
-            new (&temp_storage.inclusive_prefix) T(inclusive_prefix);
+            detail::uninitialized_copy(&temp_storage.exclusive_prefix,
+                                       exclusive_prefix);
+
+            detail::uninitialized_copy(&temp_storage.inclusive_prefix,
+                                       inclusive_prefix);
         }
 
         // Return exclusive_prefix
