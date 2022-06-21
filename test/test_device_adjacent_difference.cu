@@ -34,6 +34,7 @@
 
 #include <thrust/count.h>
 #include <thrust/device_vector.h>
+#include <thrust/fill.h>
 #include <thrust/host_vector.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/counting_iterator.h>
@@ -646,6 +647,48 @@ void TestAdjacentDifferenceWithBigIndexes()
   TestAdjacentDifferenceWithBigIndexesHelper(33);
 }
 
+struct InvocationsCounter
+{
+  int *m_d_counts{};
+
+  explicit InvocationsCounter(int *d_counts) : m_d_counts(d_counts) {}
+
+  __device__ int operator()(int l, int /* r */) const 
+  {
+    atomicAdd(m_d_counts + l, 1);
+    return l;
+  }
+};
+
+void TestAdjacentDifferenceOpInvocationsNum(int num_items)
+{
+  auto in = thrust::make_counting_iterator(0);
+  auto out = thrust::make_discard_iterator();
+
+  thrust::device_vector<int> num_of_invocations(num_items, 0);
+  InvocationsCounter op{thrust::raw_pointer_cast(num_of_invocations.data())};
+
+  AdjacentDifferenceCopy<READ_LEFT>(in, out, op, num_items);
+  AssertEquals(
+    num_items - 1,
+    thrust::count(num_of_invocations.begin() + 1, num_of_invocations.end(), 1));
+  AssertEquals(0, num_of_invocations[0]);
+
+  thrust::fill_n(num_of_invocations.begin(), num_items, 0);
+  AdjacentDifferenceCopy<READ_RIGHT>(in, out, op, num_items);
+  AssertEquals(
+    num_items - 1,
+    thrust::count(num_of_invocations.begin(), num_of_invocations.end() - 1, 1));
+  AssertEquals(0, num_of_invocations[num_items - 1]);
+}
+
+void TestAdjacentDifferenceOpInvocationsNum()
+{
+  for (int num_items = 1; num_items < 4096; num_items *= 2)
+  {
+    TestAdjacentDifferenceOpInvocationsNum(num_items);
+  }
+}
 
 int main(int argc, char** argv)
 {
@@ -660,6 +703,7 @@ int main(int argc, char** argv)
     TestSize(1ull << power_of_two);
   }
   TestAdjacentDifferenceWithBigIndexes();
+  TestAdjacentDifferenceOpInvocationsNum();
 
   return 0;
 }
