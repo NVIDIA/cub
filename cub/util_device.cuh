@@ -363,14 +363,9 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
       (
         cudaFuncAttributes empty_kernel_attrs;
 
-        do
-        {
-          if (CubDebug(result = cudaFuncGetAttributes(&empty_kernel_attrs,
-                                                      empty_kernel)))
-          {
-            break;
-          }
-        } while (0);
+        result = cudaFuncGetAttributes(&empty_kernel_attrs,
+                                       reinterpret_cast<void*>(empty_kernel));
+        CubDebug(result);
 
         ptx_version = empty_kernel_attrs.ptxVersion * 10;
       ),
