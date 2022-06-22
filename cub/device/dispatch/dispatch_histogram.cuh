@@ -175,6 +175,27 @@ template <
     typename    OffsetT>                    ///< Signed integer type for global offsets
 struct DispatchHistogram
 {
+private:
+    template <class T>
+    CUB_RUNTIME_FUNCTION 
+    static T ComputeScale(T lower_level, T upper_level, int bins)
+    {
+      return static_cast<T>(upper_level - lower_level) / bins;
+    }
+
+#if defined(__CUDA_FP16_TYPES_EXIST__)
+    // There are no host versions of arithmetic operations on `__half`, so 
+    // all arithmetic operations on host shall be done on `float`
+    CUB_RUNTIME_FUNCTION 
+    static __half ComputeScale(__half lower_level, __half upper_level, int bins)
+    {
+      return static_cast<__half>((static_cast<float>(upper_level) -
+                                  static_cast<float>(lower_level)) /
+                                 bins);
+    }
+#endif
+
+public:
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
@@ -865,7 +886,7 @@ struct DispatchHistogram
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
                 int     bins    = num_output_levels[channel] - 1;
-                LevelT  scale   = static_cast<LevelT>((upper_level[channel] - lower_level[channel]) / bins);
+                LevelT  scale   = ComputeScale(lower_level[channel], upper_level[channel], bins);
 
                 privatized_decode_op[channel].Init(num_output_levels[channel], upper_level[channel], lower_level[channel], scale);
 
