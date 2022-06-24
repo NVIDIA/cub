@@ -189,9 +189,8 @@ private:
     CUB_RUNTIME_FUNCTION 
     static __half ComputeScale(__half lower_level, __half upper_level, int bins)
     {
-      return static_cast<__half>((static_cast<float>(upper_level) -
-                                  static_cast<float>(lower_level)) /
-                                 bins);
+      return __float2half(
+          (__half2float(upper_level) - __half2float(lower_level)) / bins);
     }
 #endif
 
@@ -303,15 +302,45 @@ public:
             this->scale = double(1.0) / scale_;
         }
 
+        template <typename T>
+        static __device__ __forceinline__ void
+        BinSelectImpl(T sample, T min, T max, T scale, int &bin, bool valid)
+        {
+          if (valid && (sample >= min) && (sample < max))
+          {
+            bin = static_cast<int>((sample - min) / scale);
+          }
+        }
+
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
-        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool valid)
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample,
+                                                           int &bin,
+                                                           bool valid)
         {
-            LevelT level_sample = (LevelT) sample;
-
-            if (valid && (level_sample >= min) && (level_sample < max))
-                bin = (int) ((level_sample - min) / scale);
+          BinSelectImpl(static_cast<LevelT>(sample),
+                        min,
+                        max,
+                        scale,
+                        bin,
+                        valid);
         }
+
+#if defined(__CUDA_FP16_TYPES_EXIST__)
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __device__ __forceinline__ void BinSelect(__half sample, int &bin, bool valid)
+        {
+          NV_IF_TARGET(NV_PROVIDES_SM_53,
+                       (BinSelectImpl<__half>(sample, 
+                                              min, max, scale, 
+                                              bin, valid);),
+                       (BinSelectImpl<float>(__half2float(sample), 
+                                             __half2float(min),
+                                             __half2float(max),
+                                             __half2float(scale),
+                                             bin, valid);));
+        }
+#endif
 
         // Method for converting samples to bin-ids (float specialization)
         template <CacheLoadModifier LOAD_MODIFIER>

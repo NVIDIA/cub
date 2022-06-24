@@ -124,7 +124,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         return error;
     }
 
-#if defined(TEST_HALF_T)
+#if TEST_HALF_T
     /**
      * Dispatch to CUB multi histogram-range entrypoint
      */
@@ -212,7 +212,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         return error;
     }
 
-#if defined(TEST_HALF_T) 
+#if TEST_HALF_T 
     /**
      * Dispatch to CUB multi histogram-even entrypoint
      */
@@ -304,7 +304,7 @@ struct Dispatch<1, 1, CUB>
         return error;
     }
 
-#if defined(TEST_HALF_T)
+#if TEST_HALF_T
     template <typename CounterT, typename OffsetT>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Range(
@@ -388,7 +388,7 @@ struct Dispatch<1, 1, CUB>
         return error;
     }
 
-#if defined(TEST_HALF_T)
+#if TEST_HALF_T
     template <typename CounterT, typename OffsetT>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Even(
