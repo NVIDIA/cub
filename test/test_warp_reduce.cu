@@ -817,6 +817,7 @@ int main(int argc, char** argv)
     Test<16>();
     Test<9>();
     Test<7>();
+    Test<1>();
 
     return 0;
 }
