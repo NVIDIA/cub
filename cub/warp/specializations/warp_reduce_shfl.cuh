@@ -492,6 +492,8 @@ struct WarpReduceShfl
         return output;
     }
 
+    // Warp reduce functions are not supported by nvc++ (NVBug 3694682)
+#ifndef _NVHPC_CUDA 
     template <class U = T>
     __device__ __forceinline__ 
     typename std::enable_if<
@@ -557,6 +559,7 @@ struct WarpReduceShfl
 
       return output;
     }
+#endif // _NVHPC_CUDA 
 
     /// Reduction
     template <

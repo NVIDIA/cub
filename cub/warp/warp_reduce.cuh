@@ -609,14 +609,11 @@ class WarpReduce<T, 1, LEGACY_PTX_ARCH>
 private:
   using _TempStorage = cub::NullType;
 
-  _TempStorage &temp_storage;
-
 public:
   struct TempStorage : Uninitialized<_TempStorage>
   {};
 
-  __device__ __forceinline__ WarpReduce(TempStorage &temp_storage)
-      : temp_storage(temp_storage.Alias())
+  __device__ __forceinline__ WarpReduce(TempStorage & /*temp_storage */)
   {}
 
   __device__ __forceinline__ T Sum(T input) { return input; }
