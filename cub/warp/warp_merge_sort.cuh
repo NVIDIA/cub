@@ -96,21 +96,21 @@ CUB_NAMESPACE_BEGIN
  *       cub::WarpMergeSort<int, items_per_thread, warp_threads>;
  *
  *     // Allocate shared memory for WarpMergeSort
- *     __shared__ typename WarpMergeSort::TempStorage temp_storage[warps_per_block];
+ *     __shared__ typename WarpMergeSortT::TempStorage temp_storage[warps_per_block];
  *
  *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_keys[items_per_thread];
  *     // ...
  *
- *     WarpMergeSort(temp_storage[warp_id]).Sort(thread_keys, CustomLess());
+ *     WarpMergeSortT(temp_storage[warp_id]).Sort(thread_keys, CustomLess());
  *     // ...
  * }
  * @endcode
  * @par
- * Suppose the set of input @p thread_keys across the block of threads is
- * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.
+ * Suppose the set of input @p thread_keys across a warp of threads is
+ * `{ [0,64,1,63], [2,62,3,61], [4,60,5,59], ..., [31,34,32,33] }`.
  * The corresponding output @p thread_keys in those threads will be
- * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
+ * `{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [31,32,33,34] }`.
  */
 template <
   typename    KeyT,
