@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 
     // Allocate host arrays
     int* h_in = new int[num_items];
-    int  h_reference;
+    int  h_reference{};
 
     // Initialize problem and solution
     Initialize(h_in, num_items);

@@ -32,17 +32,19 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <typeinfo>
-
-#include <cub/util_allocator.cuh>
-#include <cub/iterator/constant_input_iterator.cuh>
-#include <cub/iterator/discard_output_iterator.cuh>
-#include <cub/iterator/counting_input_iterator.cuh>
-#include <cub/iterator/transform_input_iterator.cuh>
 #include <cub/device/device_scan.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
+#include <cub/iterator/counting_input_iterator.cuh>
+#include <cub/iterator/discard_output_iterator.cuh>
+#include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/util_allocator.cuh>
+
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <typeinfo>
 
 using namespace cub;
 
@@ -217,7 +219,6 @@ cudaError_t Dispatch(
     return error;
 }
 
-
 /**
  * Dispatch to inclusive sum entrypoint
  */
@@ -254,114 +255,130 @@ cudaError_t Dispatch(
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
 
+#if TEST_CDP == 1
+
 /**
  * Simple wrapper kernel to invoke DeviceScan
  */
-template <typename IsPrimitiveT, typename KeysInputIteratorT, typename ValuesInputIteratorT, typename ValuesOutputIteratorT, typename ScanOpT, typename InitialValueT, typename OffsetT, typename EqualityOpT>
-__global__ void CnpDispatchKernel(
-    IsPrimitiveT          is_primitive,
-    int                   timing_timing_iterations,
-    size_t                *d_temp_storage_bytes,
-    cudaError_t           *d_cdp_error,
+template <int CubBackend,
+          typename IsPrimitiveT,
+          typename KeysInputIteratorT,
+          typename ValuesInputIteratorT,
+          typename ValuesOutputIteratorT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename OffsetT,
+          typename EqualityOpT>
+__global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
+                                  IsPrimitiveT         is_primitive,
+                                  int                  timing_timing_iterations,
+                                  size_t              *d_temp_storage_bytes,
+                                  cudaError_t         *d_cdp_error,
 
-    void*                 d_temp_storage,
-    size_t                temp_storage_bytes,
-    KeysInputIteratorT    d_keys_in,
-    ValuesInputIteratorT  d_values_in,
-    ValuesOutputIteratorT d_values_out,
-    ScanOpT               scan_op,
-    InitialValueT         initial_value,
-    OffsetT               num_items,
-    EqualityOpT           equality_op,
-    bool                  debug_synchronous)
+                                  void                 *d_temp_storage,
+                                  size_t                temp_storage_bytes,
+                                  KeysInputIteratorT    d_keys_in,
+                                  ValuesInputIteratorT  d_values_in,
+                                  ValuesOutputIteratorT d_values_out,
+                                  ScanOpT               scan_op,
+                                  InitialValueT         initial_value,
+                                  OffsetT               num_items,
+                                  EqualityOpT           equality_op,
+                                  bool                  debug_synchronous)
 {
-#ifndef CUB_CDP
-    (void)is_primitive;
-    (void)timing_timing_iterations;
-    (void)d_temp_storage_bytes;
-    (void)d_cdp_error;
-    (void)d_temp_storage;
-    (void)temp_storage_bytes;
-    (void)d_keys_in;
-    (void)d_values_in;
-    (void)d_values_out;
-    (void)scan_op;
-    (void)initial_value;
-    (void)num_items;
-    (void)equality_op;
-    (void)debug_synchronous;
-    *d_cdp_error = cudaErrorNotSupported;
-#else
-    *d_cdp_error = Dispatch(
-        Int2Type<CUB>(),
-        is_primitive,
-        timing_timing_iterations,
-        d_temp_storage_bytes,
-        d_cdp_error,
-        d_temp_storage,
-        temp_storage_bytes,
-        d_in,
-        d_out,
-        scan_op,
-        initial_value,
-        num_items,
-        0,
-        debug_synchronous);
+  *d_cdp_error = Dispatch(cub_backend,
+                          is_primitive,
+                          timing_timing_iterations,
+                          d_temp_storage_bytes,
+                          d_cdp_error,
+                          d_temp_storage,
+                          temp_storage_bytes,
+                          d_keys_in,
+                          d_values_in,
+                          d_values_out,
+                          scan_op,
+                          initial_value,
+                          num_items,
+                          equality_op,
+                          0,
+                          debug_synchronous);
 
-    *d_temp_storage_bytes = temp_storage_bytes;
-#endif
+  *d_temp_storage_bytes = temp_storage_bytes;
 }
-
 
 /**
  * Dispatch to CDP kernel
  */
-template <typename IsPrimitiveT, typename KeysInputIteratorT, typename ValuesInputIteratorT, typename ValuesOutputIteratorT, typename ScanOpT, typename InitialValueT, typename OffsetT, typename EqualityOpT>
-cudaError_t Dispatch(
-    Int2Type<CDP>         dispatch_to,
-    IsPrimitiveT          is_primitive,
-    int                   timing_timing_iterations,
-    size_t                *d_temp_storage_bytes,
-    cudaError_t           *d_cdp_error,
+template <typename IsPrimitiveT,
+          typename KeysInputIteratorT,
+          typename ValuesInputIteratorT,
+          typename ValuesOutputIteratorT,
+          typename ScanOpT,
+          typename InitialValueT,
+          typename OffsetT,
+          typename EqualityOpT>
+cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
+                     IsPrimitiveT is_primitive,
+                     int          timing_timing_iterations,
+                     size_t      *d_temp_storage_bytes,
+                     cudaError_t *d_cdp_error,
 
-    void*                 d_temp_storage,
-    size_t&               temp_storage_bytes,
-    KeysInputIteratorT    d_keys_in,
-    ValuesInputIteratorT  d_values_in,
-    ValuesOutputIteratorT d_values_out,
-    ScanOpT               scan_op,
-    InitialValueT         initial_value,
-    OffsetT               num_items,
-    EqualityOpT           equality_op,
-    cudaStream_t          stream,
-    bool                  debug_synchronous)
+                     void                 *d_temp_storage,
+                     size_t               &temp_storage_bytes,
+                     KeysInputIteratorT    d_keys_in,
+                     ValuesInputIteratorT  d_values_in,
+                     ValuesOutputIteratorT d_values_out,
+                     ScanOpT               scan_op,
+                     InitialValueT         initial_value,
+                     OffsetT               num_items,
+                     EqualityOpT           equality_op,
+                     cudaStream_t          stream,
+                     bool                  debug_synchronous)
 {
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(
-        is_primitive,
-        timing_timing_iterations,
-        d_temp_storage_bytes,
-        d_cdp_error,
-        d_temp_storage,
-        temp_storage_bytes,
-        d_keys_in,
-        d_values_in,
-        d_values_out,
-        scan_op,
-        initial_value,
-        equality_op,
-        num_items,
-        debug_synchronous);
+  // Invoke kernel to invoke device-side dispatch
+  cudaError_t retval =
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+      .doit(CDPDispatchKernel<CUB,
+                              IsPrimitiveT,
+                              KeysInputIteratorT,
+                              ValuesInputIteratorT,
+                              ValuesOutputIteratorT,
+                              ScanOpT,
+                              InitialValueT,
+                              OffsetT,
+                              EqualityOpT>,
+            Int2Type<CUB>{},
+            is_primitive,
+            timing_timing_iterations,
+            d_temp_storage_bytes,
+            d_cdp_error,
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys_in,
+            d_values_in,
+            d_values_out,
+            scan_op,
+            initial_value,
+            num_items,
+            equality_op,
+            debug_synchronous);
+  CubDebugExit(retval);
 
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+  // Copy out temp_storage_bytes
+  CubDebugExit(cudaMemcpy(&temp_storage_bytes,
+                          d_temp_storage_bytes,
+                          sizeof(size_t) * 1,
+                          cudaMemcpyDeviceToHost));
 
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
+  // Copy out error
+  CubDebugExit(cudaMemcpy(&retval,
+                          d_cdp_error,
+                          sizeof(cudaError_t) * 1,
+                          cudaMemcpyDeviceToHost));
+  return retval;
 }
 
+#endif // TEST_CDP
 
 //---------------------------------------------------------------------
 // Test generation
@@ -924,10 +941,11 @@ void Test(
     InitialValueT   initial_value,
     EqualityOpT     equality_op)
 {
+#if TEST_CDP == 0
     Test<CUB, KeyT, InputT, OutputT>(num_items, scan_op, initial_value, equality_op);
-#ifdef CUB_CDP
+#elif TEST_CDP == 1
     Test<CDP, KeyT, InputT, OutputT>(num_items, scan_op, initial_value, equality_op);
-#endif
+#endif // TEST_CDP
 }
 
 
@@ -1019,7 +1037,6 @@ int main(int argc, char** argv)
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--v] "
-            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -1029,6 +1046,7 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
+    // %PARAM% TEST_CDP cdp 0:1
     // %PARAM% TEST_VALUE_TYPES types 0:1:2:3:4:5
 
 #if TEST_VALUE_TYPES == 0

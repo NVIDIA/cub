@@ -1044,11 +1044,6 @@ struct DispatchRadixSort :
     cudaError_t InvokeSingleTile(
         SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleTileKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)single_tile_kernel;
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -1078,10 +1073,17 @@ struct DispatchRadixSort :
                 end_bit);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Update selector
             d_keys.selector ^= 1;
@@ -1090,8 +1092,6 @@ struct DispatchRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
@@ -1141,10 +1141,17 @@ struct DispatchRadixSort :
                 pass_config.even_share);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Log scan_kernel configuration
             if (debug_synchronous) _CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
@@ -1158,10 +1165,17 @@ struct DispatchRadixSort :
                 pass_spine_length);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Log downsweep_kernel configuration
             if (debug_synchronous) _CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -1184,10 +1198,17 @@ struct DispatchRadixSort :
                 pass_config.even_share);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Update current bit
             current_bit += pass_bits;
@@ -1352,14 +1373,13 @@ struct DispatchRadixSort :
             {
                 break;
             }
-            if (debug_synchronous)
+
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
             {
-                if (CubDebug(error = SyncStream(stream)))
-                {
-                    break;
-                }
+              break;
             }
-            
+
             // exclusive sums to determine starts
             const int SCAN_BLOCK_THREADS = ActivePolicyT::ExclusiveSumPolicy::BLOCK_THREADS;
 
@@ -1377,14 +1397,13 @@ struct DispatchRadixSort :
                             d_bins);
             if (CubDebug(error))
             {
-              break;
+                break;
             }
-            if (debug_synchronous)
+
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
             {
-                if (CubDebug(error = SyncStream(stream)))
-                {
-                    break;
-                }
+              break;
             }
 
             // use the other buffer if no overwrite is allowed
@@ -1442,12 +1461,10 @@ struct DispatchRadixSort :
                       break;
                     }
 
-                    if (debug_synchronous)
+                    error = detail::DebugSyncStream(stream, debug_synchronous);
+                    if (CubDebug(error))
                     {
-                        if (CubDebug(error = SyncStream(stream)))
-                        {
-                            break;
-                        }
+                      break;
                     }
                 }
 
@@ -1483,17 +1500,6 @@ struct DispatchRadixSort :
         DownsweepKernelT    downsweep_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
         DownsweepKernelT    alt_downsweep_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)upsweep_kernel;
-        (void)alt_upsweep_kernel;
-        (void)scan_kernel;
-        (void)downsweep_kernel;
-        (void)alt_downsweep_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1606,8 +1612,6 @@ struct DispatchRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
@@ -1847,10 +1851,17 @@ struct DispatchSegmentedRadixSort :
                 current_bit, pass_bits);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error = cudaPeekAtLastError()))
+            {
+                break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Update current bit
             current_bit += pass_bits;
@@ -1893,14 +1904,6 @@ struct DispatchSegmentedRadixSort :
         SegmentedKernelT     segmented_kernel,          ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
         SegmentedKernelT     alt_segmented_kernel)      ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-      (void)segmented_kernel;
-      (void)alt_segmented_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1979,8 +1982,6 @@ struct DispatchSegmentedRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 

@@ -483,12 +483,6 @@ struct DispatchSpmv
         KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
         KernelConfig            segment_fixup_config)               ///< [in] Dispatch parameters that match the policy that \p segment_fixup_kernel was compiled for
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -531,10 +525,17 @@ struct DispatchSpmv
                     spmv_params);
 
                 // Check for failure to launch
-                if (CubDebug(error = cudaPeekAtLastError())) break;
+                if (CubDebug(error = cudaPeekAtLastError()))
+                {
+                    break;
+                }
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
 
                 break;
             }
@@ -639,7 +640,11 @@ struct DispatchSpmv
                 if (CubDebug(error = cudaPeekAtLastError())) break;
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
 
             // Log spmv_kernel configuration
@@ -661,7 +666,11 @@ struct DispatchSpmv
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
@@ -685,14 +694,16 @@ struct DispatchSpmv
                 if (CubDebug(error = cudaPeekAtLastError())) break;
 
                 // Sync the stream if specified to flush runtime errors
-                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                error = detail::DebugSyncStream(stream, debug_synchronous);
+                if (CubDebug(error))
+                {
+                  break;
+                }
             }
         }
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 

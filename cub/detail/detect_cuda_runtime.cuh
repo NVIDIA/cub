@@ -1,5 +1,6 @@
 /******************************************************************************
- * Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011, Duane Merrill.  All rights reserved.
+ * Copyright (c) 2011-2021, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,28 +28,73 @@
 
 /**
  * \file
- * Wrappers and extensions around <type_traits> utilities.
+ * Utilities for CUDA dynamic parallelism.
  */
 
 #pragma once
 
-#include <cub/util_cpp_dialect.cuh>
 #include <cub/util_namespace.cuh>
 
-#include <type_traits>
-
+#include <cuda_runtime_api.h>
 
 CUB_NAMESPACE_BEGIN
-namespace detail {
+namespace detail
+{
 
-template <typename Invokable, typename... Args>
-using invoke_result_t =
-#if CUB_CPP_DIALECT < 2017
-  typename std::result_of<Invokable(Args...)>::type;
-#else // 2017+
-  std::invoke_result_t<Invokable, Args...>;
+#ifdef DOXYGEN_SHOULD_SKIP_THIS // Only parse this during doxygen passes:
+
+/**
+ * \def CUB_RDC_ENABLED
+ *
+ * Defined if RDC is enabled.
+ */
+#define CUB_RDC_ENABLED
+
+/**
+ * \def CUB_RUNTIME_FUNCTION
+ *
+ * Execution space for functions that can use the CUDA runtime API (`__host__`
+ * when RDC is off, `__host__ __device__` when RDC is on).
+ */
+#define CUB_RUNTIME_FUNCTION
+
+/**
+ * \def CUB_RUNTIME_ENABLED
+ *
+ * Whether or not the active compiler pass is allowed to invoke device kernels
+ * or methods from the CUDA runtime API.
+ *
+ * This macro should not be used in CUB, as it depends on `__CUDA_ARCH__`
+ * and is not compatible with `NV_IF_TARGET`. It is provided for legacy
+ * purposes only.
+ *
+ * Replace any usages with `CUB_RDC_ENABLED` and `NV_IF_TARGET`.
+ */
+#define CUB_RUNTIME_ENABLED
+
+#else // Non-doxygen pass:
+
+#ifndef CUB_RUNTIME_FUNCTION
+
+#if defined(__CUDACC_RDC__)
+
+#define CUB_RDC_ENABLED
+#define CUB_RUNTIME_FUNCTION __host__ __device__
+
+#else // RDC disabled:
+
+#define CUB_RUNTIME_FUNCTION __host__
+
+#endif // RDC enabled
+
+#if !defined(__CUDA_ARCH__) || defined(__CUDACC_RDC__)
+// Legacy only -- do not use in new code.
+#define CUB_RUNTIME_ENABLED
 #endif
 
+#endif // CUB_RUNTIME_FUNCTION predefined
+
+#endif // Do not document
 
 } // namespace detail
 CUB_NAMESPACE_END

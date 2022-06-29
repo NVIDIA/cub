@@ -605,12 +605,10 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
   }
 
@@ -666,18 +664,17 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
   }
 
   return error;
 }
 
+#ifdef CUB_RDC_ENABLED
 /*
  * Continuation kernel is used only in the CDP mode. It's used to
  * launch DeviceSegmentedSortContinuation as a separate kernel.
@@ -721,7 +718,6 @@ DeviceSegmentedSortContinuationKernel(
   //
   // Due to (4, 5), we can't pass the user-provided stream in the continuation.
   // Due to (1, 2, 3) it's safe to pass the main stream.
-  #ifdef CUB_RUNTIME_ENABLED
   cudaError_t error =
     DeviceSegmentedSortContinuation<LargeSegmentPolicyT, SmallAndMediumPolicyT>(
       large_kernel,
@@ -742,11 +738,8 @@ DeviceSegmentedSortContinuationKernel(
       debug_synchronous);
 
   CubDebug(error);
-  #else
-  // Kernel launch not supported from this device
-  CubDebug(cudaErrorNotSupported);
-  #endif
 }
+#endif // CUB_RDC_ENABLED
 
 template <typename KeyT,
           typename ValueT>
@@ -1576,7 +1569,7 @@ private:
       THRUST_NS_QUALIFIER::make_reverse_iterator(
         large_and_medium_segments_indices.get() + num_segments);
 
-    if (CubDebug(error = cub::DevicePartition::If(
+    error = cub::DevicePartition::If(
       device_partition_temp_storage.get(),
       three_way_partition_temp_storage_bytes,
       THRUST_NS_QUALIFIER::counting_iterator<OffsetT>(0),
@@ -1588,53 +1581,60 @@ private:
       large_segments_selector,
       small_segments_selector,
       stream,
-      debug_synchronous)))
+      debug_synchronous);
+    if (CubDebug(error))
     {
       return error;
     }
 
-#ifdef CUB_RUNTIME_ENABLED
-#define CUB_TMP_DEVICE_CODE                                                    \
+    // The device path is only used (and only compiles) when CDP is enabled.
+    // It's defined in a macro since we can't put `#ifdef`s inside of
+    // `NV_IF_TARGET`.
+#ifndef CUB_RDC_ENABLED
+
+#define CUB_TEMP_DEVICE_CODE
+
+#else // CUB_RDC_ENABLED
+
+#define CUB_TEMP_DEVICE_CODE                                                   \
   using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;                \
-  THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)     \
-    .doit(DeviceSegmentedSortContinuationKernel<MaxPolicyT,                    \
-                                                LargeKernelT,                  \
-                                                SmallKernelT,                  \
-                                                KeyT,                          \
-                                                ValueT,                        \
-                                                BeginOffsetIteratorT,          \
-                                                EndOffsetIteratorT>,           \
-          large_kernel,                                                        \
-          small_kernel,                                                        \
-          num_segments,                                                        \
-          d_keys.Current(),                                                    \
-          GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),       \
-          d_keys_double_buffer,                                                \
-          d_values.Current(),                                                  \
-          GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values),   \
-          d_values_double_buffer,                                              \
-          d_begin_offsets,                                                     \
-          d_end_offsets,                                                       \
-          group_sizes.get(),                                                   \
-          large_and_medium_segments_indices.get(),                             \
-          small_segments_indices.get(),                                        \
-          debug_synchronous);                                                  \
+  error =                                                                      \
+    THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)   \
+      .doit(DeviceSegmentedSortContinuationKernel<MaxPolicyT,                  \
+                                                  LargeKernelT,                \
+                                                  SmallKernelT,                \
+                                                  KeyT,                        \
+                                                  ValueT,                      \
+                                                  BeginOffsetIteratorT,        \
+                                                  EndOffsetIteratorT>,         \
+            large_kernel,                                                      \
+            small_kernel,                                                      \
+            num_segments,                                                      \
+            d_keys.Current(),                                                  \
+            GetFinalOutput<KeyT>(LargeSegmentPolicyT::RADIX_BITS, d_keys),     \
+            d_keys_double_buffer,                                              \
+            d_values.Current(),                                                \
+            GetFinalOutput<ValueT>(LargeSegmentPolicyT::RADIX_BITS, d_values), \
+            d_values_double_buffer,                                            \
+            d_begin_offsets,                                                   \
+            d_end_offsets,                                                     \
+            group_sizes.get(),                                                 \
+            large_and_medium_segments_indices.get(),                           \
+            small_segments_indices.get(),                                      \
+            debug_synchronous);                                                \
                                                                                \
-  if (CubDebug(error = cudaPeekAtLastError()))                                 \
+  if (CubDebug(error))                                                         \
   {                                                                            \
     return error;                                                              \
   }                                                                            \
                                                                                \
-  if (debug_synchronous)                                                       \
+  error = detail::DebugSyncStream(stream, debug_synchronous);                  \
+  if (CubDebug(error))                                                         \
   {                                                                            \
-    if (CubDebug(error = SyncStream(stream)))                                  \
-    {                                                                          \
-      return error;                                                            \
-    }                                                                          \
+    return error;                                                              \
   }
-#else
-#define CUB_TMP_DEVICE_CODE error = CubDebug(cudaErrorNotSupported);
-#endif
+
+#endif // CUB_RDC_ENABLED
 
     // Clang format mangles some of this NV_IF_TARGET block
     // clang-format off
@@ -1677,10 +1677,10 @@ private:
           stream,
           debug_synchronous);),
       // NV_IS_DEVICE:
-      (CUB_TMP_DEVICE_CODE));
+      (CUB_TEMP_DEVICE_CODE));
     // clang-format on
 
-#undef CUB_TMP_DEVICE_CODE
+#undef CUB_TEMP_DEVICE_CODE
 
     return error;
   }
@@ -1732,12 +1732,10 @@ private:
     }
 
     // Sync the stream if specified to flush runtime errors
-    if (debug_synchronous)
+    error = detail::DebugSyncStream(stream, debug_synchronous);
+    if (CubDebug(error))
     {
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
+      return error;
     }
 
     return error;

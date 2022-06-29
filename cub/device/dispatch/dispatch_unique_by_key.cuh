@@ -220,16 +220,6 @@ struct DispatchUniqueByKey: SelectedPolicy
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        (void)init_kernel;
-        (void)scan_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
         using Policy = typename ActivePolicyT::UniqueByKeyPolicyT;
         using UniqueByKeyAgentT = AgentUniqueByKey<Policy,
                                                    KeyInputIteratorT,
@@ -292,7 +282,11 @@ struct DispatchUniqueByKey: SelectedPolicy
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Return if empty problem
             if (num_items == 0) break;
@@ -331,7 +325,7 @@ struct DispatchUniqueByKey: SelectedPolicy
             }
 
             // Invoke select_if_kernel
-            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
+            error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 scan_grid_size, Policy::BLOCK_THREADS, 0, stream
             ).doit(scan_kernel,
                    d_keys_in,
@@ -345,16 +339,21 @@ struct DispatchUniqueByKey: SelectedPolicy
                    num_tiles);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            error = detail::DebugSyncStream(stream, debug_synchronous);
+            if (CubDebug(error))
+            {
+              break;
+            }
         }
         while(0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
 
     template <typename ActivePolicyT>

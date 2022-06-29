@@ -360,12 +360,10 @@ struct DispatchThreeWayPartitionIf
       }
 
       // Sync the stream if specified to flush runtime errors
-      if (debug_synchronous)
+      error = detail::DebugSyncStream(stream, debug_synchronous);
+      if (CubDebug(error))
       {
-        if (CubDebug(error = cub::SyncStream(stream)))
-        {
-          break;
-        }
+        break;
       }
 
       // Get max x-dimension of grid
@@ -430,12 +428,10 @@ struct DispatchThreeWayPartitionIf
       }
 
       // Sync the stream if specified to flush runtime errors
-      if (debug_synchronous)
+      error = detail::DebugSyncStream(stream, debug_synchronous);
+      if (CubDebug(error))
       {
-        if (CubDebug(error = cub::SyncStream(stream)))
-        {
-          break;
-        }
+        break;
       }
     }
     while (0);

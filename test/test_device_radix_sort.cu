@@ -53,9 +53,12 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
+#include <cub/detail/device_synchronize.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include "test_util.h"
 
@@ -80,7 +83,11 @@ enum Backend
     CUB_SEGMENTED,              // CUB method (allows overwriting of input)
     CUB_SEGMENTED_NO_OVERWRITE, // CUB method (disallows overwriting of input)
 
-    CDP,                        // GPU-based (dynamic parallelism) dispatch to CUB method
+    // Same as above, but launches kernels from device using CDP.
+    CDP,
+    CDP_NO_OVERWRITE,
+    CDP_SEGMENTED,
+    CDP_SEGMENTED_NO_OVERWRITE,
 };
 
 static const char* BackendToString(Backend b)
@@ -97,6 +104,12 @@ static const char* BackendToString(Backend b)
       return "CUB_SEGMENTED_NO_OVERWRITE";
     case CDP:
       return "CDP";
+    case CDP_NO_OVERWRITE:
+      return "CDP_NO_OVERWRITE";
+    case CDP_SEGMENTED:
+      return "CDP_SEGMENTED";
+    case CDP_SEGMENTED_NO_OVERWRITE:
+      return "CDP_SEGMENTED_NO_OVERWRITE";
     default:
       break;
   }
@@ -114,7 +127,6 @@ static const char* BackendToString(Backend b)
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>         /*is_descending*/,
     Int2Type<CUB>           /*dispatch_to*/,
@@ -147,7 +159,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>             /*is_descending*/,
     Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
@@ -187,7 +198,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>          /*is_descending*/,
     Int2Type<CUB>           /*dispatch_to*/,
@@ -221,7 +231,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>              /*is_descending*/,
     Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
@@ -286,7 +295,6 @@ __host__ __device__ bool ValidateNumItemsForSegmentedSort(NumItemsT num_items)
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>         /*is_descending*/,
     Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
@@ -332,7 +340,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>                         /*is_descending*/,
     Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,
@@ -389,7 +396,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>          /*is_descending*/,
     Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
@@ -436,7 +442,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>                          /*is_descending*/,
     Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,
@@ -490,104 +495,195 @@ cudaError_t Dispatch(
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
 
+#if TEST_CDP == 1
+
 /**
  * Simple wrapper kernel to invoke DeviceRadixSort
  */
-template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT,
-          typename EndOffsetIteratorT, typename NumItemsT>
-__global__ void CnpDispatchKernel(
-    Int2Type<IS_DESCENDING> is_descending,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
-
-    void                    *d_temp_storage,
-    size_t                  temp_storage_bytes,
-    DoubleBuffer<KeyT>      d_keys,
-    DoubleBuffer<ValueT>    d_values,
-    NumItemsT               num_items,
-    int                     num_segments,
-    BeginOffsetIteratorT    d_segment_begin_offsets,
-    EndOffsetIteratorT      d_segment_end_offsets,
-    int                     begin_bit,
-    int                     end_bit,
-    bool                    debug_synchronous)
+template <int IsDescending,
+          int CubBackend,
+          typename KeyT,
+          typename ValueT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename NumItemsT>
+__global__ void CDPDispatchKernel(Int2Type<IsDescending> is_descending,
+                                  Int2Type<CubBackend>   cub_backend,
+                                  int                   *d_selector,
+                                  size_t                *d_temp_storage_bytes,
+                                  cudaError_t           *d_cdp_error,
+                                  void                  *d_temp_storage,
+                                  size_t                 temp_storage_bytes,
+                                  DoubleBuffer<KeyT>     d_keys,
+                                  DoubleBuffer<ValueT>   d_values,
+                                  NumItemsT              num_items,
+                                  int                    num_segments,
+                                  BeginOffsetIteratorT d_segment_begin_offsets,
+                                  EndOffsetIteratorT   d_segment_end_offsets,
+                                  int                  begin_bit,
+                                  int                  end_bit,
+                                  bool                 debug_synchronous)
 {
-#ifndef CUB_CDP
-  (void)is_descending;
-  (void)d_selector;
-  (void)d_temp_storage_bytes;
-  (void)d_cdp_error;
-  (void)d_temp_storage;
-  (void)temp_storage_bytes;
-  (void)d_keys;
-  (void)d_values;
-  (void)num_items;
-  (void)num_segments;
-  (void)d_segment_begin_offsets;
-  (void)d_segment_end_offsets;
-  (void)begin_bit;
-  (void)end_bit;
-  (void)debug_synchronous;
-    *d_cdp_error            = cudaErrorNotSupported;
-#else
-    *d_cdp_error            = Dispatch(
-                                is_descending, Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error,
-                                d_temp_storage, temp_storage_bytes, d_keys, d_values,
-                                num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-                                begin_bit, end_bit, 0, debug_synchronous);
-    *d_temp_storage_bytes   = temp_storage_bytes;
-    *d_selector             = d_keys.selector;
-#endif
-}
+  *d_cdp_error = Dispatch(is_descending,
+                          cub_backend,
+                          d_selector,
+                          d_temp_storage_bytes,
+                          d_cdp_error,
+                          d_temp_storage,
+                          temp_storage_bytes,
+                          d_keys,
+                          d_values,
+                          num_items,
+                          num_segments,
+                          d_segment_begin_offsets,
+                          d_segment_end_offsets,
+                          begin_bit,
+                          end_bit,
+                          0,
+                          debug_synchronous);
 
+  *d_temp_storage_bytes = temp_storage_bytes;
+  *d_selector           = d_keys.selector;
+}
 
 /**
- * Dispatch to CDP kernel
+ * Launch kernel and dispatch on device. Should only be called from host code.
+ * The CubBackend should be one of the non-CDP CUB backends to invoke from the
+ * device.
  */
-template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT,
-          typename EndOffsetIteratorT, typename NumItemsT>
-cudaError_t Dispatch(
-    Int2Type<IS_DESCENDING> is_descending,
-    Int2Type<CDP>           dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+template <int IsDescending,
+          int CubBackend,
+          typename KeyT,
+          typename ValueT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename NumItemsT>
+cudaError_t LaunchCDPKernel(Int2Type<IsDescending> is_descending,
+                            Int2Type<CubBackend>   cub_backend,
+                            int                   *d_selector,
+                            size_t                *d_temp_storage_bytes,
+                            cudaError_t           *d_cdp_error,
 
-    void                    *d_temp_storage,
-    size_t                  &temp_storage_bytes,
-    DoubleBuffer<KeyT>      &d_keys,
-    DoubleBuffer<ValueT>    &d_values,
-    NumItemsT               num_items,
-    int                     num_segments,
-    BeginOffsetIteratorT    d_segment_begin_offsets,
-    EndOffsetIteratorT      d_segment_end_offsets,
-    int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+                            void                 *d_temp_storage,
+                            size_t               &temp_storage_bytes,
+                            DoubleBuffer<KeyT>   &d_keys,
+                            DoubleBuffer<ValueT> &d_values,
+                            NumItemsT             num_items,
+                            int                   num_segments,
+                            BeginOffsetIteratorT  d_segment_begin_offsets,
+                            EndOffsetIteratorT    d_segment_end_offsets,
+                            int                   begin_bit,
+                            int                   end_bit,
+                            cudaStream_t          stream,
+                            bool                  debug_synchronous)
 {
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(
-        is_descending, d_selector, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys, d_values,
-        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, debug_synchronous);
+  // Invoke kernel to invoke device-side dispatch:
+  cudaError_t retval =
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+      .doit(CDPDispatchKernel<IsDescending,
+                              CubBackend,
+                              KeyT,
+                              ValueT,
+                              BeginOffsetIteratorT,
+                              EndOffsetIteratorT,
+                              NumItemsT>,
+            is_descending,
+            cub_backend,
+            d_selector,
+            d_temp_storage_bytes,
+            d_cdp_error,
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys,
+            d_values,
+            num_items,
+            num_segments,
+            d_segment_begin_offsets,
+            d_segment_end_offsets,
+            begin_bit,
+            end_bit,
+            debug_synchronous);
+  CubDebugExit(retval);
+  CubDebugExit(cub::detail::device_synchronize());
 
-    // Copy out selector
-    CubDebugExit(cudaMemcpy(&d_keys.selector, d_selector, sizeof(int) * 1, cudaMemcpyDeviceToHost));
-    d_values.selector = d_keys.selector;
+  // Copy out selector
+  CubDebugExit(cudaMemcpy(&d_keys.selector,
+                          d_selector,
+                          sizeof(int) * 1,
+                          cudaMemcpyDeviceToHost));
+  d_values.selector = d_keys.selector;
 
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+  // Copy out temp_storage_bytes
+  CubDebugExit(cudaMemcpy(&temp_storage_bytes,
+                          d_temp_storage_bytes,
+                          sizeof(size_t) * 1,
+                          cudaMemcpyDeviceToHost));
 
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
+  // Copy out error
+  CubDebugExit(cudaMemcpy(&retval,
+                          d_cdp_error,
+                          sizeof(cudaError_t) * 1,
+                          cudaMemcpyDeviceToHost));
+
+  return retval;
 }
 
+// Specializations of Dispatch that translate the CDP backend to the appropriate
+// CUB backend, and uses the CUB backend to launch the CDP kernel.
+#define DEFINE_CDP_DISPATCHER(CdpBackend, CubBackend)                          \
+  template <int IsDescending,                                                  \
+            typename KeyT,                                                     \
+            typename ValueT,                                                   \
+            typename BeginOffsetIteratorT,                                     \
+            typename EndOffsetIteratorT,                                       \
+            typename NumItemsT>                                                \
+  cudaError_t Dispatch(Int2Type<IsDescending> is_descending,                   \
+                       Int2Type<CdpBackend> /*dispatch_to*/,                   \
+                       int         *d_selector,                                \
+                       size_t      *d_temp_storage_bytes,                      \
+                       cudaError_t *d_cdp_error,                               \
+                                                                               \
+                       void                 *d_temp_storage,                   \
+                       size_t               &temp_storage_bytes,               \
+                       DoubleBuffer<KeyT>   &d_keys,                           \
+                       DoubleBuffer<ValueT> &d_values,                         \
+                       NumItemsT             num_items,                        \
+                       int                   num_segments,                     \
+                       BeginOffsetIteratorT  d_segment_begin_offsets,          \
+                       EndOffsetIteratorT    d_segment_end_offsets,            \
+                       int                   begin_bit,                        \
+                       int                   end_bit,                          \
+                       cudaStream_t          stream,                           \
+                       bool                  debug_synchronous)                \
+  {                                                                            \
+    Int2Type<CubBackend> cub_backend{};                                        \
+    return LaunchCDPKernel(is_descending,                                      \
+                           cub_backend,                                        \
+                           d_selector,                                         \
+                           d_temp_storage_bytes,                               \
+                           d_cdp_error,                                        \
+                           d_temp_storage,                                     \
+                           temp_storage_bytes,                                 \
+                           d_keys,                                             \
+                           d_values,                                           \
+                           num_items,                                          \
+                           num_segments,                                       \
+                           d_segment_begin_offsets,                            \
+                           d_segment_end_offsets,                              \
+                           begin_bit,                                          \
+                           end_bit,                                            \
+                           stream,                                             \
+                           debug_synchronous);                                 \
+  }
 
+DEFINE_CDP_DISPATCHER(CDP, CUB)
+DEFINE_CDP_DISPATCHER(CDP_NO_OVERWRITE, CUB_NO_OVERWRITE)
+DEFINE_CDP_DISPATCHER(CDP_SEGMENTED, CUB_SEGMENTED)
+DEFINE_CDP_DISPATCHER(CDP_SEGMENTED_NO_OVERWRITE, CUB_SEGMENTED_NO_OVERWRITE)
+
+#undef DEFINE_CDP_DISPATCHER
+
+#endif // TEST_CDP
 
 //---------------------------------------------------------------------
 // Problem generation
@@ -721,6 +817,13 @@ void InitializeSolution(
     NumItemsT  *&h_reference_ranks,
     KeyT       *&h_reference_keys)
 {
+    if (num_items == 0)
+    {
+        h_reference_ranks = nullptr;
+        h_reference_keys = nullptr;
+        return;
+    }
+
     if (pre_sorted)
     {
         printf("Shuffling reference solution on CPU\n");
@@ -787,7 +890,9 @@ void InitializeSolution(
         {
             h_reference_ranks = new NumItemsT[num_items];
         }
-        NumItemsT max_run = 32, run = 0, i = 0;
+        NumItemsT max_run = 32;
+        NumItemsT run = 0;
+        NumItemsT i = 0;
         while (summary.size() > 0)
         {
             // Pick up a random element and a run.
@@ -842,7 +947,12 @@ void InitializeSolution(
             h_pairs[i].value = i;
         }
 
-        printf("\nSorting reference solution on CPU (%d segments)...", num_segments); fflush(stdout);
+        printf("\nSorting reference solution on CPU "
+               "(%zd items, %d segments, %zd items/seg)...",
+               static_cast<std::size_t>(num_items),
+               num_segments,
+               static_cast<std::size_t>(num_items / num_segments));
+        fflush(stdout);
 
         for (int i = 0; i < num_segments; ++i)
         {
@@ -945,8 +1055,8 @@ void Test(
     const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     printf("%s %s cub::DeviceRadixSort %zd items, %d segments, "
-           "%d-byte keys (%s) %d-byte values (%s), descending %d, "
-           "begin_bit %d, end_bit %d\n",
+           "%d-byte keys (%s) %d-byte values (%s), %d-byte num_items (%s), "
+           "descending %d, begin_bit %d, end_bit %d\n",
            BackendToString(BACKEND),
            (KEYS_ONLY) ? "keys-only" : "key-value",
            static_cast<std::size_t>(num_items),
@@ -955,6 +1065,8 @@ void Test(
            typeid(KeyT).name(),
            (KEYS_ONLY) ? 0 : static_cast<int>(sizeof(ValueT)),
            typeid(ValueT).name(),
+           static_cast<int>(sizeof(NumItemsT)),
+           typeid(NumItemsT).name(),
            IS_DESCENDING,
            begin_bit,
            end_bit);
@@ -1104,72 +1216,135 @@ bool HasEnoughMemory(std::size_t num_items, bool overwrite)
     return test_mem < total_mem;
 }
 
+
 /**
  * Test backend
  */
-template <bool IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename NumItemsT>
-void TestBackend(
-    KeyT                 *h_keys,
-    NumItemsT            num_items,
-    int                  num_segments,
-    BeginOffsetIteratorT d_segment_begin_offsets,
-    EndOffsetIteratorT   d_segment_end_offsets,
-    int                  begin_bit,
-    int                  end_bit,
-    KeyT                 *h_reference_keys,
-    NumItemsT            *h_reference_ranks)
+template <bool IS_DESCENDING,
+          typename KeyT,
+          typename ValueT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename NumItemsT>
+void TestBackend(KeyT                *h_keys,
+                 NumItemsT            num_items,
+                 int                  num_segments,
+                 BeginOffsetIteratorT d_segment_begin_offsets,
+                 EndOffsetIteratorT   d_segment_end_offsets,
+                 int                  begin_bit,
+                 int                  end_bit,
+                 KeyT                *h_reference_keys,
+                 NumItemsT           *h_reference_ranks)
 {
-    const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
+#if TEST_CDP == 0
+  constexpr auto NonSegmentedOverwrite   = CUB;
+  constexpr auto NonSegmentedNoOverwrite = CUB_NO_OVERWRITE;
+  constexpr auto SegmentedOverwrite      = CUB_SEGMENTED;
+  constexpr auto SegmentedNoOverwrite    = CUB_SEGMENTED_NO_OVERWRITE;
+#else  // TEST_CDP
+  constexpr auto NonSegmentedOverwrite   = CDP;
+  constexpr auto NonSegmentedNoOverwrite = CDP_NO_OVERWRITE;
+  constexpr auto SegmentedOverwrite      = CDP_SEGMENTED;
+  constexpr auto SegmentedNoOverwrite    = CDP_SEGMENTED_NO_OVERWRITE;
+#endif // TEST_CDP
 
-    // A conservative check assuming overwrite is allowed.
-    if (!HasEnoughMemory<KeyT, ValueT>(static_cast<std::size_t>(num_items), true))
+  const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
+
+  // A conservative check assuming overwrite is allowed.
+  if (!HasEnoughMemory<KeyT, ValueT>(static_cast<std::size_t>(num_items), true))
+  {
+    printf("Skipping the test due to insufficient device memory\n");
+    return;
+  }
+
+  std::unique_ptr<ValueT[]> h_value_data{};
+
+  ValueT *h_values           = nullptr;
+  ValueT *h_reference_values = nullptr;
+
+  if (!KEYS_ONLY)
+  {
+    h_value_data.reset(new ValueT[2 * static_cast<std::size_t>(num_items)]);
+    h_values           = h_value_data.get();
+    h_reference_values = h_value_data.get() + num_items;
+
+    for (NumItemsT i = 0; i < num_items; ++i)
     {
-        printf("Skipping the test due to insufficient device memory\n");
-        return;
+      InitValue(INTEGER_SEED, h_values[i], i);
+      InitValue(INTEGER_SEED, h_reference_values[i], h_reference_ranks[i]);
     }
+  }
 
-    ValueT *h_values             = NULL;
-    ValueT *h_reference_values   = NULL;
-    
-    if (!KEYS_ONLY)
+  // Skip segmented sort if num_items isn't int.
+  // TODO(64bit-seg-sort): re-enable these tests once num_items is templated for
+  // segmented sort.
+  if (std::is_same<NumItemsT, int>::value)
+  {
+    printf("Testing segmented sort with overwrite\n");
+    Test<SegmentedOverwrite, IS_DESCENDING>(h_keys,
+                                            h_values,
+                                            num_items,
+                                            num_segments,
+                                            d_segment_begin_offsets,
+                                            d_segment_end_offsets,
+                                            begin_bit,
+                                            end_bit,
+                                            h_reference_keys,
+                                            h_reference_values);
+    printf("Testing segmented sort with no overwrite\n");
+    Test<SegmentedNoOverwrite, IS_DESCENDING>(h_keys,
+                                              h_values,
+                                              num_items,
+                                              num_segments,
+                                              d_segment_begin_offsets,
+                                              d_segment_end_offsets,
+                                              begin_bit,
+                                              end_bit,
+                                              h_reference_keys,
+                                              h_reference_values);
+  }
+  else
+  {
+    printf("Skipping segmented sort tests (NumItemsT != int)\n");
+  }
+
+  if (num_segments == 1)
+  {
+    printf("Testing non-segmented sort with overwrite\n");
+    Test<NonSegmentedOverwrite, IS_DESCENDING>(h_keys,
+                                               h_values,
+                                               num_items,
+                                               num_segments,
+                                               d_segment_begin_offsets,
+                                               d_segment_end_offsets,
+                                               begin_bit,
+                                               end_bit,
+                                               h_reference_keys,
+                                               h_reference_values);
+    if (HasEnoughMemory<KeyT, ValueT>(static_cast<std::size_t>(num_items),
+                                      false))
     {
-        h_values            = new ValueT[num_items];
-        h_reference_values  = new ValueT[num_items];
-
-        for (NumItemsT i = 0; i < num_items; ++i)
-        {
-            InitValue(INTEGER_SEED, h_values[i], i);
-            InitValue(INTEGER_SEED, h_reference_values[i], h_reference_ranks[i]);
-        }
+      printf("Testing non-segmented sort with no overwrite\n");
+      Test<NonSegmentedNoOverwrite, IS_DESCENDING>(h_keys,
+                                                   h_values,
+                                                   num_items,
+                                                   num_segments,
+                                                   d_segment_begin_offsets,
+                                                   d_segment_end_offsets,
+                                                   begin_bit,
+                                                   end_bit,
+                                                   h_reference_keys,
+                                                   h_reference_values);
     }
-
-    // Skip segmented sort if num_items isn't int.
-    // TODO(canonizer): re-enable these tests once num_items is templated for segmented sort.
-    if (std::is_same<NumItemsT, int>::value)
+    else
     {
-        Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-        Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+      printf("Skipping no-overwrite tests with %zd items due to "
+             "insufficient memory\n",
+             static_cast<std::size_t>(num_items));
     }
-
-    if (num_segments == 1)
-    {
-        Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-        if (HasEnoughMemory<KeyT, ValueT>(static_cast<std::size_t>(num_items), false))
-        {
-            Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-        }
-        else
-        {
-            printf("Skipping CUB_NO_OVERWRITE tests due to insufficient memory\n");
-        }
-    #ifdef CUB_CDP
-            Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-    #endif
-    }
-
-    if (h_values) delete[] h_values;
-    if (h_reference_values) delete[] h_reference_values;
+  }
 }
+
 
 // Smallest value type for TEST_VALUE_TYPE.
 // Unless TEST_VALUE_TYPE == 3, this is the only value type tested.
@@ -1612,6 +1787,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // %PARAM% TEST_CDP cdp 0:1
     // %PARAM% TEST_KEY_BYTES bytes 1:2:4:8
     // %PARAM% TEST_VALUE_TYPE pairs 0:1:2:3
     //   0->Keys only

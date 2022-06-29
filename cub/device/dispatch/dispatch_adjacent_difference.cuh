@@ -259,12 +259,10 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                 num_tiles,
                 tile_size);
 
-        if (debug_synchronous)
+        error = detail::DebugSyncStream(stream, debug_synchronous);
+        if (CubDebug(error))
         {
-          if (CubDebug(error = SyncStream(stream)))
-          {
-            break;
-          }
+          break;
         }
 
         // Check for failure to launch
@@ -302,12 +300,11 @@ struct DispatchAdjacentDifference : public SelectedPolicy
               difference_op,
               num_items);
 
-      if (debug_synchronous)
+
+      error = detail::DebugSyncStream(stream, debug_synchronous);
+      if (CubDebug(error))
       {
-        if (CubDebug(error = SyncStream(stream)))
-        {
-          break;
-        }
+        break;
       }
 
       // Check for failure to launch

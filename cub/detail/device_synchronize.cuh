@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cub/detail/detect_cuda_runtime.cuh>
 #include <cub/detail/exec_check_disable.cuh>
 #include <cub/util_arch.cuh>
 #include <cub/util_namespace.cuh>
@@ -38,8 +39,6 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
 {
   cudaError_t result = cudaErrorUnknown;
 
-#ifdef CUB_RUNTIME_ENABLED
-
 #if defined(__CUDACC__) &&                                                     \
   ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
    ((__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 6)))
@@ -48,11 +47,6 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
   result = __cudaDeviceSynchronizeDeprecationAvoidance();
 #else // CUDA < 11.6
 #define CUB_TMP_DEVICE_SYNC_IMPL result = cudaDeviceSynchronize();
-#endif
-
-#else // Device code without the CUDA runtime.
-  // Device side CUDA API calls are not supported in this configuration.
-#define CUB_TMP_DEVICE_SYNC_IMPL result = cudaErrorInvalidConfiguration;
 #endif
 
   NV_IF_TARGET(NV_IS_HOST,
