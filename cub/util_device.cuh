@@ -502,7 +502,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SmVersion(int &sm_version,
  */
 CUB_RUNTIME_FUNCTION inline cudaError_t SyncStream(cudaStream_t stream)
 {
-  cudaError_t result = cudaErrorUnknown;
+  cudaError_t result = cudaErrorNotSupported;
 
   NV_IF_TARGET(NV_IS_HOST,
                (result = CubDebug(cudaStreamSynchronize(stream));),
@@ -532,21 +532,42 @@ namespace detail
 CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream)
 {
 #ifndef CUB_DETAIL_DEBUG_ENABLE_SYNC
-  (void)stream;
 
-  return cudaSuccess;
-#else
-#if 1 // All valid targets currently support device-side synchronization
-  _CubLog("%s\n", "Synchronizing...");
-  return SyncStream(stream);
-#else
   (void)stream;
-  _CubLog("%s\n",
-          "WARNING: Skipping CUB `debug_synchronous` synchronization "
-          "(unsupported target).");
   return cudaSuccess;
-#endif
-#endif
+
+#else // CUB_DETAIL_DEBUG_ENABLE_SYNC:
+
+#define CUB_TMP_SYNC_AVAILABLE                                                 \
+  _CubLog("%s\n", "Synchronizing...");                                         \
+  return SyncStream(stream)
+
+#define CUB_TMP_DEVICE_SYNC_UNAVAILABLE                                        \
+  (void)stream;                                                                \
+  _CubLog("WARNING: Skipping CUB `debug_synchronous` synchronization (%s).\n", \
+          "device-side sync requires <sm_90, RDC, and CDPv1");                 \
+  return cudaSuccess
+
+#ifdef CUB_DETAIL_CDPv1
+
+  // Can sync everywhere but SM_90+
+  NV_IF_TARGET(NV_PROVIDES_SM_90,
+               (CUB_TMP_DEVICE_SYNC_UNAVAILABLE;),
+               (CUB_TMP_SYNC_AVAILABLE;));
+
+#else // CDPv2 or no CDP:
+
+  // Can only sync on host
+  NV_IF_TARGET(NV_IS_HOST,
+               (CUB_TMP_SYNC_AVAILABLE;),
+               (CUB_TMP_DEVICE_SYNC_UNAVAILABLE;));
+
+#endif // CDP version
+
+#undef CUB_TMP_DEVICE_SYNC_UNAVAILABLE
+#undef CUB_TMP_SYNC_AVAILABLE
+
+#endif // CUB_DETAIL_DEBUG_ENABLE_SYNC
 }
 
 } // namespace detail
