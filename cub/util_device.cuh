@@ -538,8 +538,16 @@ CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream,
   }
 
 #if 1 // All valid targets currently support device-side synchronization
-  _CubLog("%s\n", "Synchronizing...");
-  return SyncStream(stream);
+  cudaError_t result = cudaSuccess;
+
+  NV_IF_TARGET(NV_IS_HOST,
+               (_CubLog("%s\n", "Synchronizing...");
+                result = CubDebug(cudaStreamSynchronize(stream));),
+               ((void)stream; 
+                _CubLog("%s\n", "WARNING: Skipping CUB `debug_synchronous` "
+                  " synchronization (unsupported target).");));
+
+  return result;
 #else
   (void)stream;
   _CubLog("%s\n",
