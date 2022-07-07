@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2011-2021, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,9 +27,10 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_namespace.cuh"
-#include "dispatch/dispatch_merge_sort.cuh"
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_merge_sort.cuh>
+#include <cub/util_deprecated.cuh>
+#include <cub/util_namespace.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -192,11 +193,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -212,8 +208,7 @@ struct DeviceMergeSort
             ValueIteratorT d_items,
             OffsetT num_items,
             CompareOpT compare_op,
-            cudaStream_t stream    = 0,
-            bool debug_synchronous = false)
+            cudaStream_t stream = 0)
   {
     using DispatchMergeSortT = DispatchMergeSort<KeyIteratorT,
                                                  ValueIteratorT,
@@ -230,8 +225,33 @@ struct DeviceMergeSort
                                         d_items,
                                         num_items,
                                         compare_op,
-                                        stream,
-                                        debug_synchronous);
+                                        stream);
+  }
+
+  template <typename KeyIteratorT,
+            typename ValueIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairs(void *d_temp_storage,
+            std::size_t &temp_storage_bytes,
+            KeyIteratorT d_keys,
+            ValueIteratorT d_items,
+            OffsetT num_items,
+            CompareOpT compare_op,
+            cudaStream_t stream,
+            bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
+
+    return SortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      d_items,
+      num_items,
+      compare_op,
+      stream);
   }
 
   /**
@@ -341,11 +361,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -365,8 +380,7 @@ struct DeviceMergeSort
                 ValueIteratorT d_output_items,
                 OffsetT num_items,
                 CompareOpT compare_op,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     using DispatchMergeSortT = DispatchMergeSort<KeyInputIteratorT,
                                                  ValueInputIteratorT,
@@ -383,8 +397,43 @@ struct DeviceMergeSort
                                         d_output_items,
                                         num_items,
                                         compare_op,
-                                        stream,
-                                        debug_synchronous);
+                                        stream);
+  }
+
+  template <typename KeyInputIteratorT,
+            typename ValueInputIteratorT,
+            typename KeyIteratorT,
+            typename ValueIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairsCopy(void *d_temp_storage,
+                std::size_t &temp_storage_bytes,
+                KeyInputIteratorT d_input_keys,
+                ValueInputIteratorT d_input_items,
+                KeyIteratorT d_output_keys,
+                ValueIteratorT d_output_items,
+                OffsetT num_items,
+                CompareOpT compare_op,
+                cudaStream_t stream,
+                bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
+
+    return SortPairsCopy<KeyInputIteratorT,
+                         ValueInputIteratorT,
+                         KeyIteratorT,
+                         ValueIteratorT,
+                         OffsetT,
+                         CompareOpT>(d_temp_storage,
+                                     temp_storage_bytes,
+                                     d_input_keys,
+                                     d_input_items,
+                                     d_output_keys,
+                                     d_output_items,
+                                     num_items,
+                                     compare_op,
+                                     stream);
   }
 
   /**
@@ -466,11 +515,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -484,8 +528,7 @@ struct DeviceMergeSort
            KeyIteratorT d_keys,
            OffsetT num_items,
            CompareOpT compare_op,
-           cudaStream_t stream    = 0,
-           bool debug_synchronous = false)
+           cudaStream_t stream = 0)
   {
     using DispatchMergeSortT = DispatchMergeSort<KeyIteratorT,
                                                  NullType *,
@@ -502,8 +545,29 @@ struct DeviceMergeSort
                                         static_cast<NullType *>(nullptr),
                                         num_items,
                                         compare_op,
-                                        stream,
-                                        debug_synchronous);
+                                        stream);
+  }
+
+  template <typename KeyIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           KeyIteratorT d_keys,
+           OffsetT num_items,
+           CompareOpT compare_op,
+           cudaStream_t stream,
+           bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
+
+    return SortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
+                                                       temp_storage_bytes,
+                                                       d_keys,
+                                                       num_items,
+                                                       compare_op,
+                                                       stream);
   }
 
   /**
@@ -598,11 +662,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -618,8 +677,7 @@ struct DeviceMergeSort
                KeyIteratorT d_output_keys,
                OffsetT num_items,
                CompareOpT compare_op,
-               cudaStream_t stream    = 0,
-               bool debug_synchronous = false)
+               cudaStream_t stream = 0)
   {
     using DispatchMergeSortT = DispatchMergeSort<KeyInputIteratorT,
                                                  NullType *,
@@ -636,8 +694,33 @@ struct DeviceMergeSort
                                         static_cast<NullType *>(nullptr),
                                         num_items,
                                         compare_op,
-                                        stream,
-                                        debug_synchronous);
+                                        stream);
+  }
+
+  template <typename KeyInputIteratorT,
+            typename KeyIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeysCopy(void *d_temp_storage,
+               std::size_t &temp_storage_bytes,
+               KeyInputIteratorT d_input_keys,
+               KeyIteratorT d_output_keys,
+               OffsetT num_items,
+               CompareOpT compare_op,
+               cudaStream_t stream,
+               bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
+
+    return SortKeysCopy<KeyInputIteratorT, KeyIteratorT, OffsetT, CompareOpT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_input_keys,
+      d_output_keys,
+      num_items,
+      compare_op,
+      stream);
   }
 
   /**
@@ -728,11 +811,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -748,8 +826,7 @@ struct DeviceMergeSort
                   ValueIteratorT d_items,
                   OffsetT num_items,
                   CompareOpT compare_op,
-                  cudaStream_t stream    = 0,
-                  bool debug_synchronous = false)
+                  cudaStream_t stream = 0)
   {
     return SortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
@@ -758,8 +835,33 @@ struct DeviceMergeSort
       d_items,
       num_items,
       compare_op,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyIteratorT,
+            typename ValueIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortPairs(void *d_temp_storage,
+                  std::size_t &temp_storage_bytes,
+                  KeyIteratorT d_keys,
+                  ValueIteratorT d_items,
+                  OffsetT num_items,
+                  CompareOpT compare_op,
+                  cudaStream_t stream,
+                  bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
+
+    return StableSortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      d_items,
+      num_items,
+      compare_op,
+      stream);
   }
 
   /**
@@ -842,11 +944,6 @@ struct DeviceMergeSort
    *   **[optional]** CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
-   *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
    * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
@@ -860,16 +957,36 @@ struct DeviceMergeSort
                  KeyIteratorT d_keys,
                  OffsetT num_items,
                  CompareOpT compare_op,
-                 cudaStream_t stream    = 0,
-                 bool debug_synchronous = false)
+                 cudaStream_t stream = 0)
   {
     return SortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
                                                        temp_storage_bytes,
                                                        d_keys,
                                                        num_items,
                                                        compare_op,
-                                                       stream,
-                                                       debug_synchronous);
+                                                       stream);
+  }
+
+  template <typename KeyIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeys(void *d_temp_storage,
+                 std::size_t &temp_storage_bytes,
+                 KeyIteratorT d_keys,
+                 OffsetT num_items,
+                 CompareOpT compare_op,
+                 cudaStream_t stream,
+                 bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
+
+    return StableSortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
+                                                             temp_storage_bytes,
+                                                             d_keys,
+                                                             num_items,
+                                                             compare_op,
+                                                             stream);
   }
 };
 

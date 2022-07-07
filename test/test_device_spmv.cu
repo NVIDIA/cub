@@ -411,9 +411,7 @@ void compute_cub_solution(const device_csr_matrix<ValueT>& a,
                                thrust::raw_pointer_cast(y.data()),
                                a.get_num_rows(),
                                a.get_num_columns(),
-                               a.get_num_nonzeros(),
-                               0,
-                               true);
+                               a.get_num_nonzeros());
   CubDebugExit(err);
 }
 

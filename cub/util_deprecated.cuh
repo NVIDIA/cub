@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,8 +32,11 @@
 
 #pragma once
 
-#include "util_compiler.cuh"
-#include "util_cpp_dialect.cuh"
+
+#include <cub/detail/type_traits.cuh>
+#include <cub/util_compiler.cuh>
+#include <cub/util_cpp_dialect.cuh>
+
 
 #if defined(THRUST_IGNORE_DEPRECATED_API) && !defined(CUB_IGNORE_DEPRECATED_API)
 #  define CUB_IGNORE_DEPRECATED_API
@@ -52,3 +55,15 @@
 #else
 #  define CUB_DEPRECATED
 #endif
+
+#ifndef CUB_IGNORE_DEPRECATED_RUNTIME_DEBUG_SYNC
+#define CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(T) \
+  static_assert( \
+    cub::detail::dependent_false<T>::value, \
+    "CUB no longer takes `debug_synchronous` parameter. " \
+    "Define CUB_DEBUG_SYNC instead, or silence this message by " \
+    "defining CUB_IGNORE_DEPRECATED_RUNTIME_DEBUG_SYNC.") 
+#else
+#define CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(T) 
+#endif
+

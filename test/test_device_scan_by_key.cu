@@ -141,14 +141,12 @@ cudaError_t Dispatch(
     ScanOpT               scan_op,
     InitialValueT         initial_value,
     OffsetT               num_items,
-    EqualityOpT           equality_op,
-    cudaStream_t          stream,
-    bool                  debug_synchronous)
+    EqualityOpT           equality_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceScan::ExclusiveScanByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, scan_op, initial_value, num_items, equality_op, stream, debug_synchronous);
+        error = DeviceScan::ExclusiveScanByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, scan_op, initial_value, num_items, equality_op);
     }
     return error;
 }
@@ -174,14 +172,12 @@ cudaError_t Dispatch(
     Sum                   /*scan_op*/,
     InitialValueT         /*initial_value*/,
     OffsetT               num_items,
-    EqualityOpT           equality_op,
-    cudaStream_t          stream,
-    bool                  debug_synchronous)
+    EqualityOpT           equality_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceScan::ExclusiveSumByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, num_items, equality_op, stream, debug_synchronous);
+        error = DeviceScan::ExclusiveSumByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, num_items, equality_op);
     }
     return error;
 }
@@ -207,14 +203,12 @@ cudaError_t Dispatch(
     ScanOpT               scan_op,
     NullType              /*initial_value*/,
     OffsetT               num_items,
-    EqualityOpT           equality_op,
-    cudaStream_t          stream,
-    bool                  debug_synchronous)
+    EqualityOpT           equality_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceScan::InclusiveScanByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, scan_op, num_items, equality_op, stream, debug_synchronous);
+        error = DeviceScan::InclusiveScanByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, scan_op, num_items, equality_op);
     }
     return error;
 }
@@ -239,14 +233,12 @@ cudaError_t Dispatch(
     Sum                   /*scan_op*/,
     NullType              /*initial_value*/,
     OffsetT               num_items,
-    EqualityOpT           equality_op,
-    cudaStream_t          stream,
-    bool                  debug_synchronous)
+    EqualityOpT           equality_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceScan::InclusiveSumByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, num_items, equality_op, stream, debug_synchronous);
+        error = DeviceScan::InclusiveSumByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_values_out, num_items, equality_op);
     }
     return error;
 }
@@ -283,8 +275,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                                   ScanOpT               scan_op,
                                   InitialValueT         initial_value,
                                   OffsetT               num_items,
-                                  EqualityOpT           equality_op,
-                                  bool                  debug_synchronous)
+                                  EqualityOpT           equality_op)
 {
   *d_cdp_error = Dispatch(cub_backend,
                           is_primitive,
@@ -299,9 +290,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                           scan_op,
                           initial_value,
                           num_items,
-                          equality_op,
-                          0,
-                          debug_synchronous);
+                          equality_op);
 
   *d_temp_storage_bytes = temp_storage_bytes;
 }
@@ -331,13 +320,11 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
                      ScanOpT               scan_op,
                      InitialValueT         initial_value,
                      OffsetT               num_items,
-                     EqualityOpT           equality_op,
-                     cudaStream_t          stream,
-                     bool                  debug_synchronous)
+                     EqualityOpT           equality_op)
 {
   // Invoke kernel to invoke device-side dispatch
   cudaError_t retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<CUB,
                               IsPrimitiveT,
                               KeysInputIteratorT,
@@ -360,8 +347,7 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
             scan_op,
             initial_value,
             num_items,
-            equality_op,
-            debug_synchronous);
+            equality_op);
   CubDebugExit(retval);
 
   // Copy out temp_storage_bytes
@@ -568,9 +554,7 @@ void Test(
         scan_op,
         initial_value,
         num_items,
-        equality_op,
-        0,
-        true));
+        equality_op));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
@@ -594,9 +578,7 @@ void Test(
         scan_op,
         initial_value,
         num_items,
-        equality_op,
-        0,
-        true));
+        equality_op));
 
     // Check for correctness (and display results, if specified)
     const int compare = CompareDeviceResults(h_reference,
@@ -630,9 +612,7 @@ void Test(
           scan_op,
           initial_value,
           num_items,
-          equality_op,
-          0,
-          false));
+          equality_op));
 
       gpu_timer.Stop();
       float elapsed_millis = gpu_timer.ElapsedMillis();

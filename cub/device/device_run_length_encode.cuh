@@ -40,6 +40,7 @@
 #include <cub/config.cuh>
 #include <cub/device/dispatch/dispatch_reduce_by_key.cuh>
 #include <cub/device/dispatch/dispatch_rle.cuh>
+#include <cub/util_deprecated.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -188,11 +189,6 @@ struct DeviceRunLengthEncode
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false.
    */
   template <typename InputIteratorT,
             typename UniqueOutputIteratorT,
@@ -206,8 +202,7 @@ struct DeviceRunLengthEncode
          LengthsOutputIteratorT d_counts_out,
          NumRunsOutputIteratorT d_num_runs_out,
          int num_items,
-         cudaStream_t stream    = 0,
-         bool debug_synchronous = false)
+         cudaStream_t stream = 0)
   {
     using OffsetT      = int;        // Signed integer type for global offsets
     using FlagIterator = NullType *; // FlagT iterator type (not used)
@@ -240,8 +235,37 @@ struct DeviceRunLengthEncode
                                                   EqualityOp(),
                                                   ReductionOp(),
                                                   num_items,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename InputIteratorT,
+            typename UniqueOutputIteratorT,
+            typename LengthsOutputIteratorT,
+            typename NumRunsOutputIteratorT>
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Encode(void *d_temp_storage,
+         size_t &temp_storage_bytes,
+         InputIteratorT d_in,
+         UniqueOutputIteratorT d_unique_out,
+         LengthsOutputIteratorT d_counts_out,
+         NumRunsOutputIteratorT d_num_runs_out,
+         int num_items,
+         cudaStream_t stream,
+         bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+
+    return Encode<InputIteratorT,
+                  UniqueOutputIteratorT,
+                  LengthsOutputIteratorT,
+                  NumRunsOutputIteratorT>(d_temp_storage,
+                                          temp_storage_bytes,
+                                          d_in,
+                                          d_unique_out,
+                                          d_counts_out,
+                                          d_num_runs_out,
+                                          num_items,
+                                          stream);
   }
 
   /**
@@ -347,11 +371,6 @@ struct DeviceRunLengthEncode
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename InputIteratorT,
             typename OffsetsOutputIteratorT,
@@ -365,8 +384,7 @@ struct DeviceRunLengthEncode
                  LengthsOutputIteratorT d_lengths_out,
                  NumRunsOutputIteratorT d_num_runs_out,
                  int num_items,
-                 cudaStream_t stream    = 0,
-                 bool debug_synchronous = false)
+                 cudaStream_t stream = 0)
   {
     using OffsetT    = int;      // Signed integer type for global offsets
     using EqualityOp = Equality; // Default == operator
@@ -384,8 +402,37 @@ struct DeviceRunLengthEncode
                                                 d_num_runs_out,
                                                 EqualityOp(),
                                                 num_items,
-                                                stream,
-                                                debug_synchronous);
+                                                stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OffsetsOutputIteratorT,
+            typename LengthsOutputIteratorT,
+            typename NumRunsOutputIteratorT>
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  NonTrivialRuns(void *d_temp_storage,
+                 size_t &temp_storage_bytes,
+                 InputIteratorT d_in,
+                 OffsetsOutputIteratorT d_offsets_out,
+                 LengthsOutputIteratorT d_lengths_out,
+                 NumRunsOutputIteratorT d_num_runs_out,
+                 int num_items,
+                 cudaStream_t stream,
+                 bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+
+    return NonTrivialRuns<InputIteratorT,
+                          OffsetsOutputIteratorT,
+                          LengthsOutputIteratorT,
+                          NumRunsOutputIteratorT>(d_temp_storage,
+                                                  temp_storage_bytes,
+                                                  d_in,
+                                                  d_offsets_out,
+                                                  d_lengths_out,
+                                                  d_num_runs_out,
+                                                  num_items,
+                                                  stream);
   }
 };
 

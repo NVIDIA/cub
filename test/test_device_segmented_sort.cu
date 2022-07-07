@@ -514,9 +514,7 @@ void Sort(bool pairs,
             num_items,
             num_segments,
             d_offsets,
-            d_offsets + 1,
-            0,
-            true));
+            d_offsets + 1));
 
           *keys_selector   = keys_buffer.selector;
           *values_selector = values_buffer.selector;
@@ -533,9 +531,7 @@ void Sort(bool pairs,
             num_items,
             num_segments,
             d_offsets,
-            d_offsets + 1,
-            0,
-            true));
+            d_offsets + 1));
         }
       }
       else
@@ -556,9 +552,7 @@ void Sort(bool pairs,
                                                       num_items,
                                                       num_segments,
                                                       d_offsets,
-                                                      d_offsets + 1,
-                                                      0,
-                                                      true));
+                                                      d_offsets + 1));
 
           *keys_selector   = keys_buffer.selector;
           *values_selector = values_buffer.selector;
@@ -575,9 +569,7 @@ void Sort(bool pairs,
                                                       num_items,
                                                       num_segments,
                                                       d_offsets,
-                                                      d_offsets + 1,
-                                                      0,
-                                                      true));
+                                                      d_offsets + 1));
         }
       }
     }
@@ -597,9 +589,7 @@ void Sort(bool pairs,
             num_items,
             num_segments,
             d_offsets,
-            d_offsets + 1,
-            0,
-            true));
+            d_offsets + 1));
 
           *keys_selector = keys_buffer.selector;
         }
@@ -613,9 +603,7 @@ void Sort(bool pairs,
             num_items,
             num_segments,
             d_offsets,
-            d_offsets + 1,
-            0,
-            true));
+            d_offsets + 1));
         }
       }
       else
@@ -632,9 +620,7 @@ void Sort(bool pairs,
                                                      num_items,
                                                      num_segments,
                                                      d_offsets,
-                                                     d_offsets + 1,
-                                                     0,
-                                                     true));
+                                                     d_offsets + 1));
 
           *keys_selector = keys_buffer.selector;
         }
@@ -648,9 +634,7 @@ void Sort(bool pairs,
                                                      num_items,
                                                      num_segments,
                                                      d_offsets,
-                                                     d_offsets + 1,
-                                                     0,
-                                                     true));
+                                                     d_offsets + 1));
         }
       }
     }
@@ -677,9 +661,7 @@ void Sort(bool pairs,
                                                           num_items,
                                                           num_segments,
                                                           d_offsets,
-                                                          d_offsets + 1,
-                                                          0,
-                                                          true));
+                                                          d_offsets + 1));
 
           *keys_selector   = keys_buffer.selector;
           *values_selector = values_buffer.selector;
@@ -696,9 +678,7 @@ void Sort(bool pairs,
                                                           num_items,
                                                           num_segments,
                                                           d_offsets,
-                                                          d_offsets + 1,
-                                                          0,
-                                                          true));
+                                                          d_offsets + 1));
         }
       }
       else
@@ -718,9 +698,7 @@ void Sort(bool pairs,
                                                            num_items,
                                                            num_segments,
                                                            d_offsets,
-                                                           d_offsets + 1,
-                                                           0,
-                                                           true));
+                                                           d_offsets + 1));
 
           *keys_selector   = keys_buffer.selector;
           *values_selector = values_buffer.selector;
@@ -736,9 +714,7 @@ void Sort(bool pairs,
                                                            num_items,
                                                            num_segments,
                                                            d_offsets,
-                                                           d_offsets + 1,
-                                                           0,
-                                                           true));
+                                                           d_offsets + 1));
         }
       }
     }
@@ -758,9 +734,7 @@ void Sort(bool pairs,
                                                          num_items,
                                                          num_segments,
                                                          d_offsets,
-                                                         d_offsets + 1,
-                                                         0,
-                                                         true));
+                                                         d_offsets + 1));
 
           *keys_selector = keys_buffer.selector;
         }
@@ -774,9 +748,7 @@ void Sort(bool pairs,
                                                          num_items,
                                                          num_segments,
                                                          d_offsets,
-                                                         d_offsets + 1,
-                                                         0,
-                                                         true));
+                                                         d_offsets + 1));
         }
       }
       else
@@ -792,9 +764,7 @@ void Sort(bool pairs,
                                                           num_items,
                                                           num_segments,
                                                           d_offsets,
-                                                          d_offsets + 1,
-                                                          0,
-                                                          true));
+                                                          d_offsets + 1));
 
           *keys_selector = keys_buffer.selector;
         }
@@ -807,9 +777,7 @@ void Sort(bool pairs,
                                                           num_items,
                                                           num_segments,
                                                           d_offsets,
-                                                          d_offsets + 1,
-                                                          0,
-                                                          true));
+                                                          d_offsets + 1));
         }
       }
     }

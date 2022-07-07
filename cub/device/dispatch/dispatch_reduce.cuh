@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,14 +37,14 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../../agent/agent_reduce.cuh"
-#include "../../iterator/arg_index_input_iterator.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../grid/grid_even_share.cuh"
-#include "../../iterator/arg_index_input_iterator.cuh"
-#include "../../config.cuh"
-#include "../../util_debug.cuh"
-#include "../../util_device.cuh"
+#include <cub/agent/agent_reduce.cuh>
+#include <cub/config.cuh>
+#include <cub/grid/grid_even_share.cuh>
+#include <cub/iterator/arg_index_input_iterator.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
+#include <cub/util_device.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -341,7 +341,6 @@ struct DispatchReduce :
     ReductionOpT        reduction_op;                   ///< [in] Binary reduction functor
     OutputT             init;                           ///< [in] The initial value of the reduction
     cudaStream_t        stream;                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                debug_synchronous;              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                 ptx_version;                    ///< [in] PTX version
 
     //------------------------------------------------------------------------------
@@ -359,7 +358,6 @@ struct DispatchReduce :
         ReductionOpT            reduction_op,
         OutputT                 init,
         cudaStream_t            stream,
-        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -370,9 +368,34 @@ struct DispatchReduce :
         reduction_op(reduction_op),
         init(init),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
     {}
+
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchReduce(
+        void*                   d_temp_storage,
+        size_t                  &temp_storage_bytes,
+        InputIteratorT          d_in,
+        OutputIteratorT         d_out,
+        OffsetT                 num_items,
+        ReductionOpT            reduction_op,
+        OutputT                 init,
+        cudaStream_t            stream,
+        bool                    /* debug_synchronous */,
+        int                     ptx_version)
+    :
+        d_temp_storage(d_temp_storage),
+        temp_storage_bytes(temp_storage_bytes),
+        d_in(d_in),
+        d_out(d_out),
+        num_items(num_items),
+        reduction_op(reduction_op),
+        init(init),
+        stream(stream),
+        ptx_version(ptx_version)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+    }
 
 
     //------------------------------------------------------------------------------
@@ -398,10 +421,12 @@ struct DispatchReduce :
             }
 
             // Log single_reduce_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
                 ActivePolicyT::SingleTilePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
+            #endif
 
             // Invoke single_reduce_sweep_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -420,7 +445,7 @@ struct DispatchReduce :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -489,12 +514,14 @@ struct DispatchReduce :
             int reduce_grid_size = even_share.grid_size;
 
             // Log device_reduce_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking DeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking DeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 reduce_grid_size,
                 ActivePolicyT::ReducePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD,
                 reduce_config.sm_occupancy);
+            #endif
 
             // Invoke DeviceReduceKernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -514,17 +541,19 @@ struct DispatchReduce :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
             }
 
             // Log single_reduce_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
                 ActivePolicyT::SingleTilePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
+            #endif
 
             // Invoke DeviceReduceSingleTileKernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -543,7 +572,7 @@ struct DispatchReduce :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -600,8 +629,7 @@ struct DispatchReduce :
         OffsetT         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         ReductionOpT    reduction_op,                       ///< [in] Binary reduction functor
         OutputT         init,                               ///< [in] The initial value of the reduction
-        cudaStream_t    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t    stream)                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchReduce::MaxPolicy MaxPolicyT;
 
@@ -616,7 +644,7 @@ struct DispatchReduce :
             DispatchReduce dispatch(
                 d_temp_storage, temp_storage_bytes,
                 d_in, d_out, num_items, reduction_op, init,
-                stream, debug_synchronous, ptx_version);
+                stream, ptx_version);
 
             // Dispatch to chained policy
             if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
@@ -624,6 +652,29 @@ struct DispatchReduce :
         while (0);
 
         return error;
+    }
+
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             InputIteratorT d_in,
+             OutputIteratorT d_out,
+             OffsetT num_items,
+             ReductionOpT reduction_op,
+             OutputT init,
+             cudaStream_t stream,
+             bool /* debug_synchronous */)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_in,
+                      d_out,
+                      num_items,
+                      reduction_op,
+                      init,
+                      stream);
     }
 };
 
@@ -668,7 +719,6 @@ struct DispatchSegmentedReduce :
     ReductionOpT         reduction_op;           ///< [in] Binary reduction functor
     OutputT              init;                   ///< [in] The initial value of the reduction
     cudaStream_t         stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                 debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                  ptx_version;            ///< [in] PTX version
 
     //------------------------------------------------------------------------------
@@ -688,7 +738,6 @@ struct DispatchSegmentedReduce :
         ReductionOpT            reduction_op,
         OutputT                 init,
         cudaStream_t            stream,
-        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -701,10 +750,38 @@ struct DispatchSegmentedReduce :
         reduction_op(reduction_op),
         init(init),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
     {}
 
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchSegmentedReduce(
+        void*                   d_temp_storage,
+        size_t                  &temp_storage_bytes,
+        InputIteratorT          d_in,
+        OutputIteratorT         d_out,
+        OffsetT                 num_segments,
+        BeginOffsetIteratorT    d_begin_offsets,
+        EndOffsetIteratorT      d_end_offsets,
+        ReductionOpT            reduction_op,
+        OutputT                 init,
+        cudaStream_t            stream,
+        bool                    /* debug_synchronous */,
+        int                     ptx_version)
+    :
+        d_temp_storage(d_temp_storage),
+        temp_storage_bytes(temp_storage_bytes),
+        d_in(d_in),
+        d_out(d_out),
+        num_segments(num_segments),
+        d_begin_offsets(d_begin_offsets),
+        d_end_offsets(d_end_offsets),
+        reduction_op(reduction_op),
+        init(init),
+        stream(stream),
+        ptx_version(ptx_version)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+    }
 
 
     //------------------------------------------------------------------------------
@@ -734,12 +811,14 @@ struct DispatchSegmentedReduce :
             if (CubDebug(error = segmented_reduce_config.Init<typename ActivePolicyT::SegmentedReducePolicy>(segmented_reduce_kernel))) break;
 
             // Log device_reduce_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking SegmentedDeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking SegmentedDeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 num_segments,
                 ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::SegmentedReducePolicy::ITEMS_PER_THREAD,
                 segmented_reduce_config.sm_occupancy);
+            #endif
 
             // Invoke DeviceReduceKernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -761,7 +840,7 @@ struct DispatchSegmentedReduce :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -804,8 +883,7 @@ struct DispatchSegmentedReduce :
         EndOffsetIteratorT   d_end_offsets,                      ///< [in] Random-access input iterator to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
         ReductionOpT         reduction_op,                       ///< [in] Binary reduction functor
         OutputT              init,                               ///< [in] The initial value of the reduction
-        cudaStream_t         stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                 debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t         stream)                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchSegmentedReduce::MaxPolicy MaxPolicyT;
 
@@ -825,7 +903,7 @@ struct DispatchSegmentedReduce :
                 d_in, d_out,
                 num_segments, d_begin_offsets, d_end_offsets,
                 reduction_op, init,
-                stream, debug_synchronous, ptx_version);
+                stream, ptx_version);
 
             // Dispatch to chained policy
             if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
@@ -833,6 +911,33 @@ struct DispatchSegmentedReduce :
         while (0);
 
         return error;
+    }
+
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             InputIteratorT d_in,
+             OutputIteratorT d_out,
+             int num_segments,
+             BeginOffsetIteratorT d_begin_offsets,
+             EndOffsetIteratorT d_end_offsets,
+             ReductionOpT reduction_op,
+             OutputT init,
+             cudaStream_t stream,
+             bool /* debug_synchronous */)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
+
+      return Dispatch(d_temp_storage,
+                      &temp_storage_bytes,
+                      d_in,
+                      d_out,
+                      num_segments,
+                      d_begin_offsets,
+                      d_end_offsets,
+                      reduction_op,
+                      init,
+                      stream);
     }
 };
 

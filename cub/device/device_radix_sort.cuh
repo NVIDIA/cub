@@ -38,6 +38,7 @@
 #include <cub/config.cuh>
 #include <cub/detail/choose_offset.cuh>
 #include <cub/device/dispatch/dispatch_radix_sort.cuh>
+#include <cub/util_deprecated.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -229,11 +230,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename ValueT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -246,8 +242,7 @@ struct DeviceRadixSort
             NumItemsT num_items,
             int begin_bit          = 0,
             int end_bit            = sizeof(KeyT) * 8,
-            cudaStream_t stream    = 0,
-            bool debug_synchronous = false)
+            cudaStream_t stream    = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -270,8 +265,35 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairs(void *d_temp_storage,
+            size_t &temp_storage_bytes,
+            const KeyT *d_keys_in,
+            KeyT *d_keys_out,
+            const ValueT *d_values_in,
+            ValueT *d_values_out,
+            NumItemsT num_items,
+            int begin_bit,
+            int end_bit,
+            cudaStream_t stream,
+            bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortPairs<KeyT, ValueT, NumItemsT>(d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_keys_in,
+                                              d_keys_out,
+                                              d_values_in,
+                                              d_values_out,
+                                              num_items,
+                                              begin_bit,
+                                              end_bit,
+                                              stream);
   }
 
   /**
@@ -388,11 +410,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename ValueT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -403,8 +420,7 @@ struct DeviceRadixSort
             NumItemsT num_items,
             int begin_bit          = 0,
             int end_bit            = sizeof(KeyT) * 8,
-            cudaStream_t stream    = 0,
-            bool debug_synchronous = false)
+            cudaStream_t stream    = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -420,8 +436,31 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairs(void *d_temp_storage,
+            size_t &temp_storage_bytes,
+            DoubleBuffer<KeyT> &d_keys,
+            DoubleBuffer<ValueT> &d_values,
+            NumItemsT num_items,
+            int begin_bit,
+            int end_bit,
+            cudaStream_t stream,
+            bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortPairs<KeyT, ValueT, NumItemsT>(d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_keys,
+                                              d_values,
+                                              num_items,
+                                              begin_bit,
+                                              end_bit,
+                                              stream);
   }
 
   /**
@@ -528,11 +567,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename ValueT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -543,10 +577,9 @@ struct DeviceRadixSort
                       const ValueT *d_values_in,
                       ValueT *d_values_out,
                       NumItemsT num_items,
-                      int begin_bit          = 0,
-                      int end_bit            = sizeof(KeyT) * 8,
-                      cudaStream_t stream    = 0,
-                      bool debug_synchronous = false)
+                      int begin_bit       = 0,
+                      int end_bit         = sizeof(KeyT) * 8,
+                      cudaStream_t stream = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -569,8 +602,35 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairsDescending(void *d_temp_storage,
+                      size_t &temp_storage_bytes,
+                      const KeyT *d_keys_in,
+                      KeyT *d_keys_out,
+                      const ValueT *d_values_in,
+                      ValueT *d_values_out,
+                      NumItemsT num_items,
+                      int begin_bit,
+                      int end_bit,
+                      cudaStream_t stream,
+                      bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortPairsDescending<KeyT, ValueT, NumItemsT>(d_temp_storage,
+                                                        temp_storage_bytes,
+                                                        d_keys_in,
+                                                        d_keys_out,
+                                                        d_values_in,
+                                                        d_values_out,
+                                                        num_items,
+                                                        begin_bit,
+                                                        end_bit,
+                                                        stream);
   }
 
   /**
@@ -682,11 +742,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename ValueT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -697,8 +752,7 @@ struct DeviceRadixSort
                       NumItemsT num_items,
                       int begin_bit          = 0,
                       int end_bit            = sizeof(KeyT) * 8,
-                      cudaStream_t stream    = 0,
-                      bool debug_synchronous = false)
+                      cudaStream_t stream    = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -714,8 +768,31 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairsDescending(void *d_temp_storage,
+                      size_t &temp_storage_bytes,
+                      DoubleBuffer<KeyT> &d_keys,
+                      DoubleBuffer<ValueT> &d_values,
+                      NumItemsT num_items,
+                      int begin_bit,
+                      int end_bit,
+                      cudaStream_t stream,
+                      bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortPairsDescending<KeyT, ValueT, NumItemsT>(d_temp_storage,
+                                                        temp_storage_bytes,
+                                                        d_keys,
+                                                        d_values,
+                                                        num_items,
+                                                        begin_bit,
+                                                        end_bit,
+                                                        stream);
   }
 
   //@}  end member group
@@ -820,11 +897,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -833,10 +905,9 @@ struct DeviceRadixSort
            const KeyT *d_keys_in,
            KeyT *d_keys_out,
            NumItemsT num_items,
-           int begin_bit          = 0,
-           int end_bit            = sizeof(KeyT) * 8,
-           cudaStream_t stream    = 0,
-           bool debug_synchronous = false)
+           int begin_bit       = 0,
+           int end_bit         = sizeof(KeyT) * 8,
+           cudaStream_t stream = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -859,8 +930,31 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           size_t &temp_storage_bytes,
+           const KeyT *d_keys_in,
+           KeyT *d_keys_out,
+           NumItemsT num_items,
+           int begin_bit,
+           int end_bit,
+           cudaStream_t stream,
+           bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortKeys<KeyT, NumItemsT>(d_temp_storage,
+                                     temp_storage_bytes,
+                                     d_keys_in,
+                                     d_keys_out,
+                                     num_items,
+                                     begin_bit,
+                                     end_bit,
+                                     stream);
   }
 
   /**
@@ -960,11 +1054,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -972,10 +1061,9 @@ struct DeviceRadixSort
            size_t &temp_storage_bytes,
            DoubleBuffer<KeyT> &d_keys,
            NumItemsT num_items,
-           int begin_bit          = 0,
-           int end_bit            = sizeof(KeyT) * 8,
-           cudaStream_t stream    = 0,
-           bool debug_synchronous = false)
+           int begin_bit       = 0,
+           int end_bit         = sizeof(KeyT) * 8,
+           cudaStream_t stream = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -994,8 +1082,29 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           size_t &temp_storage_bytes,
+           DoubleBuffer<KeyT> &d_keys,
+           NumItemsT num_items,
+           int begin_bit,
+           int end_bit,
+           cudaStream_t stream,
+           bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortKeys<KeyT, NumItemsT>(d_temp_storage,
+                                     temp_storage_bytes,
+                                     d_keys,
+                                     num_items,
+                                     begin_bit,
+                                     end_bit,
+                                     stream);
   }
 
   /**
@@ -1089,11 +1198,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1102,10 +1206,9 @@ struct DeviceRadixSort
                      const KeyT *d_keys_in,
                      KeyT *d_keys_out,
                      NumItemsT num_items,
-                     int begin_bit          = 0,
-                     int end_bit            = sizeof(KeyT) * 8,
-                     cudaStream_t stream    = 0,
-                     bool debug_synchronous = false)
+                     int begin_bit       = 0,
+                     int end_bit         = sizeof(KeyT) * 8,
+                     cudaStream_t stream = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -1127,8 +1230,31 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeysDescending(void *d_temp_storage,
+                     size_t &temp_storage_bytes,
+                     const KeyT *d_keys_in,
+                     KeyT *d_keys_out,
+                     NumItemsT num_items,
+                     int begin_bit,
+                     int end_bit,
+                     cudaStream_t stream,
+                     bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortKeysDescending<KeyT, NumItemsT>(d_temp_storage,
+                                               temp_storage_bytes,
+                                               d_keys_in,
+                                               d_keys_out,
+                                               num_items,
+                                               begin_bit,
+                                               end_bit,
+                                               stream);
   }
 
   /**
@@ -1223,11 +1349,6 @@ struct DeviceRadixSort
    * @param[in] stream 
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT, typename NumItemsT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1235,10 +1356,9 @@ struct DeviceRadixSort
                      size_t &temp_storage_bytes,
                      DoubleBuffer<KeyT> &d_keys,
                      NumItemsT num_items,
-                     int begin_bit          = 0,
-                     int end_bit            = sizeof(KeyT) * 8,
-                     cudaStream_t stream    = 0,
-                     bool debug_synchronous = false)
+                     int begin_bit       = 0,
+                     int end_bit         = sizeof(KeyT) * 8,
+                     cudaStream_t stream = 0)
   {
     // Unsigned integer type for global offsets.
     using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
@@ -1257,8 +1377,29 @@ struct DeviceRadixSort
       begin_bit,
       end_bit,
       is_overwrite_okay,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT, typename NumItemsT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeysDescending(void *d_temp_storage,
+                     size_t &temp_storage_bytes,
+                     DoubleBuffer<KeyT> &d_keys,
+                     NumItemsT num_items,
+                     int begin_bit,
+                     int end_bit,
+                     cudaStream_t stream,
+                     bool /* debug_synchronous */)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+    return SortKeysDescending<KeyT, NumItemsT>(d_temp_storage,
+                                               temp_storage_bytes,
+                                               d_keys,
+                                               num_items,
+                                               begin_bit,
+                                               end_bit,
+                                               stream);
   }
 
   //@}  end member group

@@ -100,9 +100,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         LevelT              *(&d_levels)[NUM_ACTIVE_CHANNELS],          ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                           ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                           ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
 
@@ -117,9 +115,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
                 d_levels,
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -143,9 +139,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         half_t              *(&d_levels)[NUM_ACTIVE_CHANNELS],          ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                           ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                           ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
 
@@ -160,9 +154,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
                 reinterpret_cast<__half *(&)[NUM_ACTIVE_CHANNELS]>(d_levels),
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -188,9 +180,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         LevelT              *upper_level,           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -205,9 +195,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
                 upper_level,
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -232,9 +220,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         half_t              *upper_level,           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -249,9 +235,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
                 reinterpret_cast<__half*>(upper_level),
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -281,9 +265,7 @@ struct Dispatch<1, 1, CUB>
         LevelT              (&d_levels)[1],                         ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -297,9 +279,7 @@ struct Dispatch<1, 1, CUB>
                 d_levels[0],
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -320,9 +300,7 @@ struct Dispatch<1, 1, CUB>
         half_t              (&d_levels)[1],                         ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -336,9 +314,7 @@ struct Dispatch<1, 1, CUB>
                 d_levels[0].operator __half(),
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -364,9 +340,7 @@ struct Dispatch<1, 1, CUB>
         LevelT              *upper_level,                             ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -381,9 +355,7 @@ struct Dispatch<1, 1, CUB>
                 upper_level[0],
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -405,9 +377,7 @@ struct Dispatch<1, 1, CUB>
         half_t              *upper_level,                             ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,
-        bool                debug_synchronous)
+        OffsetT             row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     {
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -422,9 +392,7 @@ struct Dispatch<1, 1, CUB>
                 upper_level[0].operator __half(),
                 num_row_pixels,
                 num_rows,
-                row_stride_bytes,
-                stream,
-                debug_synchronous);
+                row_stride_bytes);
         }
         return error;
     }
@@ -739,8 +707,7 @@ void TestEven(
         1, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, true);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate temporary storage with "canary" zones
     int     canary_bytes    = 256;
@@ -756,8 +723,7 @@ void TestEven(
         1, d_temp_storage_bytes, d_cdp_error,
         ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, true);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     // Check canary zones
     int error = CompareDeviceResults(canary_zone, (char *) d_temp_storage, canary_bytes, true, g_verbose);
@@ -787,8 +753,7 @@ void TestEven(
         g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
         ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, false);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
@@ -1034,8 +999,7 @@ void TestRange(
         d_samples,
         d_histogram,
         num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, true);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate temporary storage with "canary" zones
     int     canary_bytes    = 256;
@@ -1053,8 +1017,7 @@ void TestRange(
         d_samples,
         d_histogram,
         num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, true);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     // Check canary zones
     int error = CompareDeviceResults(canary_zone, (char *) d_temp_storage, canary_bytes, true, g_verbose);
@@ -1086,8 +1049,7 @@ void TestRange(
         d_samples,
         d_histogram,
         num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride_bytes,
-        0, false);
+        num_row_pixels, num_rows, row_stride_bytes);
 
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
@@ -1444,17 +1406,13 @@ void TestLevelsAliasing()
   std::uint8_t *d_temp_storage{};
   std::size_t temp_storage_bytes{};
 
-  cudaStream_t stream = 0;
-
   CubDebugExit(cub::DeviceHistogram::HistogramRange(d_temp_storage,
                                                     temp_storage_bytes,
                                                     d_samples,
                                                     d_histogram,
                                                     num_levels,
                                                     d_levels,
-                                                    num_samples,
-                                                    stream,
-                                                    true));
+                                                    num_samples));
 
   CubDebugExit(
     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
@@ -1465,9 +1423,7 @@ void TestLevelsAliasing()
                                                     d_histogram,
                                                     num_levels,
                                                     d_levels,
-                                                    num_samples,
-                                                    stream,
-                                                    true));
+                                                    num_samples));
 
   CubDebugExit(cudaMemcpy(h_histogram,
                           d_histogram,

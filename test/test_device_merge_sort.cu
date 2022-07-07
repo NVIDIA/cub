@@ -116,9 +116,7 @@ void Test(std::int64_t num_items,
       thrust::raw_pointer_cast(d_keys.data()),
       thrust::raw_pointer_cast(d_values.data()),
       num_items,
-      CustomLess(),
-      0,
-      true));
+      CustomLess()));
 
   thrust::device_vector<char> tmp(temp_size);
 
@@ -128,9 +126,7 @@ void Test(std::int64_t num_items,
     thrust::raw_pointer_cast(d_keys.data()),
     thrust::raw_pointer_cast(d_values.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   thrust::device_vector<KeyType> d_keys_after_sort_copy(d_keys);
   thrust::device_vector<DataType> d_values_after_sort_copy(d_values);
@@ -145,9 +141,7 @@ void Test(std::int64_t num_items,
     thrust::raw_pointer_cast(d_keys.data()),
     thrust::raw_pointer_cast(d_values.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   AssertEquals(d_keys, d_keys_after_sort_copy);
   AssertEquals(d_values, d_values_after_sort_copy);
@@ -162,9 +156,7 @@ void Test(std::int64_t num_items,
     thrust::raw_pointer_cast(d_keys.data()),
     thrust::raw_pointer_cast(d_values.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   AssertTrue(CheckResult(d_values));
 
@@ -176,9 +168,7 @@ void Test(std::int64_t num_items,
     thrust::raw_pointer_cast(d_keys.data()),
     thrust::raw_pointer_cast(d_values.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   thrust::sequence(d_values_before_sort.begin(), d_values_before_sort.end());
 
@@ -217,9 +207,7 @@ void TestKeys(std::int64_t num_items,
     temp_size,
     thrust::raw_pointer_cast(d_keys.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   thrust::device_vector<KeyType> d_after_sort(d_keys);
 
@@ -231,9 +219,7 @@ void TestKeys(std::int64_t num_items,
     thrust::raw_pointer_cast(d_before_sort.data()),
     thrust::raw_pointer_cast(d_keys.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   AssertTrue(d_keys == d_after_sort);
   AssertTrue(d_before_sort == d_before_sort_copy);
@@ -245,9 +231,7 @@ void TestKeys(std::int64_t num_items,
     temp_size,
     thrust::raw_pointer_cast(d_keys.data()),
     num_items,
-    CustomLess(),
-    0,
-    true));
+    CustomLess()));
 
   AssertTrue(CheckResult(d_keys));
 }

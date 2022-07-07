@@ -87,14 +87,12 @@ cudaError_t Dispatch(
     KeyOutputIteratorT          d_keys_out,
     ValueOutputIteratorT        d_values_out,
     NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    OffsetT                     num_items)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::UniqueByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, stream, debug_synchronous);
+        error = DeviceSelect::UniqueByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items);
     }
     return error;
 }
@@ -127,8 +125,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                                   KeyOutputIteratorT   d_keys_out,
                                   ValueOutputIteratorT d_values_out,
                                   NumSelectedIteratorT d_num_selected_out,
-                                  OffsetT              num_items,
-                                  bool                 debug_synchronous)
+                                  OffsetT              num_items)
 {
   *d_cdp_error = Dispatch(cub_backend,
                           timing_timing_iterations,
@@ -141,9 +138,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                           d_keys_out,
                           d_values_out,
                           d_num_selected_out,
-                          num_items,
-                          0,
-                          debug_synchronous);
+                          num_items);
 
   *d_temp_storage_bytes = temp_storage_bytes;
 }
@@ -169,13 +164,11 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
                      KeyOutputIteratorT   d_keys_out,
                      ValueOutputIteratorT d_values_out,
                      NumSelectedIteratorT d_num_selected_out,
-                     OffsetT              num_items,
-                     cudaStream_t         stream,
-                     bool                 debug_synchronous)
+                     OffsetT              num_items)
 {
   // Invoke kernel to invoke device-side dispatch
   cudaError_t retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<CUB,
                               KeyInputIteratorT,
                               ValueInputIteratorT,
@@ -194,8 +187,7 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
             d_keys_out,
             d_values_out,
             d_num_selected_out,
-            num_items,
-            debug_synchronous);
+            num_items);
   CubDebugExit(retval);
 
   // Copy out temp_storage_bytes
@@ -344,7 +336,7 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
@@ -353,7 +345,7 @@ void Test(
     CubDebugExit(cudaMemset(d_num_selected_out, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items));
 
     // Check for correctness (and display results, if specified)
     int compare11 = CompareDeviceResults(h_keys_reference, d_keys_out, num_selected, true, g_verbose);
@@ -371,7 +363,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 

@@ -110,9 +110,7 @@ void TestEmpty()
                                         d_num_selected_out,
                                         num_items,
                                         le,
-                                        ge,
-                                        0,
-                                        true));
+                                        ge));
 
   thrust::device_vector<std::uint8_t> temp_storage(temp_storage_size);
   std::uint8_t *d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
@@ -126,9 +124,7 @@ void TestEmpty()
                                         d_num_selected_out,
                                         num_items,
                                         le,
-                                        ge,
-                                        0,
-                                        true));
+                                        ge));
 }
 
 template <typename T>
@@ -196,9 +192,7 @@ ThreeWayPartitionResult<T> CUBPartition(
                                         d_num_selected_out,
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::device_vector<std::uint8_t> temp_storage(temp_storage_size);
   std::uint8_t *d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
@@ -212,9 +206,7 @@ ThreeWayPartitionResult<T> CUBPartition(
                                         d_num_selected_out,
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::host_vector<int> h_num_selected_out(num_selected_out);
 
@@ -448,9 +440,7 @@ void TestReverseIterator(int num_items)
                                         num_selected_out.begin(),
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::device_vector<std::uint8_t> temp_storage(temp_storage_size);
   std::uint8_t *d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
@@ -464,9 +454,7 @@ void TestReverseIterator(int num_items)
                                         num_selected_out.begin(),
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::device_vector<int> h_num_selected_out(num_selected_out);
 
@@ -522,9 +510,7 @@ void TestSingleOutput(int num_items)
                                         num_selected_out.begin(),
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::device_vector<std::uint8_t> temp_storage(temp_storage_size);
   std::uint8_t *d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
@@ -538,9 +524,7 @@ void TestSingleOutput(int num_items)
                                         num_selected_out.begin(),
                                         num_items,
                                         first_selector,
-                                        second_selector,
-                                        0,
-                                        true));
+                                        second_selector));
 
   thrust::device_vector<int> h_num_selected_out(num_selected_out);
 

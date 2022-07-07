@@ -102,9 +102,7 @@ cudaError_t Dispatch(
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               /*equality_op*/,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    OffsetT                     num_items)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
@@ -116,9 +114,7 @@ cudaError_t Dispatch(
             d_unique_out,
             d_lengths_out,
             d_num_runs,
-            num_items,
-            stream,
-            debug_synchronous);
+            num_items);
     }
     return error;
 }
@@ -150,9 +146,7 @@ cudaError_t Dispatch(
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               /*equality_op*/,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    OffsetT                     num_items)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
@@ -164,9 +158,7 @@ cudaError_t Dispatch(
             d_offsets_out,
             d_lengths_out,
             d_num_runs,
-            num_items,
-            stream,
-            debug_synchronous);
+            num_items);
     }
     return error;
 }
@@ -203,8 +195,7 @@ __global__ void CDPDispatchKernel(Int2Type<RLE_METHOD> method,
                                   LengthsOutputIteratorT d_lengths_out,
                                   NumRunsIterator        d_num_runs,
                                   cub::Equality          equality_op,
-                                  OffsetT                num_items,
-                                  bool                   debug_synchronous)
+                                  OffsetT                num_items)
 {
   *d_cdp_error = Dispatch(method,
                           cub_backend,
@@ -219,9 +210,7 @@ __global__ void CDPDispatchKernel(Int2Type<RLE_METHOD> method,
                           d_lengths_out,
                           d_num_runs,
                           equality_op,
-                          num_items,
-                          0,
-                          debug_synchronous);
+                          num_items);
 
   *d_temp_storage_bytes = temp_storage_bytes;
 }
@@ -252,13 +241,11 @@ Dispatch(Int2Type<RLE_METHOD> method,
          LengthsOutputIteratorT d_lengths_out,
          NumRunsIterator        d_num_runs,
          EqualityOp             equality_op,
-         OffsetT                num_items,
-         cudaStream_t           stream,
-         bool                   debug_synchronous)
+         OffsetT                num_items)
 {
   // Invoke kernel to invoke device-side dispatch
   cudaError_t retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<RLE_METHOD,
                               CUB,
                               InputIteratorT,
@@ -281,8 +268,7 @@ Dispatch(Int2Type<RLE_METHOD> method,
             d_lengths_out,
             d_num_runs,
             equality_op,
-            num_items,
-            debug_synchronous);
+            num_items);
   CubDebugExit(retval);
 
   // Copy out temp_storage_bytes
@@ -463,7 +449,7 @@ void Test(
     // Allocate temporary storage
     void*           d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output arrays
@@ -475,7 +461,7 @@ void Test(
     CubDebugExit(cudaMemset(d_num_runs,     0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items));
 
     // Check for correctness (and display results, if specified)
     int compare0 = 0;
@@ -508,7 +494,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 

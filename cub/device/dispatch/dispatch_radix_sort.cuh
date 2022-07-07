@@ -36,18 +36,19 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../../agent/agent_radix_sort_histogram.cuh"
-#include "../../agent/agent_radix_sort_onesweep.cuh"
-#include "../../agent/agent_radix_sort_upsweep.cuh"
-#include "../../agent/agent_radix_sort_downsweep.cuh"
-#include "../../agent/agent_scan.cuh"
-#include "../../block/block_radix_sort.cuh"
-#include "../../config.cuh"
-#include "../../grid/grid_even_share.cuh"
-#include "../../util_type.cuh"
-#include "../../util_debug.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
+#include <cub/agent/agent_radix_sort_downsweep.cuh>
+#include <cub/agent/agent_radix_sort_histogram.cuh>
+#include <cub/agent/agent_radix_sort_onesweep.cuh>
+#include <cub/agent/agent_radix_sort_upsweep.cuh>
+#include <cub/agent/agent_scan.cuh>
+#include <cub/block/block_radix_sort.cuh>
+#include <cub/config.cuh>
+#include <cub/grid/grid_even_share.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
+#include <cub/util_type.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -994,7 +995,6 @@ struct DispatchRadixSort :
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
     int                     end_bit;                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
     bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
 
@@ -1015,7 +1015,6 @@ struct DispatchRadixSort :
         int                     end_bit,
         bool                    is_overwrite_okay,
         cudaStream_t            stream,
-        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -1026,10 +1025,37 @@ struct DispatchRadixSort :
         begin_bit(begin_bit),
         end_bit(end_bit),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version),
         is_overwrite_okay(is_overwrite_okay)
     {}
+
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchRadixSort(
+        void*                   d_temp_storage,
+        size_t                  &temp_storage_bytes,
+        DoubleBuffer<KeyT>      &d_keys,
+        DoubleBuffer<ValueT>    &d_values,
+        OffsetT                 num_items,
+        int                     begin_bit,
+        int                     end_bit,
+        bool                    is_overwrite_okay,
+        cudaStream_t            stream,
+        bool                    /* debug_synchronous */,
+        int                     ptx_version)
+    :
+        d_temp_storage(d_temp_storage),
+        temp_storage_bytes(temp_storage_bytes),
+        d_keys(d_keys),
+        d_values(d_values),
+        num_items(num_items),
+        begin_bit(begin_bit),
+        end_bit(end_bit),
+        stream(stream),
+        ptx_version(ptx_version),
+        is_overwrite_okay(is_overwrite_okay)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+    }
 
 
     //------------------------------------------------------------------------------
@@ -1055,10 +1081,11 @@ struct DispatchRadixSort :
             }
 
             // Log single_tile_kernel configuration
-            if (debug_synchronous)
-                _CubLog("Invoking single_tile_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
-                    1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, (long long) stream,
-                    ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD, 1, begin_bit, ActivePolicyT::SingleTilePolicy::RADIX_BITS);
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking single_tile_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
+                1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, (long long) stream,
+                ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD, 1, begin_bit, ActivePolicyT::SingleTilePolicy::RADIX_BITS);
+            #endif
 
             // Invoke upsweep_kernel with same grid size as downsweep_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -1079,7 +1106,7 @@ struct DispatchRadixSort :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -1120,10 +1147,11 @@ struct DispatchRadixSort :
             int pass_bits = CUB_MIN(pass_config.radix_bits, (end_bit - current_bit));
 
             // Log upsweep_kernel configuration
-            if (debug_synchronous)
-                _CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
-                pass_config.even_share.grid_size, pass_config.upsweep_config.block_threads, (long long) stream,
-                pass_config.upsweep_config.items_per_thread, pass_config.upsweep_config.sm_occupancy, current_bit, pass_bits);
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
+              pass_config.even_share.grid_size, pass_config.upsweep_config.block_threads, (long long) stream,
+              pass_config.upsweep_config.items_per_thread, pass_config.upsweep_config.sm_occupancy, current_bit, pass_bits);
+            #endif
 
             // Spine length written by the upsweep kernel in the current pass.
             int pass_spine_length = pass_config.even_share.grid_size * pass_config.radix_digits;
@@ -1147,15 +1175,17 @@ struct DispatchRadixSort :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
             }
 
             // Log scan_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
                 1, pass_config.scan_config.block_threads, (long long) stream, pass_config.scan_config.items_per_thread);
+            #endif
 
             // Invoke scan_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -1171,16 +1201,18 @@ struct DispatchRadixSort :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
             }
 
             // Log downsweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 pass_config.even_share.grid_size, pass_config.downsweep_config.block_threads, (long long) stream,
                 pass_config.downsweep_config.items_per_thread, pass_config.downsweep_config.sm_occupancy);
+            #endif
 
             // Invoke downsweep_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -1204,7 +1236,7 @@ struct DispatchRadixSort :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -1355,15 +1387,14 @@ struct DispatchRadixSort :
                 &histo_blocks_per_sm, histogram_kernel, HISTO_BLOCK_THREADS, 0))) break;
 
             // log histogram_kernel configuration
-            if (debug_synchronous)
-            {
-                _CubLog("Invoking histogram_kernel<<<%d, %d, 0, %lld>>>(), %d items per iteration, "
-                        "%d SM occupancy, bit_grain %d\n",
-                        histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS,
-                        reinterpret_cast<long long>(stream),
-                        ActivePolicyT::HistogramPolicy::ITEMS_PER_THREAD, histo_blocks_per_sm,
-                        ActivePolicyT::HistogramPolicy::RADIX_BITS);
-            }
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking histogram_kernel<<<%d, %d, 0, %lld>>>(), %d items per iteration, "
+                    "%d SM occupancy, bit_grain %d\n",
+                    histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS,
+                    reinterpret_cast<long long>(stream),
+                    ActivePolicyT::HistogramPolicy::ITEMS_PER_THREAD, histo_blocks_per_sm,
+                    ActivePolicyT::HistogramPolicy::RADIX_BITS);
+            #endif
 
             error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
               histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS, 0, stream
@@ -1374,7 +1405,7 @@ struct DispatchRadixSort :
                 break;
             }
 
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -1384,12 +1415,11 @@ struct DispatchRadixSort :
             const int SCAN_BLOCK_THREADS = ActivePolicyT::ExclusiveSumPolicy::BLOCK_THREADS;
 
             // log exclusive_sum_kernel configuration
-            if (debug_synchronous)
-            {
-                _CubLog("Invoking exclusive_sum_kernel<<<%d, %d, 0, %lld>>>(), bit_grain %d\n",
-                        num_passes, SCAN_BLOCK_THREADS, reinterpret_cast<long long>(stream),
-                        ActivePolicyT::ExclusiveSumPolicy::RADIX_BITS);
-            }
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking exclusive_sum_kernel<<<%d, %d, 0, %lld>>>(), bit_grain %d\n",
+                    num_passes, SCAN_BLOCK_THREADS, reinterpret_cast<long long>(stream),
+                    ActivePolicyT::ExclusiveSumPolicy::RADIX_BITS);
+            #endif
 
             error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                       num_passes, SCAN_BLOCK_THREADS, 0, stream
@@ -1400,7 +1430,7 @@ struct DispatchRadixSort :
                 break;
             }
 
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -1432,14 +1462,13 @@ struct DispatchRadixSort :
                            stream))) break;
 
                     // log onesweep_kernel configuration
-                    if (debug_synchronous)
-                    {
-                        _CubLog("Invoking onesweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, "
-                                "current bit %d, bit_grain %d, portion %d/%d\n",
-                                num_blocks, ONESWEEP_BLOCK_THREADS, reinterpret_cast<long long>(stream),
-                                ActivePolicyT::OnesweepPolicy::ITEMS_PER_THREAD, current_bit,
-                                num_bits, static_cast<int>(portion), static_cast<int>(num_portions));
-                    }
+                    #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+                    _CubLog("Invoking onesweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, "
+                            "current bit %d, bit_grain %d, portion %d/%d\n",
+                            num_blocks, ONESWEEP_BLOCK_THREADS, reinterpret_cast<long long>(stream),
+                            ActivePolicyT::OnesweepPolicy::ITEMS_PER_THREAD, current_bit,
+                            num_bits, static_cast<int>(portion), static_cast<int>(num_portions));
+                    #endif
 
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
                         MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, PortionOffsetT>;
@@ -1461,7 +1490,7 @@ struct DispatchRadixSort :
                       break;
                     }
 
-                    error = detail::DebugSyncStream(stream, debug_synchronous);
+                    error = detail::DebugSyncStream(stream);
                     if (CubDebug(error))
                     {
                       break;
@@ -1692,8 +1721,7 @@ struct DispatchRadixSort :
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
         bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
-        cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t            stream)                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchRadixSort::MaxPolicy MaxPolicyT;
 
@@ -1708,7 +1736,7 @@ struct DispatchRadixSort :
                 d_temp_storage, temp_storage_bytes,
                 d_keys, d_values,
                 num_items, begin_bit, end_bit, is_overwrite_okay,
-                stream, debug_synchronous, ptx_version);
+                stream, ptx_version);
 
             // Dispatch to chained policy
             if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
@@ -1716,6 +1744,31 @@ struct DispatchRadixSort :
         } while (0);
 
         return error;
+    }
+
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             DoubleBuffer<KeyT> &d_keys,
+             DoubleBuffer<ValueT> &d_values,
+             OffsetT num_items,
+             int begin_bit,
+             int end_bit,
+             bool is_overwrite_okay,
+             cudaStream_t stream,
+             bool /* debug_synchronous */)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_keys,
+                      d_values,
+                      num_items,
+                      begin_bit,
+                      end_bit,
+                      is_overwrite_okay,
+                      stream);
     }
 };
 
@@ -1762,7 +1815,6 @@ struct DispatchSegmentedRadixSort :
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
     int                     end_bit;                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
     bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
 
@@ -1786,7 +1838,6 @@ struct DispatchSegmentedRadixSort :
         int                     end_bit,
         bool                    is_overwrite_okay,
         cudaStream_t            stream,
-        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -1801,9 +1852,42 @@ struct DispatchSegmentedRadixSort :
         end_bit(end_bit),
         is_overwrite_okay(is_overwrite_okay),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
     {}
+
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchSegmentedRadixSort(
+        void*                   d_temp_storage,
+        size_t                  &temp_storage_bytes,
+        DoubleBuffer<KeyT>      &d_keys,
+        DoubleBuffer<ValueT>    &d_values,
+        OffsetT                 num_items,
+        OffsetT                 num_segments,
+        BeginOffsetIteratorT    d_begin_offsets,
+        EndOffsetIteratorT      d_end_offsets,
+        int                     begin_bit,
+        int                     end_bit,
+        bool                    is_overwrite_okay,
+        cudaStream_t            stream,
+        bool                    /* debug_synchronous */,
+        int                     ptx_version)
+    :
+        d_temp_storage(d_temp_storage),
+        temp_storage_bytes(temp_storage_bytes),
+        d_keys(d_keys),
+        d_values(d_values),
+        num_items(num_items),
+        num_segments(num_segments),
+        d_begin_offsets(d_begin_offsets),
+        d_end_offsets(d_end_offsets),
+        begin_bit(begin_bit),
+        end_bit(end_bit),
+        is_overwrite_okay(is_overwrite_okay),
+        stream(stream),
+        ptx_version(ptx_version)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+    }
 
 
     //------------------------------------------------------------------------------
@@ -1827,19 +1911,18 @@ struct DispatchSegmentedRadixSort :
             int pass_bits = CUB_MIN(pass_config.radix_bits, (end_bit - current_bit));
 
             // Log kernel configuration
-            if (debug_synchronous)
-            {
-              _CubLog("Invoking segmented_kernels<<<%lld, %lld, 0, %lld>>>(), "
-                      "%lld items per thread, %lld SM occupancy, "
-                      "current bit %d, bit_grain %d\n",
-                      (long long)num_segments,
-                      (long long)pass_config.segmented_config.block_threads,
-                      (long long)stream,
-                      (long long)pass_config.segmented_config.items_per_thread,
-                      (long long)pass_config.segmented_config.sm_occupancy,
-                      current_bit,
-                      pass_bits);
-            }
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking segmented_kernels<<<%lld, %lld, 0, %lld>>>(), "
+                    "%lld items per thread, %lld SM occupancy, "
+                    "current bit %d, bit_grain %d\n",
+                    (long long)num_segments,
+                    (long long)pass_config.segmented_config.block_threads,
+                    (long long)stream,
+                    (long long)pass_config.segmented_config.items_per_thread,
+                    (long long)pass_config.segmented_config.sm_occupancy,
+                    current_bit,
+                    pass_bits);
+            #endif
 
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 num_segments, pass_config.segmented_config.block_threads, 0,
@@ -1857,7 +1940,7 @@ struct DispatchSegmentedRadixSort :
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -2033,8 +2116,7 @@ struct DispatchSegmentedRadixSort :
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
         bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
-        cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t            stream)                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchSegmentedRadixSort::MaxPolicy MaxPolicyT;
 
@@ -2050,7 +2132,7 @@ struct DispatchSegmentedRadixSort :
                 d_keys, d_values,
                 num_items, num_segments, d_begin_offsets, d_end_offsets,
                 begin_bit, end_bit, is_overwrite_okay,
-                stream, debug_synchronous, ptx_version);
+                stream, ptx_version);
 
             // Dispatch to chained policy
             if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
@@ -2058,6 +2140,37 @@ struct DispatchSegmentedRadixSort :
         } while (0);
 
         return error;
+    }
+
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             DoubleBuffer<KeyT> &d_keys,
+             DoubleBuffer<ValueT> &d_values,
+             int num_items,
+             int num_segments,
+             BeginOffsetIteratorT d_begin_offsets,
+             EndOffsetIteratorT d_end_offsets,
+             int begin_bit,
+             int end_bit,
+             bool is_overwrite_okay,
+             cudaStream_t stream,
+             bool /* debug_synchronous */)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_keys,
+                      d_values,
+                      num_items,
+                      num_segments,
+                      d_begin_offsets,
+                      d_end_offsets,
+                      begin_bit,
+                      end_bit,
+                      is_overwrite_okay,
+                      stream);
     }
 };
 

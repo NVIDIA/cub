@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -143,14 +143,12 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
     EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
     return DeviceRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
         d_keys, d_values,
-        num_items, begin_bit, end_bit, stream, debug_synchronous);
+        num_items, begin_bit, end_bit);
 }
 
 /**
@@ -175,9 +173,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
     EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
     KeyT      const *const_keys_itr     = d_keys.Current();
     ValueT    const *const_values_itr   = d_values.Current();
@@ -185,7 +181,7 @@ cudaError_t Dispatch(
     cudaError_t retval = DeviceRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, begin_bit, end_bit, stream, debug_synchronous);
+        num_items, begin_bit, end_bit);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
@@ -214,14 +210,12 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
     EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
     return DeviceRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
         d_keys, d_values, num_items,
-        begin_bit, end_bit, stream, debug_synchronous);
+        begin_bit, end_bit);
 }
 
 
@@ -247,9 +241,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
     EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
     KeyT      const *const_keys_itr     = d_keys.Current();
     ValueT    const *const_values_itr   = d_values.Current();
@@ -257,7 +249,7 @@ cudaError_t Dispatch(
     cudaError_t retval = DeviceRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, begin_bit, end_bit, stream, debug_synchronous);
+        num_items, begin_bit, end_bit);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
@@ -311,9 +303,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    d_segment_begin_offsets,
     EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
   if (ValidateNumItemsForSegmentedSort(num_items))
   {
@@ -326,9 +316,7 @@ cudaError_t Dispatch(
                                                d_segment_begin_offsets,
                                                d_segment_end_offsets,
                                                begin_bit,
-                                               end_bit,
-                                               stream,
-                                               debug_synchronous);
+                                               end_bit);
   }
 
   return cudaErrorInvalidValue;
@@ -356,9 +344,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    d_segment_begin_offsets,
     EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
   if (ValidateNumItemsForSegmentedSort(num_items))
   {
@@ -377,9 +363,7 @@ cudaError_t Dispatch(
                                           d_segment_begin_offsets,
                                           d_segment_end_offsets,
                                           begin_bit,
-                                          end_bit,
-                                          stream,
-                                          debug_synchronous);
+                                          end_bit);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
@@ -412,9 +396,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    d_segment_begin_offsets,
     EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
   if (ValidateNumItemsForSegmentedSort(num_items))
   {
@@ -428,9 +410,7 @@ cudaError_t Dispatch(
       d_segment_begin_offsets,
       d_segment_end_offsets,
       begin_bit,
-      end_bit,
-      stream,
-      debug_synchronous);
+      end_bit);
   }
 
   return cudaErrorInvalidValue;
@@ -458,9 +438,7 @@ cudaError_t Dispatch(
     BeginOffsetIteratorT    d_segment_begin_offsets,
     EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     end_bit)
 {
   if (ValidateNumItemsForSegmentedSort(num_items))
   {
@@ -479,9 +457,7 @@ cudaError_t Dispatch(
                                                     d_segment_begin_offsets,
                                                     d_segment_end_offsets,
                                                     begin_bit,
-                                                    end_bit,
-                                                    stream,
-                                                    debug_synchronous);
+                                                    end_bit);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
@@ -521,8 +497,7 @@ __global__ void CDPDispatchKernel(Int2Type<IsDescending> is_descending,
                                   BeginOffsetIteratorT d_segment_begin_offsets,
                                   EndOffsetIteratorT   d_segment_end_offsets,
                                   int                  begin_bit,
-                                  int                  end_bit,
-                                  bool                 debug_synchronous)
+                                  int                  end_bit)
 {
   *d_cdp_error = Dispatch(is_descending,
                           cub_backend,
@@ -538,9 +513,7 @@ __global__ void CDPDispatchKernel(Int2Type<IsDescending> is_descending,
                           d_segment_begin_offsets,
                           d_segment_end_offsets,
                           begin_bit,
-                          end_bit,
-                          0,
-                          debug_synchronous);
+                          end_bit);
 
   *d_temp_storage_bytes = temp_storage_bytes;
   *d_selector           = d_keys.selector;
@@ -573,13 +546,11 @@ cudaError_t LaunchCDPKernel(Int2Type<IsDescending> is_descending,
                             BeginOffsetIteratorT  d_segment_begin_offsets,
                             EndOffsetIteratorT    d_segment_end_offsets,
                             int                   begin_bit,
-                            int                   end_bit,
-                            cudaStream_t          stream,
-                            bool                  debug_synchronous)
+                            int                   end_bit)
 {
   // Invoke kernel to invoke device-side dispatch:
   cudaError_t retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<IsDescending,
                               CubBackend,
                               KeyT,
@@ -601,8 +572,7 @@ cudaError_t LaunchCDPKernel(Int2Type<IsDescending> is_descending,
             d_segment_begin_offsets,
             d_segment_end_offsets,
             begin_bit,
-            end_bit,
-            debug_synchronous);
+            end_bit);
   CubDebugExit(retval);
   CubDebugExit(cub::detail::device_synchronize());
 
@@ -652,9 +622,7 @@ cudaError_t LaunchCDPKernel(Int2Type<IsDescending> is_descending,
                        BeginOffsetIteratorT  d_segment_begin_offsets,          \
                        EndOffsetIteratorT    d_segment_end_offsets,            \
                        int                   begin_bit,                        \
-                       int                   end_bit,                          \
-                       cudaStream_t          stream,                           \
-                       bool                  debug_synchronous)                \
+                       int                   end_bit)                          \
   {                                                                            \
     Int2Type<CubBackend> cub_backend{};                                        \
     return LaunchCDPKernel(is_descending,                                      \
@@ -671,9 +639,7 @@ cudaError_t LaunchCDPKernel(Int2Type<IsDescending> is_descending,
                            d_segment_begin_offsets,                            \
                            d_segment_end_offsets,                              \
                            begin_bit,                                          \
-                           end_bit,                                            \
-                           stream,                                             \
-                           debug_synchronous);                                 \
+                           end_bit);                                           \
   }
 
 DEFINE_CDP_DISPATCHER(CDP, CUB)
@@ -1102,7 +1068,7 @@ void Test(
         Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes, d_keys, d_values,
         num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, 0, true));
+        begin_bit, end_bit));
 
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes + 1));
     void* mis_aligned_temp = static_cast<char*>(d_temp_storage) + 1;
@@ -1123,7 +1089,7 @@ void Test(
         Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
         mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
         num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, 0, true));
+        begin_bit, end_bit));
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -1169,7 +1135,7 @@ void Test(
             Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
             mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
             num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-            begin_bit, end_bit, 0, false));
+            begin_bit, end_bit));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }

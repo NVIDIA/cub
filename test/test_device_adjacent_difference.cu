@@ -120,9 +120,7 @@ void AdjacentDifference(void *temp_storage,
                                                     temp_storage_bytes,
                                                     it,
                                                     num_items,
-                                                    difference_op,
-                                                    0,
-                                                    true));
+                                                    difference_op));
     }
   }
   else
@@ -142,9 +140,7 @@ void AdjacentDifference(void *temp_storage,
                                                      temp_storage_bytes,
                                                      it,
                                                      num_items,
-                                                     difference_op,
-                                                     0,
-                                                     true));
+                                                     difference_op));
     }
   }
 }
@@ -184,9 +180,7 @@ void AdjacentDifferenceCopy(void *temp_storage,
                                                         input,
                                                         output,
                                                         num_items,
-                                                        difference_op,
-                                                        0,
-                                                        true));
+                                                        difference_op));
     }
   }
   else
@@ -208,9 +202,7 @@ void AdjacentDifferenceCopy(void *temp_storage,
                                                          input,
                                                          output,
                                                          num_items,
-                                                         difference_op,
-                                                         0,
-                                                         true));
+                                                         difference_op));
     }
   }
 }
