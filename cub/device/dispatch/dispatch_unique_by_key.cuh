@@ -240,7 +240,7 @@ struct DispatchUniqueByKey: SelectedPolicy
      ******************************************************************************/
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
-    CUB_RUNTIME_FUNCTION __host__  __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
     {
         using Policy = typename ActivePolicyT::UniqueByKeyPolicyT;
@@ -384,7 +384,7 @@ struct DispatchUniqueByKey: SelectedPolicy
     }
 
     template <typename ActivePolicyT>
-    CUB_RUNTIME_FUNCTION __host__  __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
         // Ensure kernels are instantiated.

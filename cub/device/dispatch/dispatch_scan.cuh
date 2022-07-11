@@ -400,7 +400,7 @@ struct DispatchScan : SelectedPolicy
   }
 
   template <typename ActivePolicyT>
-  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
+  CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
     using Policy         = typename ActivePolicyT::ScanPolicyT;
     using ScanTileStateT = typename cub::ScanTileState<AccumT>;
