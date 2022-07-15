@@ -242,6 +242,7 @@ struct DeviceRunLengthEncode
             typename UniqueOutputIteratorT,
             typename LengthsOutputIteratorT,
             typename NumRunsOutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Encode(void *d_temp_storage,
          size_t &temp_storage_bytes,
@@ -253,8 +254,6 @@ struct DeviceRunLengthEncode
          cudaStream_t stream,
          bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Encode<InputIteratorT,
                   UniqueOutputIteratorT,
                   LengthsOutputIteratorT,
@@ -409,6 +408,7 @@ struct DeviceRunLengthEncode
             typename OffsetsOutputIteratorT,
             typename LengthsOutputIteratorT,
             typename NumRunsOutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   NonTrivialRuns(void *d_temp_storage,
                  size_t &temp_storage_bytes,
@@ -420,8 +420,6 @@ struct DeviceRunLengthEncode
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return NonTrivialRuns<InputIteratorT,
                           OffsetsOutputIteratorT,
                           LengthsOutputIteratorT,

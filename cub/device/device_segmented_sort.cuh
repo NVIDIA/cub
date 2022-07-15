@@ -261,6 +261,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -273,8 +274,6 @@ struct DeviceSegmentedSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -431,6 +430,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysDescending(void *d_temp_storage,
                      std::size_t &temp_storage_bytes,
@@ -443,8 +443,6 @@ struct DeviceSegmentedSort
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -610,6 +608,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -621,8 +620,6 @@ struct DeviceSegmentedSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -787,6 +784,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysDescending(void *d_temp_storage,
                      std::size_t &temp_storage_bytes,
@@ -798,8 +796,6 @@ struct DeviceSegmentedSort
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -944,6 +940,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeys(void *d_temp_storage,
                  std::size_t &temp_storage_bytes,
@@ -956,8 +953,6 @@ struct DeviceSegmentedSort
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1104,6 +1099,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeysDescending(void *d_temp_storage,
                            std::size_t &temp_storage_bytes,
@@ -1116,8 +1112,6 @@ struct DeviceSegmentedSort
                            cudaStream_t stream,
                            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortKeysDescending<KeyT,
                                     BeginOffsetIteratorT,
                                     EndOffsetIteratorT>(d_temp_storage,
@@ -1272,6 +1266,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeys(void *d_temp_storage,
                  std::size_t &temp_storage_bytes,
@@ -1283,8 +1278,6 @@ struct DeviceSegmentedSort
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1438,6 +1431,7 @@ struct DeviceSegmentedSort
   template <typename KeyT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeysDescending(void *d_temp_storage,
                            std::size_t &temp_storage_bytes,
@@ -1449,8 +1443,6 @@ struct DeviceSegmentedSort
                            cudaStream_t stream,
                            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortKeysDescending<KeyT,
                                     BeginOffsetIteratorT,
                                     EndOffsetIteratorT>(d_temp_storage,
@@ -1636,6 +1628,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairs(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -1650,8 +1643,6 @@ struct DeviceSegmentedSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1832,6 +1823,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairsDescending(void *d_temp_storage,
                       std::size_t &temp_storage_bytes,
@@ -1846,8 +1838,6 @@ struct DeviceSegmentedSort
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairsDescending<KeyT,
                                ValueT,
                                BeginOffsetIteratorT,
@@ -2034,6 +2024,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairs(void *d_temp_storage,
             std::size_t &temp_storage_bytes,
@@ -2046,8 +2037,6 @@ struct DeviceSegmentedSort
             cudaStream_t stream,
             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2230,6 +2219,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairsDescending(void *d_temp_storage,
                       std::size_t &temp_storage_bytes,
@@ -2242,8 +2232,6 @@ struct DeviceSegmentedSort
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairsDescending<KeyT,
                                ValueT,
                                BeginOffsetIteratorT,
@@ -2416,6 +2404,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortPairs(void *d_temp_storage,
                   std::size_t &temp_storage_bytes,
@@ -2430,8 +2419,6 @@ struct DeviceSegmentedSort
                   cudaStream_t stream,
                   bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2606,6 +2593,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortPairsDescending(void *d_temp_storage,
                             std::size_t &temp_storage_bytes,
@@ -2620,8 +2608,6 @@ struct DeviceSegmentedSort
                             cudaStream_t stream,
                             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortPairsDescending<KeyT,
                                      ValueT,
                                      BeginOffsetIteratorT,
@@ -2802,6 +2788,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortPairs(void *d_temp_storage,
                   std::size_t &temp_storage_bytes,
@@ -2814,8 +2801,6 @@ struct DeviceSegmentedSort
                   cudaStream_t stream,
                   bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2991,6 +2976,7 @@ struct DeviceSegmentedSort
             typename ValueT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortPairsDescending(void *d_temp_storage,
                             std::size_t &temp_storage_bytes,
@@ -3003,8 +2989,6 @@ struct DeviceSegmentedSort
                             cudaStream_t stream,
                             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return StableSortPairsDescending<KeyT,
                                      ValueT,
                                      BeginOffsetIteratorT,

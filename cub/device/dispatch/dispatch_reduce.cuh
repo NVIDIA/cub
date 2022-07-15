@@ -371,6 +371,7 @@ struct DispatchReduce :
         ptx_version(ptx_version)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchReduce(
         void*                   d_temp_storage,
@@ -393,9 +394,7 @@ struct DispatchReduce :
         init(init),
         stream(stream),
         ptx_version(ptx_version)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-    }
+    { }
 
 
     //------------------------------------------------------------------------------
@@ -654,6 +653,7 @@ struct DispatchReduce :
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -665,8 +665,6 @@ struct DispatchReduce :
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_in,
@@ -753,6 +751,7 @@ struct DispatchSegmentedReduce :
         ptx_version(ptx_version)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchSegmentedReduce(
         void*                   d_temp_storage,
@@ -779,9 +778,7 @@ struct DispatchSegmentedReduce :
         init(init),
         stream(stream),
         ptx_version(ptx_version)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-    }
+    {}
 
 
     //------------------------------------------------------------------------------
@@ -913,6 +910,7 @@ struct DispatchSegmentedReduce :
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -926,8 +924,6 @@ struct DispatchSegmentedReduce :
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return Dispatch(d_temp_storage,
                       &temp_storage_bytes,
                       d_in,

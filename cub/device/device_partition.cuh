@@ -213,6 +213,7 @@ struct DevicePartition
               typename FlagIterator,
               typename OutputIteratorT,
               typename NumSelectedIteratorT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Flagged(void *d_temp_storage,
             size_t &temp_storage_bytes,
@@ -224,8 +225,6 @@ struct DevicePartition
             cudaStream_t stream,
             bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return Flagged<InputIteratorT,
                      FlagIterator,
                      OutputIteratorT,
@@ -409,6 +408,7 @@ struct DevicePartition
               typename OutputIteratorT,
               typename NumSelectedIteratorT,
               typename SelectOp>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     If(void *d_temp_storage,
        size_t &temp_storage_bytes,
@@ -420,8 +420,6 @@ struct DevicePartition
        cudaStream_t stream,
        bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
         d_temp_storage,
         temp_storage_bytes,
@@ -668,6 +666,7 @@ struct DevicePartition
               typename NumSelectedIteratorT,
               typename SelectFirstPartOp,
               typename SelectSecondPartOp>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     If(void *d_temp_storage,
        std::size_t &temp_storage_bytes,
@@ -682,8 +681,6 @@ struct DevicePartition
        cudaStream_t stream,
        bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return If<InputIteratorT,
                 FirstOutputIteratorT,
                 SecondOutputIteratorT,

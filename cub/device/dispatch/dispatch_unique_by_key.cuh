@@ -209,6 +209,7 @@ struct DispatchUniqueByKey: SelectedPolicy
         stream(stream)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchUniqueByKey(
         void*                   d_temp_storage,     
@@ -233,9 +234,7 @@ struct DispatchUniqueByKey: SelectedPolicy
         equality_op(equality_op),
         num_items(num_items),
         stream(stream)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-    }
+    {}
 
 
     /******************************************************************************
@@ -453,6 +452,7 @@ struct DispatchUniqueByKey: SelectedPolicy
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                   d_temp_storage,         
@@ -467,8 +467,6 @@ struct DispatchUniqueByKey: SelectedPolicy
         cudaStream_t            stream,                
         bool                    /* debug_synchronous */)    
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys_in,

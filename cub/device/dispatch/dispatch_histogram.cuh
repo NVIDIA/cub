@@ -692,6 +692,7 @@ public:
               typename OutputDecodeOpT,
               typename DeviceHistogramInitKernelT,
               typename DeviceHistogramSweepKernelT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t PrivatizedDispatch(
       void *d_temp_storage,
       size_t &temp_storage_bytes,
@@ -711,8 +712,6 @@ public:
       cudaStream_t stream,
       bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(PrivatizedDecodeOpT);
-
       return PrivatizedDispatch<PrivatizedDecodeOpT,
                                 OutputDecodeOpT,
                                 DeviceHistogramInitKernelT,
@@ -836,6 +835,7 @@ public:
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION
     static cudaError_t
     DispatchRange(void *d_temp_storage,
@@ -851,8 +851,6 @@ public:
                   bool /* debug_synchronous */,
                   Int2Type<false> is_byte_sample)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
       return DispatchRange(d_temp_storage,
                            temp_storage_bytes,
                            d_samples,
@@ -941,6 +939,7 @@ public:
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION
     static cudaError_t
     DispatchRange(void *d_temp_storage,
@@ -956,8 +955,6 @@ public:
                   bool /* debug_synchronous */,
                   Int2Type<true> is_byte_sample)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
       return DispatchRange(d_temp_storage,
                            temp_storage_bytes,
                            d_samples,
@@ -1075,6 +1072,7 @@ public:
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
         void*               d_temp_storage,                         
@@ -1091,8 +1089,6 @@ public:
         bool                /* debug_synchronous */,                          
         Int2Type<false>     is_byte_sample)                    
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
       return DispatchEven(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,

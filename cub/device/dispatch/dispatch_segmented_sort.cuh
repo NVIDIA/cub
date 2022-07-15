@@ -1210,6 +1210,7 @@ struct DispatchSegmentedSort : SelectedPolicy
       , stream(stream)
   {}
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchSegmentedSort(void *d_temp_storage,
                         std::size_t &temp_storage_bytes,
@@ -1232,9 +1233,7 @@ struct DispatchSegmentedSort : SelectedPolicy
       , d_end_offsets(d_end_offsets)
       , is_overwrite_okay(is_overwrite_okay)
       , stream(stream)
-  {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-  }
+  {}
 
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
@@ -1526,6 +1525,7 @@ struct DispatchSegmentedSort : SelectedPolicy
     return error;
   }
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Dispatch(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -1539,8 +1539,6 @@ struct DispatchSegmentedSort : SelectedPolicy
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_keys,

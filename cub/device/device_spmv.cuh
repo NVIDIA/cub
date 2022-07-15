@@ -158,6 +158,7 @@ struct DeviceSpmv
     }
 
     template <typename ValueT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION static cudaError_t CsrMV(void *d_temp_storage,
                                                   size_t &temp_storage_bytes,
                                                   const ValueT *d_values,
@@ -171,8 +172,6 @@ struct DeviceSpmv
                                                   cudaStream_t stream,
                                                   bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ValueT);
-
       return CsrMV<ValueT>(d_temp_storage,
                            temp_storage_bytes,
                            d_values,

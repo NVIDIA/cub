@@ -203,6 +203,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   HistogramEven(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -215,8 +216,6 @@ struct DeviceHistogram
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return HistogramEven(d_temp_storage,
                          temp_storage_bytes,
                          d_samples,
@@ -381,6 +380,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   HistogramEven(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -395,8 +395,6 @@ struct DeviceHistogram
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return HistogramEven(d_temp_storage,
                          temp_storage_bytes,
                          d_samples,
@@ -575,6 +573,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   MultiHistogramEven(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -587,8 +586,6 @@ struct DeviceHistogram
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return MultiHistogramEven(d_temp_storage,
                               temp_storage_bytes,
                               d_samples,
@@ -818,6 +815,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   MultiHistogramEven(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -832,8 +830,6 @@ struct DeviceHistogram
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return MultiHistogramEven(d_temp_storage,
                               temp_storage_bytes,
                               d_samples,
@@ -985,6 +981,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   HistogramRange(void *d_temp_storage,
                  size_t &temp_storage_bytes,
@@ -996,8 +993,6 @@ struct DeviceHistogram
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return HistogramRange(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,
@@ -1157,6 +1152,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   HistogramRange(void *d_temp_storage,
                  size_t &temp_storage_bytes,
@@ -1170,8 +1166,6 @@ struct DeviceHistogram
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return HistogramRange(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,
@@ -1348,6 +1342,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   MultiHistogramRange(void *d_temp_storage,
                       size_t &temp_storage_bytes,
@@ -1359,8 +1354,6 @@ struct DeviceHistogram
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return MultiHistogramRange(d_temp_storage,
                                temp_storage_bytes,
                                d_samples,
@@ -1587,6 +1580,7 @@ struct DeviceHistogram
             typename CounterT,
             typename LevelT,
             typename OffsetT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   MultiHistogramRange(void *d_temp_storage,
                       size_t &temp_storage_bytes,
@@ -1600,8 +1594,6 @@ struct DeviceHistogram
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(SampleIteratorT);
-
     return MultiHistogramRange(d_temp_storage,
                                temp_storage_bytes,
                                d_samples,

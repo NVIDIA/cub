@@ -378,6 +378,7 @@ struct DispatchReduceByKey
     }
 
     template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -396,8 +397,6 @@ struct DispatchReduceByKey
              ReduceByKeyKernelT reduce_by_key_kernel,
              KernelConfig reduce_by_key_config)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ScanInitKernelT);
-
       return Dispatch<ScanInitKernelT, ReduceByKeyKernelT>(d_temp_storage,
                                                            temp_storage_bytes,
                                                            d_keys_in,
@@ -466,6 +465,7 @@ struct DispatchReduceByKey
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -480,8 +480,6 @@ struct DispatchReduceByKey
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys_in,

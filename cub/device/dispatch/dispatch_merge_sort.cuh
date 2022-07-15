@@ -509,6 +509,7 @@ struct DispatchMergeSort : SelectedPolicy
       , ptx_version(ptx_version)
   {}
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchMergeSort(void *d_temp_storage,
                     std::size_t &temp_storage_bytes,
@@ -531,9 +532,7 @@ struct DispatchMergeSort : SelectedPolicy
       , compare_op(compare_op)
       , stream(stream)
       , ptx_version(ptx_version)
-  {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-  }
+  {}
 
   // Invocation
   template <typename ActivePolicyT>
@@ -866,6 +865,7 @@ struct DispatchMergeSort : SelectedPolicy
     return error;
   }
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Dispatch(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -878,8 +878,6 @@ struct DispatchMergeSort : SelectedPolicy
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_input_keys,

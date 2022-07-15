@@ -105,7 +105,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   target_link_libraries(${test_target} ${cub_target})
   cub_clone_target_properties(${test_target} ${cub_target})
   target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
-  target_compile_definitions(${test_target} PRIVATE CUB_DEBUG_SYNC)
+  target_compile_definitions(${test_target} PRIVATE CUB_DEBUG_HOST_ASSERTIONS)
 
   # Add to the active configuration's meta target
   add_dependencies(${config_meta_target} ${test_target})

@@ -381,6 +381,7 @@ struct DispatchSelectIf
     }
 
     template <typename ScanInitKernelPtrT, typename SelectIfKernelPtrT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -398,8 +399,6 @@ struct DispatchSelectIf
              SelectIfKernelPtrT select_if_kernel,
              KernelConfig select_if_config)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ScanInitKernelPtrT);
-
       return Dispatch<ScanInitKernelPtrT, SelectIfKernelPtrT>(
         d_temp_storage,
         temp_storage_bytes,
@@ -466,6 +465,7 @@ struct DispatchSelectIf
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                       d_temp_storage,          
@@ -480,8 +480,6 @@ struct DispatchSelectIf
         cudaStream_t                stream,                
         bool                        /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_in,

@@ -217,6 +217,7 @@ struct DeviceSelect
             typename FlagIterator,
             typename OutputIteratorT,
             typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Flagged(void *d_temp_storage,
           size_t &temp_storage_bytes,
@@ -228,8 +229,6 @@ struct DeviceSelect
           cudaStream_t stream,
           bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Flagged<InputIteratorT,
                    FlagIterator,
                    OutputIteratorT,
@@ -370,6 +369,7 @@ struct DeviceSelect
   template <typename IteratorT,
             typename FlagIterator,
             typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Flagged(void *d_temp_storage,
           size_t &temp_storage_bytes,
@@ -380,8 +380,6 @@ struct DeviceSelect
           cudaStream_t stream,
           bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return Flagged<IteratorT, FlagIterator, NumSelectedIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -552,6 +550,7 @@ struct DeviceSelect
             typename OutputIteratorT,
             typename NumSelectedIteratorT,
             typename SelectOp>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   If(void *d_temp_storage,
      size_t &temp_storage_bytes,
@@ -563,8 +562,6 @@ struct DeviceSelect
      cudaStream_t stream,
      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
       d_temp_storage,
       temp_storage_bytes,
@@ -711,6 +708,7 @@ struct DeviceSelect
   template <typename IteratorT,
             typename NumSelectedIteratorT,
             typename SelectOp>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   If(void *d_temp_storage,
      size_t &temp_storage_bytes,
@@ -721,8 +719,6 @@ struct DeviceSelect
      cudaStream_t stream,
      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return If<IteratorT, NumSelectedIteratorT, SelectOp>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_data,
@@ -872,6 +868,7 @@ struct DeviceSelect
   template <typename InputIteratorT,
             typename OutputIteratorT,
             typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Unique(void *d_temp_storage,
          size_t &temp_storage_bytes,
@@ -882,8 +879,6 @@ struct DeviceSelect
          cudaStream_t stream,
          bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Unique<InputIteratorT, OutputIteratorT, NumSelectedIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1048,6 +1043,7 @@ struct DeviceSelect
             typename KeyOutputIteratorT,
             typename ValueOutputIteratorT,
             typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   UniqueByKey(void *d_temp_storage,
               size_t &temp_storage_bytes,
@@ -1060,8 +1056,6 @@ struct DeviceSelect
               cudaStream_t stream,
               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-
     return UniqueByKey<KeyInputIteratorT,
                        ValueInputIteratorT,
                        KeyOutputIteratorT,

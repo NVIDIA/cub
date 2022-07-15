@@ -269,6 +269,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairs(void *d_temp_storage,
             size_t &temp_storage_bytes,
@@ -282,8 +283,6 @@ struct DeviceRadixSort
             cudaStream_t stream,
             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairs<KeyT, ValueT, NumItemsT>(d_temp_storage,
                                               temp_storage_bytes,
                                               d_keys_in,
@@ -440,6 +439,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairs(void *d_temp_storage,
             size_t &temp_storage_bytes,
@@ -451,8 +451,6 @@ struct DeviceRadixSort
             cudaStream_t stream,
             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairs<KeyT, ValueT, NumItemsT>(d_temp_storage,
                                               temp_storage_bytes,
                                               d_keys,
@@ -606,6 +604,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairsDescending(void *d_temp_storage,
                       size_t &temp_storage_bytes,
@@ -619,8 +618,6 @@ struct DeviceRadixSort
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairsDescending<KeyT, ValueT, NumItemsT>(d_temp_storage,
                                                         temp_storage_bytes,
                                                         d_keys_in,
@@ -772,6 +769,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename ValueT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairsDescending(void *d_temp_storage,
                       size_t &temp_storage_bytes,
@@ -783,8 +781,6 @@ struct DeviceRadixSort
                       cudaStream_t stream,
                       bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortPairsDescending<KeyT, ValueT, NumItemsT>(d_temp_storage,
                                                         temp_storage_bytes,
                                                         d_keys,
@@ -934,6 +930,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            size_t &temp_storage_bytes,
@@ -945,8 +942,6 @@ struct DeviceRadixSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeys<KeyT, NumItemsT>(d_temp_storage,
                                      temp_storage_bytes,
                                      d_keys_in,
@@ -1086,6 +1081,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            size_t &temp_storage_bytes,
@@ -1096,8 +1092,6 @@ struct DeviceRadixSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeys<KeyT, NumItemsT>(d_temp_storage,
                                      temp_storage_bytes,
                                      d_keys,
@@ -1234,6 +1228,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysDescending(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -1245,8 +1240,6 @@ struct DeviceRadixSort
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeysDescending<KeyT, NumItemsT>(d_temp_storage,
                                                temp_storage_bytes,
                                                d_keys_in,
@@ -1381,6 +1374,7 @@ struct DeviceRadixSort
   }
 
   template <typename KeyT, typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysDescending(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -1391,8 +1385,6 @@ struct DeviceRadixSort
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
     return SortKeysDescending<KeyT, NumItemsT>(d_temp_storage,
                                                temp_storage_bytes,
                                                d_keys,

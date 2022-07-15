@@ -265,6 +265,7 @@ public:
             typename OutputIteratorT,
             typename DifferenceOpT,
             typename NumItemsT = std::uint32_t>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractLeftCopy(void *d_temp_storage,
                    std::size_t &temp_storage_bytes,
@@ -275,8 +276,6 @@ public:
                    cudaStream_t stream,
                    bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return SubtractLeftCopy(d_temp_storage,
                             temp_storage_bytes,
                             d_input,
@@ -399,6 +398,7 @@ public:
   template <typename RandomAccessIteratorT,
             typename DifferenceOpT,
             typename NumItemsT = std::uint32_t>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractLeft(void *d_temp_storage,
                std::size_t &temp_storage_bytes,
@@ -408,8 +408,6 @@ public:
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(RandomAccessIteratorT);
-
     return SubtractLeft(d_temp_storage,
                         temp_storage_bytes,
                         d_input,
@@ -547,6 +545,7 @@ public:
             typename OutputIteratorT,
             typename DifferenceOpT,
             typename NumItemsT = std::uint32_t>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractRightCopy(void *d_temp_storage,
                     std::size_t &temp_storage_bytes,
@@ -557,8 +556,6 @@ public:
                     cudaStream_t stream,
                     bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return SubtractRightCopy(d_temp_storage,
                              temp_storage_bytes,
                              d_input,
@@ -671,6 +668,7 @@ public:
   template <typename RandomAccessIteratorT,
             typename DifferenceOpT,
             typename NumItemsT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractRight(void *d_temp_storage,
                 std::size_t &temp_storage_bytes,
@@ -680,8 +678,6 @@ public:
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(RandomAccessIteratorT);
-
     return SubtractRight(d_temp_storage,
                          temp_storage_bytes,
                          d_input,

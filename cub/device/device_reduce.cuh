@@ -218,6 +218,7 @@ struct DeviceReduce
             typename OutputIteratorT,
             typename ReductionOpT,
             typename T>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t Reduce(void *d_temp_storage,
                                                  size_t &temp_storage_bytes,
                                                  InputIteratorT d_in,
@@ -228,8 +229,6 @@ struct DeviceReduce
                                                  cudaStream_t stream,
                                                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Reduce<InputIteratorT, OutputIteratorT, ReductionOpT, T>(
       d_temp_storage,
       temp_storage_bytes,
@@ -350,6 +349,7 @@ struct DeviceReduce
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t Sum(void *d_temp_storage,
                                               size_t &temp_storage_bytes,
                                               InputIteratorT d_in,
@@ -358,8 +358,6 @@ struct DeviceReduce
                                               cudaStream_t stream,
                                               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Sum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -470,6 +468,7 @@ struct DeviceReduce
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t Min(void *d_temp_storage,
                                               size_t &temp_storage_bytes,
                                               InputIteratorT d_in,
@@ -478,8 +477,6 @@ struct DeviceReduce
                                               cudaStream_t stream,
                                               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Min<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -617,6 +614,7 @@ struct DeviceReduce
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t ArgMin(void *d_temp_storage,
                                                  size_t &temp_storage_bytes,
                                                  InputIteratorT d_in,
@@ -625,8 +623,6 @@ struct DeviceReduce
                                                  cudaStream_t stream,
                                                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return ArgMin<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,
                                                    d_in,
@@ -738,6 +734,7 @@ struct DeviceReduce
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t Max(void *d_temp_storage,
                                               size_t &temp_storage_bytes,
                                               InputIteratorT d_in,
@@ -746,8 +743,6 @@ struct DeviceReduce
                                               cudaStream_t stream,
                                               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Max<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -888,6 +883,7 @@ struct DeviceReduce
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t ArgMax(void *d_temp_storage,
                                                  size_t &temp_storage_bytes,
                                                  InputIteratorT d_in,
@@ -896,8 +892,6 @@ struct DeviceReduce
                                                  cudaStream_t stream,
                                                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return ArgMax<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,
                                                    d_in,
@@ -1117,6 +1111,7 @@ struct DeviceReduce
             typename AggregatesOutputIteratorT,
             typename NumRunsOutputIteratorT,
             typename ReductionOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   ReduceByKey(void *d_temp_storage,
               size_t &temp_storage_bytes,
@@ -1130,8 +1125,6 @@ struct DeviceReduce
               cudaStream_t stream,
               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
     return ReduceByKey<KeysInputIteratorT,
                        UniqueOutputIteratorT,
                        ValuesInputIteratorT,

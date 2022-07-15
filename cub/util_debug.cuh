@@ -45,15 +45,60 @@
 
 CUB_NAMESPACE_BEGIN
 
+
+#ifdef DOXYGEN_SHOULD_SKIP_THIS // Only parse this during doxygen passes:
+
+/**
+ * @def CUB_DEBUG_LOG
+ *
+ * Causes kernel launch configurations to be printed to the console
+ */
+#define CUB_DEBUG_LOG
+
+/**
+ * @def CUB_DEBUG_SYNC
+ *
+ * Causes synchronization of the stream after every kernel launch to check 
+ * for errors. Also causes kernel launch configurations to be printed to the 
+ * console.
+ */
+#define CUB_DEBUG_SYNC
+
+/**
+ * @def CUB_DEBUG_HOST_ASSERTIONS
+ *
+ * Extends `CUB_DEBUG_SYNC` effects by checking host-side precondition 
+ * assertions.
+ */
+#define CUB_DEBUG_HOST_ASSERTIONS
+
+/**
+ * @def CUB_DEBUG_DEVICE_ASSERTIONS
+ *
+ * Extends `CUB_DEBUG_HOST_ASSERTIONS` effects by checking device-side 
+ * precondition assertions.
+ */
+#define CUB_DEBUG_DEVICE_ASSERTIONS
+
+/**
+ * @def CUB_DEBUG_ALL
+ *
+ * Causes host and device-side precondition assertions to be checked. Apart 
+ * from that, causes synchronization of the stream after every kernel launch to 
+ * check for errors. Also causes kernel launch configurations to be printed to 
+ * the console.
+ */
+#define CUB_DEBUG_ALL
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS 
+
 /**
  * \addtogroup UtilMgmt
  * @{
  */
 
 
-/**
- * `CUB_DETAIL_DEBUG_LEVEL_*`: Implementation details, internal use only:
- */
+// `CUB_DETAIL_DEBUG_LEVEL_*`: Implementation details, internal use only:
 
 #define CUB_DETAIL_DEBUG_LEVEL_NONE 0
 #define CUB_DETAIL_DEBUG_LEVEL_HOST_ASSERTIONS_ONLY 1
@@ -61,12 +106,9 @@ CUB_NAMESPACE_BEGIN
 #define CUB_DETAIL_DEBUG_LEVEL_SYNC 3
 #define CUB_DETAIL_DEBUG_LEVEL_HOST_ASSERTIONS 4
 #define CUB_DETAIL_DEBUG_LEVEL_DEVICE_ASSERTIONS 5
+#define CUB_DETAIL_DEBUG_LEVEL_ALL 1000
 
-// TODO Implement _ALL version that turns on everything
-
-/*
- * `CUB_DEBUG_*`: User interfaces:
- */
+// `CUB_DEBUG_*`: User interfaces:
 
 // Extra logging, no syncs
 #ifdef CUB_DEBUG_LOG
@@ -86,6 +128,11 @@ CUB_NAMESPACE_BEGIN
 // Logging + syncs + host assertions + device assertions
 #ifdef CUB_DEBUG_DEVICE_ASSERTIONS
 #define CUB_DETAIL_DEBUG_LEVEL CUB_DETAIL_DEBUG_LEVEL_DEVICE_ASSERTIONS
+#endif
+
+// All
+#ifdef CUB_DEBUG_ALL
+#define CUB_DETAIL_DEBUG_LEVEL CUB_DETAIL_DEBUG_LEVEL_ALL 
 #endif
 
 // Default case, no extra debugging:

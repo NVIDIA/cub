@@ -442,6 +442,7 @@ struct DispatchThreeWayPartitionIf
 
   template <typename ScanInitKernelPtrT,
             typename SelectIfKernelPtrT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
   Dispatch(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -460,8 +461,6 @@ struct DispatchThreeWayPartitionIf
            SelectIfKernelPtrT three_way_partition_kernel,
            KernelConfig three_way_partition_config)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ScanInitKernelPtrT);
-
     return Dispatch<ScanInitKernelPtrT, SelectIfKernelPtrT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -548,6 +547,7 @@ struct DispatchThreeWayPartitionIf
     return error;
   }
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__
   static cudaError_t Dispatch(
     void*                       d_temp_storage,
@@ -563,8 +563,6 @@ struct DispatchThreeWayPartitionIf
     cudaStream_t                stream,
     bool                        /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_in,

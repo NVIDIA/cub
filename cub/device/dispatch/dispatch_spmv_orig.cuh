@@ -718,6 +718,7 @@ struct DispatchSpmv
               typename SpmvSearchKernelT,
               typename SpmvKernelT,
               typename SegmentFixupKernelT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -731,8 +732,6 @@ struct DispatchSpmv
              KernelConfig spmv_config,
              KernelConfig segment_fixup_config)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ValueT);
-
       return Dispatch<Spmv1ColKernelT,
                       SpmvSearchKernelT,
                       SpmvKernelT,
@@ -783,6 +782,7 @@ struct DispatchSpmv
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -790,8 +790,6 @@ struct DispatchSpmv
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(ValueT);
-
       return Dispatch(d_temp_storage, temp_storage_bytes, spmv_params, stream);
     }
 };

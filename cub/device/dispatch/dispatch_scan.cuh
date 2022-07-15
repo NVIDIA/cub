@@ -270,6 +270,7 @@ struct DispatchScan:
         ptx_version(ptx_version)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchScan(void *d_temp_storage,
                  size_t &temp_storage_bytes,
@@ -290,9 +291,7 @@ struct DispatchScan:
         , num_items(num_items)
         , stream(stream)
         , ptx_version(ptx_version)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-    }
+    { }
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
@@ -475,6 +474,7 @@ struct DispatchScan:
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -486,8 +486,6 @@ struct DispatchScan:
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_in,

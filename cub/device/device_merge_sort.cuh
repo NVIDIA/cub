@@ -232,6 +232,7 @@ struct DeviceMergeSort
             typename ValueIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairs(void *d_temp_storage,
             std::size_t &temp_storage_bytes,
@@ -242,8 +243,6 @@ struct DeviceMergeSort
             cudaStream_t stream,
             bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
-
     return SortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -406,6 +405,7 @@ struct DeviceMergeSort
             typename ValueIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortPairsCopy(void *d_temp_storage,
                 std::size_t &temp_storage_bytes,
@@ -418,8 +418,6 @@ struct DeviceMergeSort
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-
     return SortPairsCopy<KeyInputIteratorT,
                          ValueInputIteratorT,
                          KeyIteratorT,
@@ -551,6 +549,7 @@ struct DeviceMergeSort
   template <typename KeyIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
@@ -560,8 +559,6 @@ struct DeviceMergeSort
            cudaStream_t stream,
            bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
-
     return SortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
                                                        temp_storage_bytes,
                                                        d_keys,
@@ -701,6 +698,7 @@ struct DeviceMergeSort
             typename KeyIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysCopy(void *d_temp_storage,
                std::size_t &temp_storage_bytes,
@@ -711,8 +709,6 @@ struct DeviceMergeSort
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyInputIteratorT);
-
     return SortKeysCopy<KeyInputIteratorT, KeyIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -842,6 +838,7 @@ struct DeviceMergeSort
             typename ValueIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortPairs(void *d_temp_storage,
                   std::size_t &temp_storage_bytes,
@@ -852,8 +849,6 @@ struct DeviceMergeSort
                   cudaStream_t stream,
                   bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
-
     return StableSortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -970,6 +965,7 @@ struct DeviceMergeSort
   template <typename KeyIteratorT,
             typename OffsetT,
             typename CompareOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeys(void *d_temp_storage,
                  std::size_t &temp_storage_bytes,
@@ -979,8 +975,6 @@ struct DeviceMergeSort
                  cudaStream_t stream,
                  bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyIteratorT);
-
     return StableSortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
                                                              temp_storage_bytes,
                                                              d_keys,

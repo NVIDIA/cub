@@ -378,6 +378,7 @@ struct DeviceRleDispatch
 
 
     template <typename DeviceScanInitKernelPtr, typename DeviceRleSweepKernelPtr>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -394,8 +395,6 @@ struct DeviceRleDispatch
              DeviceRleSweepKernelPtr device_rle_sweep_kernel,
              KernelConfig device_rle_config)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(DeviceScanInitKernelPtr);
-
       return Dispatch<DeviceScanInitKernelPtr, DeviceRleSweepKernelPtr>(
         d_temp_storage,
         temp_storage_bytes,

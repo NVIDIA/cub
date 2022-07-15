@@ -209,6 +209,7 @@ struct DeviceScan
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveSum(void *d_temp_storage,
                size_t &temp_storage_bytes,
@@ -218,8 +219,6 @@ struct DeviceScan
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return ExclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_in,
@@ -320,6 +319,7 @@ struct DeviceScan
   }
 
   template <typename IteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveSum(void *d_temp_storage,
                size_t &temp_storage_bytes,
@@ -328,8 +328,6 @@ struct DeviceScan
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return ExclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
@@ -481,6 +479,7 @@ struct DeviceScan
             typename OutputIteratorT,
             typename ScanOpT,
             typename InitValueT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -492,8 +491,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return ExclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT, InitValueT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -626,6 +623,7 @@ struct DeviceScan
   template <typename IteratorT,
             typename ScanOpT,
             typename InitValueT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -636,8 +634,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return ExclusiveScan<IteratorT, ScanOpT, InitValueT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_data,
@@ -797,6 +793,7 @@ struct DeviceScan
             typename ScanOpT,
             typename InitValueT,
             typename InitValueIterT = InitValueT *>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -808,8 +805,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return ExclusiveScan<InputIteratorT,
                          OutputIteratorT,
                          ScanOpT,
@@ -952,6 +947,7 @@ struct DeviceScan
             typename ScanOpT,
             typename InitValueT,
             typename InitValueIterT = InitValueT *>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -962,8 +958,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return ExclusiveScan<IteratorT, ScanOpT, InitValueT, InitValueIterT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1088,6 +1082,7 @@ struct DeviceScan
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveSum(void *d_temp_storage,
                size_t &temp_storage_bytes,
@@ -1097,8 +1092,6 @@ struct DeviceScan
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return InclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_in,
@@ -1193,6 +1186,7 @@ struct DeviceScan
   }
 
   template <typename IteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveSum(void *d_temp_storage,
                size_t &temp_storage_bytes,
@@ -1201,8 +1195,6 @@ struct DeviceScan
                cudaStream_t stream,
                bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return InclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
@@ -1339,6 +1331,7 @@ struct DeviceScan
   }
 
   template <typename InputIteratorT, typename OutputIteratorT, typename ScanOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -1349,8 +1342,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return InclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1469,6 +1460,7 @@ struct DeviceScan
   }
 
   template <typename IteratorT, typename ScanOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveScan(void *d_temp_storage,
                 size_t &temp_storage_bytes,
@@ -1478,8 +1470,6 @@ struct DeviceScan
                 cudaStream_t stream,
                 bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(IteratorT);
-
     return InclusiveScan<IteratorT, ScanOpT>(d_temp_storage,
                                              temp_storage_bytes,
                                              d_data,
@@ -1636,6 +1626,7 @@ struct DeviceScan
             typename ValuesInputIteratorT,
             typename ValuesOutputIteratorT,
             typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveSumByKey(void *d_temp_storage,
                     size_t &temp_storage_bytes,
@@ -1647,8 +1638,6 @@ struct DeviceScan
                     cudaStream_t stream,
                     bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
     return ExclusiveSumByKey<KeysInputIteratorT,
                              ValuesInputIteratorT,
                              ValuesOutputIteratorT,
@@ -1851,6 +1840,7 @@ struct DeviceScan
             typename ScanOpT,
             typename InitValueT,
             typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   ExclusiveScanByKey(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -1864,8 +1854,6 @@ struct DeviceScan
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
     return ExclusiveScanByKey<KeysInputIteratorT,
                               ValuesInputIteratorT,
                               ValuesOutputIteratorT,
@@ -2022,6 +2010,7 @@ struct DeviceScan
             typename ValuesInputIteratorT,
             typename ValuesOutputIteratorT,
             typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveSumByKey(void *d_temp_storage,
                     size_t &temp_storage_bytes,
@@ -2033,8 +2022,6 @@ struct DeviceScan
                     cudaStream_t stream,
                     bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
     return InclusiveSumByKey<KeysInputIteratorT,
                              ValuesInputIteratorT,
                              ValuesOutputIteratorT,
@@ -2221,6 +2208,7 @@ struct DeviceScan
             typename ValuesOutputIteratorT,
             typename ScanOpT,
             typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
   InclusiveScanByKey(void *d_temp_storage,
                      size_t &temp_storage_bytes,
@@ -2233,8 +2221,6 @@ struct DeviceScan
                      cudaStream_t stream,
                      bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeysInputIteratorT);
-
     return InclusiveScanByKey<KeysInputIteratorT,
                               ValuesInputIteratorT,
                               ValuesOutputIteratorT,

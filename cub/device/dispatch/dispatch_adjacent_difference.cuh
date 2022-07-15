@@ -177,6 +177,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
       , stream(stream)
   {}
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_DEPRECATED CUB_RUNTIME_FUNCTION __forceinline__
   DispatchAdjacentDifference(void *d_temp_storage,
                              std::size_t &temp_storage_bytes,
@@ -193,9 +194,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
       , num_items(num_items)
       , difference_op(difference_op)
       , stream(stream)
-  {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-  }
+  { }
 
   /// Invocation
   template <typename ActivePolicyT>
@@ -375,7 +374,8 @@ struct DispatchAdjacentDifference : public SelectedPolicy
     return error;
   }
 
-  CUB_DEPRECATED CUB_RUNTIME_FUNCTION
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION
   static cudaError_t Dispatch(void *d_temp_storage,
                               std::size_t &temp_storage_bytes,
                               InputIteratorT d_input,
@@ -385,8 +385,6 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                               cudaStream_t stream,
                               bool /* debug_synchronous */)
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(InputIteratorT);
-
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_input,

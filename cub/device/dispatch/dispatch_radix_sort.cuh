@@ -1029,6 +1029,7 @@ struct DispatchRadixSort :
         is_overwrite_okay(is_overwrite_okay)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchRadixSort(
         void*                   d_temp_storage,
@@ -1053,9 +1054,7 @@ struct DispatchRadixSort :
         stream(stream),
         ptx_version(ptx_version),
         is_overwrite_okay(is_overwrite_okay)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-    }
+    {}
 
 
     //------------------------------------------------------------------------------
@@ -1746,6 +1745,7 @@ struct DispatchRadixSort :
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -1758,8 +1758,6 @@ struct DispatchRadixSort :
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys,
@@ -1855,6 +1853,7 @@ struct DispatchSegmentedRadixSort :
         ptx_version(ptx_version)
     {}
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchSegmentedRadixSort(
         void*                   d_temp_storage,
@@ -1885,9 +1884,7 @@ struct DispatchSegmentedRadixSort :
         is_overwrite_okay(is_overwrite_okay),
         stream(stream),
         ptx_version(ptx_version)
-    {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-    }
+    { }
 
 
     //------------------------------------------------------------------------------
@@ -2142,6 +2139,7 @@ struct DispatchSegmentedRadixSort :
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
              size_t &temp_storage_bytes,
@@ -2157,8 +2155,6 @@ struct DispatchSegmentedRadixSort :
              cudaStream_t stream,
              bool /* debug_synchronous */)
     {
-      CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED(KeyT);
-
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys,

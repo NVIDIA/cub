@@ -531,15 +531,16 @@ namespace detail
  */
 CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream)
 {
+#ifndef CUB_DETAIL_DEBUG_ENABLE_SYNC
   (void)stream;
 
-#ifndef CUB_DETAIL_DEBUG_ENABLE_SYNC
   return cudaSuccess;
 #else
 #if 1 // All valid targets currently support device-side synchronization
   _CubLog("%s\n", "Synchronizing...");
   return SyncStream(stream);
 #else
+  (void)stream;
   _CubLog("%s\n",
           "WARNING: Skipping CUB `debug_synchronous` synchronization "
           "(unsupported target).");
