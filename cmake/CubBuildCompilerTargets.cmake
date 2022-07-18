@@ -79,6 +79,7 @@ function(cub_build_compiler_targets)
     # * NVC++ accepts CUDA C++ in .cpp files but not .cu files.
     # TODO: This won't be necessary in the future.
     list(APPEND cxx_compile_options -cppsuffix=cu)
+    list(APPEND cxx_compile_options -gpu=nomanaged)
   endif()
 
   add_library(cub.compiler_interface INTERFACE)
