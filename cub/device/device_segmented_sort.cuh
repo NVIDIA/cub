@@ -36,8 +36,8 @@
 
 #include <cub/config.cuh>
 #include <cub/device/dispatch/dispatch_segmented_sort.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_namespace.cuh>
-
 
 CUB_NAMESPACE_BEGIN
 
@@ -219,11 +219,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -237,8 +232,7 @@ struct DeviceSegmentedSort
            int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
-           cudaStream_t stream    = 0,
-           bool debug_synchronous = false)
+           cudaStream_t stream = 0)
   {
     constexpr bool is_descending = false;
     constexpr bool is_overwrite_okay = false;
@@ -261,8 +255,37 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           const KeyT *d_keys_in,
+           KeyT *d_keys_out,
+           int num_items,
+           int num_segments,
+           BeginOffsetIteratorT d_begin_offsets,
+           EndOffsetIteratorT d_end_offsets,
+           cudaStream_t stream,
+           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys_in,
+      d_keys_out,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -367,11 +390,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -385,8 +403,7 @@ struct DeviceSegmentedSort
                      int num_segments,
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
-                     cudaStream_t stream    = 0,
-                     bool debug_synchronous = false)
+                     cudaStream_t stream = 0)
   {
     constexpr bool is_descending = true;
     constexpr bool is_overwrite_okay = false;
@@ -409,8 +426,37 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeysDescending(void *d_temp_storage,
+                     std::size_t &temp_storage_bytes,
+                     const KeyT *d_keys_in,
+                     KeyT *d_keys_out,
+                     int num_items,
+                     int num_segments,
+                     BeginOffsetIteratorT d_begin_offsets,
+                     EndOffsetIteratorT d_end_offsets,
+                     cudaStream_t stream,
+                     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys_in,
+      d_keys_out,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -525,11 +571,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -542,8 +583,7 @@ struct DeviceSegmentedSort
            int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
-           cudaStream_t stream    = 0,
-           bool debug_synchronous = false)
+           cudaStream_t stream = 0)
   {
     constexpr bool is_descending     = false;
     constexpr bool is_overwrite_okay = true;
@@ -566,8 +606,35 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           DoubleBuffer<KeyT> &d_keys,
+           int num_items,
+           int num_segments,
+           BeginOffsetIteratorT d_begin_offsets,
+           EndOffsetIteratorT d_end_offsets,
+           cudaStream_t stream,
+           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -682,11 +749,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -699,8 +761,7 @@ struct DeviceSegmentedSort
                      int num_segments,
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
-                     cudaStream_t stream    = 0,
-                     bool debug_synchronous = false)
+                     cudaStream_t stream = 0)
   {
     constexpr bool is_descending = true;
     constexpr bool is_overwrite_okay = true;
@@ -723,8 +784,35 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeysDescending(void *d_temp_storage,
+                     std::size_t &temp_storage_bytes,
+                     DoubleBuffer<KeyT> &d_keys,
+                     int num_items,
+                     int num_segments,
+                     BeginOffsetIteratorT d_begin_offsets,
+                     EndOffsetIteratorT d_end_offsets,
+                     cudaStream_t stream,
+                     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -830,11 +918,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -848,8 +931,7 @@ struct DeviceSegmentedSort
                  int num_segments,
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
-                 cudaStream_t stream    = 0,
-                 bool debug_synchronous = false)
+                 cudaStream_t stream = 0)
   {
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
@@ -860,8 +942,37 @@ struct DeviceSegmentedSort
       num_segments,
       d_begin_offsets,
       d_end_offsets,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeys(void *d_temp_storage,
+                 std::size_t &temp_storage_bytes,
+                 const KeyT *d_keys_in,
+                 KeyT *d_keys_out,
+                 int num_items,
+                 int num_segments,
+                 BeginOffsetIteratorT d_begin_offsets,
+                 EndOffsetIteratorT d_end_offsets,
+                 cudaStream_t stream,
+                 bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys_in,
+      d_keys_out,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -967,11 +1078,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -985,8 +1091,7 @@ struct DeviceSegmentedSort
                            int num_segments,
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
-                           cudaStream_t stream    = 0,
-                           bool debug_synchronous = false)
+                           cudaStream_t stream = 0)
   {
     return SortKeysDescending<KeyT,
                               BeginOffsetIteratorT,
@@ -998,8 +1103,38 @@ struct DeviceSegmentedSort
                                                   num_segments,
                                                   d_begin_offsets,
                                                   d_end_offsets,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeysDescending(void *d_temp_storage,
+                           std::size_t &temp_storage_bytes,
+                           const KeyT *d_keys_in,
+                           KeyT *d_keys_out,
+                           int num_items,
+                           int num_segments,
+                           BeginOffsetIteratorT d_begin_offsets,
+                           EndOffsetIteratorT d_end_offsets,
+                           cudaStream_t stream,
+                           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortKeysDescending<KeyT,
+                                    BeginOffsetIteratorT,
+                                    EndOffsetIteratorT>(d_temp_storage,
+                                                        temp_storage_bytes,
+                                                        d_keys_in,
+                                                        d_keys_out,
+                                                        num_items,
+                                                        num_segments,
+                                                        d_begin_offsets,
+                                                        d_end_offsets,
+                                                        stream);
   }
 
   /**
@@ -1115,11 +1250,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -1132,8 +1262,7 @@ struct DeviceSegmentedSort
                  int num_segments,
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
-                 cudaStream_t stream    = 0,
-                 bool debug_synchronous = false)
+                 cudaStream_t stream = 0)
   {
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
@@ -1143,8 +1272,35 @@ struct DeviceSegmentedSort
       num_segments,
       d_begin_offsets,
       d_end_offsets,
-      stream,
-      debug_synchronous);
+      stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeys(void *d_temp_storage,
+                 std::size_t &temp_storage_bytes,
+                 DoubleBuffer<KeyT> &d_keys,
+                 int num_items,
+                 int num_segments,
+                 BeginOffsetIteratorT d_begin_offsets,
+                 EndOffsetIteratorT d_end_offsets,
+                 cudaStream_t stream,
+                 bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -1260,11 +1416,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename BeginOffsetIteratorT,
@@ -1277,8 +1428,7 @@ struct DeviceSegmentedSort
                            int num_segments,
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
-                           cudaStream_t stream    = 0,
-                           bool debug_synchronous = false)
+                           cudaStream_t stream = 0)
   {
     return SortKeysDescending<KeyT,
                               BeginOffsetIteratorT,
@@ -1289,8 +1439,36 @@ struct DeviceSegmentedSort
                                                   num_segments,
                                                   d_begin_offsets,
                                                   d_end_offsets,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeyT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeysDescending(void *d_temp_storage,
+                           std::size_t &temp_storage_bytes,
+                           DoubleBuffer<KeyT> &d_keys,
+                           int num_items,
+                           int num_segments,
+                           BeginOffsetIteratorT d_begin_offsets,
+                           EndOffsetIteratorT d_end_offsets,
+                           cudaStream_t stream,
+                           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortKeysDescending<KeyT,
+                                    BeginOffsetIteratorT,
+                                    EndOffsetIteratorT>(d_temp_storage,
+                                                        temp_storage_bytes,
+                                                        d_keys,
+                                                        num_items,
+                                                        num_segments,
+                                                        d_begin_offsets,
+                                                        d_end_offsets,
+                                                        stream);
   }
 
   //@}  end member group
@@ -1420,11 +1598,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1441,8 +1614,7 @@ struct DeviceSegmentedSort
            int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
-           cudaStream_t stream = 0,
-           bool debug_synchronous = false)
+           cudaStream_t stream = 0)
   {
     constexpr bool is_descending = false;
     constexpr bool is_overwrite_okay = false;
@@ -1465,8 +1637,42 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairs(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           const KeyT *d_keys_in,
+           KeyT *d_keys_out,
+           const ValueT *d_values_in,
+           ValueT *d_values_out,
+           int num_items,
+           int num_segments,
+           BeginOffsetIteratorT d_begin_offsets,
+           EndOffsetIteratorT d_end_offsets,
+           cudaStream_t stream,
+           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys_in,
+      d_keys_out,
+      d_values_in,
+      d_values_out,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -1589,11 +1795,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1610,8 +1811,7 @@ struct DeviceSegmentedSort
                       int num_segments,
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
-                      cudaStream_t stream    = 0,
-                      bool debug_synchronous = false)
+                      cudaStream_t stream = 0)
   {
     constexpr bool is_descending = true;
     constexpr bool is_overwrite_okay = false;
@@ -1634,8 +1834,44 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairsDescending(void *d_temp_storage,
+                      std::size_t &temp_storage_bytes,
+                      const KeyT *d_keys_in,
+                      KeyT *d_keys_out,
+                      const ValueT *d_values_in,
+                      ValueT *d_values_out,
+                      int num_items,
+                      int num_segments,
+                      BeginOffsetIteratorT d_begin_offsets,
+                      EndOffsetIteratorT d_end_offsets,
+                      cudaStream_t stream,
+                      bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortPairsDescending<KeyT,
+                               ValueT,
+                               BeginOffsetIteratorT,
+                               EndOffsetIteratorT>(d_temp_storage,
+                                                   temp_storage_bytes,
+                                                   d_keys_in,
+                                                   d_keys_out,
+                                                   d_values_in,
+                                                   d_values_out,
+                                                   num_items,
+                                                   num_segments,
+                                                   d_begin_offsets,
+                                                   d_end_offsets,
+                                                   stream);
   }
 
   /**
@@ -1767,11 +2003,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations
-   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1786,8 +2017,7 @@ struct DeviceSegmentedSort
             int num_segments,
             BeginOffsetIteratorT d_begin_offsets,
             EndOffsetIteratorT d_end_offsets,
-            cudaStream_t stream    = 0,
-            bool debug_synchronous = false)
+            cudaStream_t stream = 0)
   {
     constexpr bool is_descending = false;
     constexpr bool is_overwrite_okay = true;
@@ -1807,8 +2037,38 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairs(void *d_temp_storage,
+            std::size_t &temp_storage_bytes,
+            DoubleBuffer<KeyT> &d_keys,
+            DoubleBuffer<ValueT> &d_values,
+            int num_items,
+            int num_segments,
+            BeginOffsetIteratorT d_begin_offsets,
+            EndOffsetIteratorT d_end_offsets,
+            cudaStream_t stream,
+            bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      d_values,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -1940,11 +2200,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1959,8 +2214,7 @@ struct DeviceSegmentedSort
                       int num_segments,
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
-                      cudaStream_t stream    = 0,
-                      bool debug_synchronous = false)
+                      cudaStream_t stream = 0)
   {
     constexpr bool is_descending = true;
     constexpr bool is_overwrite_okay = true;
@@ -1980,8 +2234,40 @@ struct DeviceSegmentedSort
                                d_begin_offsets,
                                d_end_offsets,
                                is_overwrite_okay,
-                               stream,
-                               debug_synchronous);
+                               stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortPairsDescending(void *d_temp_storage,
+                      std::size_t &temp_storage_bytes,
+                      DoubleBuffer<KeyT> &d_keys,
+                      DoubleBuffer<ValueT> &d_values,
+                      int num_items,
+                      int num_segments,
+                      BeginOffsetIteratorT d_begin_offsets,
+                      EndOffsetIteratorT d_end_offsets,
+                      cudaStream_t stream,
+                      bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return SortPairsDescending<KeyT,
+                               ValueT,
+                               BeginOffsetIteratorT,
+                               EndOffsetIteratorT>(d_temp_storage,
+                                                   temp_storage_bytes,
+                                                   d_keys,
+                                                   d_values,
+                                                   num_items,
+                                                   num_segments,
+                                                   d_begin_offsets,
+                                                   d_end_offsets,
+                                                   stream);
   }
 
   /**
@@ -2104,11 +2390,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -2125,8 +2406,7 @@ struct DeviceSegmentedSort
                   int num_segments,
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
-                  cudaStream_t stream    = 0,
-                  bool debug_synchronous = false)
+                  cudaStream_t stream = 0)
   {
     return SortPairs<KeyT,
                      ValueT,
@@ -2141,8 +2421,42 @@ struct DeviceSegmentedSort
                                          num_segments,
                                          d_begin_offsets,
                                          d_end_offsets,
-                                         stream,
-                                         debug_synchronous);
+                                         stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortPairs(void *d_temp_storage,
+                  std::size_t &temp_storage_bytes,
+                  const KeyT *d_keys_in,
+                  KeyT *d_keys_out,
+                  const ValueT *d_values_in,
+                  ValueT *d_values_out,
+                  int num_items,
+                  int num_segments,
+                  BeginOffsetIteratorT d_begin_offsets,
+                  EndOffsetIteratorT d_end_offsets,
+                  cudaStream_t stream,
+                  bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys_in,
+      d_keys_out,
+      d_values_in,
+      d_values_out,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -2267,11 +2581,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -2288,8 +2597,7 @@ struct DeviceSegmentedSort
                             int num_segments,
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
-                            cudaStream_t stream    = 0,
-                            bool debug_synchronous = false)
+                            cudaStream_t stream = 0)
   {
     return SortPairsDescending<KeyT,
                                ValueT,
@@ -2304,8 +2612,44 @@ struct DeviceSegmentedSort
                                                    num_segments,
                                                    d_begin_offsets,
                                                    d_end_offsets,
-                                                   stream,
-                                                   debug_synchronous);
+                                                   stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortPairsDescending(void *d_temp_storage,
+                            std::size_t &temp_storage_bytes,
+                            const KeyT *d_keys_in,
+                            KeyT *d_keys_out,
+                            const ValueT *d_values_in,
+                            ValueT *d_values_out,
+                            int num_items,
+                            int num_segments,
+                            BeginOffsetIteratorT d_begin_offsets,
+                            EndOffsetIteratorT d_end_offsets,
+                            cudaStream_t stream,
+                            bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortPairsDescending<KeyT,
+                                     ValueT,
+                                     BeginOffsetIteratorT,
+                                     EndOffsetIteratorT>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_keys_in,
+                                                         d_keys_out,
+                                                         d_values_in,
+                                                         d_values_out,
+                                                         num_items,
+                                                         num_segments,
+                                                         d_begin_offsets,
+                                                         d_end_offsets,
+                                                         stream);
   }
 
   /**
@@ -2438,11 +2782,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -2457,8 +2796,7 @@ struct DeviceSegmentedSort
                   int num_segments,
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
-                  cudaStream_t stream    = 0,
-                  bool debug_synchronous = false)
+                  cudaStream_t stream = 0)
   {
     return SortPairs<KeyT,
                      ValueT,
@@ -2471,8 +2809,38 @@ struct DeviceSegmentedSort
                                          num_segments,
                                          d_begin_offsets,
                                          d_end_offsets,
-                                         stream,
-                                         debug_synchronous);
+                                         stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortPairs(void *d_temp_storage,
+                  std::size_t &temp_storage_bytes,
+                  DoubleBuffer<KeyT> &d_keys,
+                  DoubleBuffer<ValueT> &d_values,
+                  int num_items,
+                  int num_segments,
+                  BeginOffsetIteratorT d_begin_offsets,
+                  EndOffsetIteratorT d_end_offsets,
+                  cudaStream_t stream,
+                  bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      d_values,
+      num_items,
+      num_segments,
+      d_begin_offsets,
+      d_end_offsets,
+      stream);
   }
 
   /**
@@ -2604,11 +2972,6 @@ struct DeviceSegmentedSort
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
    *   stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous
-   *   <b>[optional]</b> Whether or not to synchronize the stream after every
-   *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -2623,8 +2986,7 @@ struct DeviceSegmentedSort
                             int num_segments,
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
-                            cudaStream_t stream    = 0,
-                            bool debug_synchronous = false)
+                            cudaStream_t stream = 0)
   {
     return SortPairsDescending<KeyT,
                                ValueT,
@@ -2637,8 +2999,40 @@ struct DeviceSegmentedSort
                                                    num_segments,
                                                    d_begin_offsets,
                                                    d_end_offsets,
-                                                   stream,
-                                                   debug_synchronous);
+                                                   stream);
+  }
+
+  template <typename KeyT,
+            typename ValueT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortPairsDescending(void *d_temp_storage,
+                            std::size_t &temp_storage_bytes,
+                            DoubleBuffer<KeyT> &d_keys,
+                            DoubleBuffer<ValueT> &d_values,
+                            int num_items,
+                            int num_segments,
+                            BeginOffsetIteratorT d_begin_offsets,
+                            EndOffsetIteratorT d_end_offsets,
+                            cudaStream_t stream,
+                            bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return StableSortPairsDescending<KeyT,
+                                     ValueT,
+                                     BeginOffsetIteratorT,
+                                     EndOffsetIteratorT>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_keys,
+                                                         d_values,
+                                                         num_items,
+                                                         num_segments,
+                                                         d_begin_offsets,
+                                                         d_end_offsets,
+                                                         stream);
   }
 
   //@}  end member group

@@ -114,14 +114,12 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   select_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream, debug_synchronous);
+        error = DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
     }
     return error;
 }
@@ -147,14 +145,12 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   select_op)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream, debug_synchronous);
+        error = DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
     }
     return error;
 }
@@ -180,14 +176,12 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   /*select_op*/,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   /*select_op*/)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, stream, debug_synchronous);
+        error = DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
     }
     return error;
 }
@@ -213,14 +207,12 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   /*select_op*/,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   /*select_op*/)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, stream, debug_synchronous);
+        error = DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
     }
     return error;
 }
@@ -257,8 +249,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                                   OutputIteratorT      d_out,
                                   NumSelectedIteratorT d_num_selected_out,
                                   OffsetT              num_items,
-                                  SelectOpT            select_op,
-                                  bool                 debug_synchronous)
+                                  SelectOpT            select_op)
 {
   *d_cdp_error = Dispatch(cub_backend,
                           is_flagged,
@@ -273,9 +264,7 @@ __global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
                           d_out,
                           d_num_selected_out,
                           num_items,
-                          select_op,
-                          0,
-                          debug_synchronous);
+                          select_op);
 
   *d_temp_storage_bytes = temp_storage_bytes;
 }
@@ -305,13 +294,11 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
                      OutputIteratorT      d_out,
                      NumSelectedIteratorT d_num_selected_out,
                      OffsetT              num_items,
-                     SelectOpT            select_op,
-                     cudaStream_t         stream,
-                     bool                 debug_synchronous)
+                     SelectOpT            select_op)
 {
   // Invoke kernel to invoke device-side dispatch
   cudaError_t retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<CUB,
                               IsFlaggedTag,
                               IsPartitionTag,
@@ -334,8 +321,7 @@ cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
             d_out,
             d_num_selected_out,
             num_items,
-            select_op,
-            debug_synchronous);
+            select_op);
   CubDebugExit(retval);
 
   // Copy out temp_storage_bytes
@@ -457,7 +443,7 @@ void Test(
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<IS_FLAGGED>(), Int2Type<IS_PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
-    d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op, 0, true));
+    d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Copy flags and clear device output array
@@ -467,7 +453,7 @@ void Test(
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<IS_FLAGGED>(), Int2Type<IS_PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op, 0, true));
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op));
 
     // Check for correctness (and display results, if specified)
     int compare1 = (IS_PARTITION) ?
@@ -486,7 +472,7 @@ void Test(
     GpuTimer gpu_timer;
     gpu_timer.Start();
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<IS_FLAGGED>(), Int2Type<IS_PARTITION>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op, 0, false));
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items, select_op));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -739,8 +725,7 @@ void TestMixedOp(int num_items)
     cub::DeviceSelect::If(
             d_tmp_storage, tmp_storage_size,
             in, out, thrust::make_discard_iterator(),
-            num_items, select_t<T0, T1>{},
-            0, true);
+            num_items, select_t<T0, T1>{});
 
     thrust::device_vector<char> tmp_storage(tmp_storage_size);
     d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -748,8 +733,7 @@ void TestMixedOp(int num_items)
     cub::DeviceSelect::If(
             d_tmp_storage, tmp_storage_size,
             in, out, thrust::make_discard_iterator(),
-            num_items, select_t<T0, T1>{},
-            0, true);
+            num_items, select_t<T0, T1>{});
 
     AssertEquals(num_items, thrust::count(result.begin(), result.end(), target_value));
 }
@@ -788,9 +772,7 @@ void TestFlagsNormalization()
                                cub::CountingInputIterator<int>(1),      // flags
                                thrust::raw_pointer_cast(result.data()), // out
                                thrust::make_discard_iterator(), // num_out
-                               num_items,
-                               0,
-                               true));
+                               num_items));
 
   thrust::device_vector<char> tmp_storage(tmp_storage_size);
   d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -802,9 +784,7 @@ void TestFlagsNormalization()
                                cub::CountingInputIterator<int>(1),      // flags
                                thrust::raw_pointer_cast(result.data()), // out
                                thrust::make_discard_iterator(), // num_out
-                               num_items,
-                               0,
-                               true));
+                               num_items));
 
   AssertTrue(thrust::equal(result.begin(),
                            result.end(),
@@ -838,9 +818,7 @@ void TestFlagsAliasingInPartition()
                                   d_flags,
                                   d_out,
                                   thrust::make_discard_iterator(), // num_out
-                                  num_items,
-                                  0,
-                                  true));
+                                  num_items));
 
   thrust::device_vector<char> tmp_storage(tmp_storage_size);
   d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -852,9 +830,7 @@ void TestFlagsAliasingInPartition()
                                   d_flags,
                                   d_out,
                                   thrust::make_discard_iterator(), // num_out
-                                  num_items,
-                                  0,
-                                  true));
+                                  num_items));
 
   AssertTrue(thrust::equal(thrust::device,
                            d_out,
@@ -902,9 +878,7 @@ void TestIfInPlace()
                           d_data,
                           d_num_out,
                           num_items,
-                          op,
-                          0,
-                          true));
+                          op));
 
   thrust::device_vector<char> tmp_storage(tmp_storage_size);
   d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -922,9 +896,7 @@ void TestIfInPlace()
                             d_reference,
                             d_reference_out,
                             num_items,
-                            op,
-                            0,
-                            true));
+                            op));
 
     CubDebugExit(
       cub::DeviceSelect::If(d_tmp_storage,
@@ -932,9 +904,7 @@ void TestIfInPlace()
                             d_data,
                             d_num_out,
                             num_items,
-                            op,
-                            0,
-                            true));
+                            op));
 
     AssertEquals(num_out, reference_out);
     const int num_selected = num_out[0];
@@ -969,9 +939,7 @@ void TestFlaggedInPlace()
                                d_data,
                                d_flags,
                                d_num_out,
-                               num_items,
-                               0,
-                               true));
+                               num_items));
 
   thrust::device_vector<char> tmp_storage(tmp_storage_size);
   d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -993,9 +961,7 @@ void TestFlaggedInPlace()
                                  d_data,
                                  d_flags,
                                  d_num_out,
-                                 num_items,
-                                 0,
-                                 true));
+                                 num_items));
 
     cudaMemcpy(&h_num_out, d_num_out, sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -1036,9 +1002,7 @@ void TestFlaggedInPlaceWithAliasedFlags()
                                d_data,
                                d_flags,
                                d_num_out,
-                               num_items,
-                               0,
-                               true));
+                               num_items));
 
   thrust::device_vector<char> tmp_storage(tmp_storage_size);
   d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
@@ -1060,9 +1024,7 @@ void TestFlaggedInPlaceWithAliasedFlags()
                                  d_allocated_flags,
                                  d_reference, // out
                                  d_num_out,
-                                 num_items,
-                                 0,
-                                 true));
+                                 num_items));
 
     CubDebugExit(
       cub::DeviceSelect::Flagged(d_tmp_storage,
@@ -1070,9 +1032,7 @@ void TestFlaggedInPlaceWithAliasedFlags()
                                  d_data,
                                  d_flags,
                                  d_num_out,
-                                 num_items,
-                                 0,
-                                 true));
+                                 num_items));
 
     cudaMemcpy(&h_num_out, d_num_out, sizeof(int), cudaMemcpyDeviceToHost);
 

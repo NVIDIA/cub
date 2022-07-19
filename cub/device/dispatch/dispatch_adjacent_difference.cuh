@@ -30,6 +30,8 @@
 #include <cub/agent/agent_adjacent_difference.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/type_traits.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 #include <cub/util_namespace.cuh>
@@ -157,9 +159,26 @@ struct DispatchAdjacentDifference : public SelectedPolicy
   OffsetT num_items;
   DifferenceOpT difference_op;
   cudaStream_t stream;
-  bool debug_synchronous;
 
   CUB_RUNTIME_FUNCTION __forceinline__
+  DispatchAdjacentDifference(void *d_temp_storage,
+                             std::size_t &temp_storage_bytes,
+                             InputIteratorT d_input,
+                             OutputIteratorT d_output,
+                             OffsetT num_items,
+                             DifferenceOpT difference_op,
+                             cudaStream_t stream)
+      : d_temp_storage(d_temp_storage)
+      , temp_storage_bytes(temp_storage_bytes)
+      , d_input(d_input)
+      , d_output(d_output)
+      , num_items(num_items)
+      , difference_op(difference_op)
+      , stream(stream)
+  {}
+
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_DEPRECATED CUB_RUNTIME_FUNCTION __forceinline__
   DispatchAdjacentDifference(void *d_temp_storage,
                              std::size_t &temp_storage_bytes,
                              InputIteratorT d_input,
@@ -175,8 +194,9 @@ struct DispatchAdjacentDifference : public SelectedPolicy
       , num_items(num_items)
       , difference_op(difference_op)
       , stream(stream)
-      , debug_synchronous(debug_synchronous)
-  {}
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+  }
 
   /// Invocation
   template <typename ActivePolicyT>
@@ -237,14 +257,13 @@ struct DispatchAdjacentDifference : public SelectedPolicy
         const int init_block_size = AgentDifferenceInitT::BLOCK_THREADS;
         const int init_grid_size = DivideAndRoundUp(num_tiles, init_block_size);
 
-        if (debug_synchronous)
-        {
-          _CubLog("Invoking DeviceAdjacentDifferenceInitKernel"
-                  "<<<%d, %d, 0, %lld>>>()\n",
-                  init_grid_size,
-                  init_block_size,
-                  reinterpret_cast<long long>(stream));
-        }
+        #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+        _CubLog("Invoking DeviceAdjacentDifferenceInitKernel"
+                "<<<%d, %d, 0, %lld>>>()\n",
+                init_grid_size,
+                init_block_size,
+                reinterpret_cast<long long>(stream));
+        #endif
 
         THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(init_grid_size,
                                                                 init_block_size,
@@ -259,7 +278,8 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                 num_tiles,
                 tile_size);
 
-        error = detail::DebugSyncStream(stream, debug_synchronous);
+        error = detail::DebugSyncStream(stream);
+
         if (CubDebug(error))
         {
           break;
@@ -272,14 +292,13 @@ struct DispatchAdjacentDifference : public SelectedPolicy
         }
       }
 
-      if (debug_synchronous)
-      {
-        _CubLog("Invoking DeviceAdjacentDifferenceDifferenceKernel"
-                "<<<%d, %d, 0, %lld>>>()\n",
-                num_tiles,
-                AdjacentDifferencePolicyT::BLOCK_THREADS,
-                reinterpret_cast<long long>(stream));
-      }
+      #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+      _CubLog("Invoking DeviceAdjacentDifferenceDifferenceKernel"
+              "<<<%d, %d, 0, %lld>>>()\n",
+              num_tiles,
+              AdjacentDifferencePolicyT::BLOCK_THREADS,
+              reinterpret_cast<long long>(stream));
+      #endif
 
       THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
         num_tiles,
@@ -300,8 +319,8 @@ struct DispatchAdjacentDifference : public SelectedPolicy
               difference_op,
               num_items);
 
-
-      error = detail::DebugSyncStream(stream, debug_synchronous);
+      error = detail::DebugSyncStream(stream);
+      
       if (CubDebug(error))
       {
         break;
@@ -324,8 +343,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                               OutputIteratorT d_output,
                               OffsetT num_items,
                               DifferenceOpT difference_op,
-                              cudaStream_t stream,
-                              bool debug_synchronous)
+                              cudaStream_t stream)
   {
     using MaxPolicyT = typename DispatchAdjacentDifference::MaxPolicy;
 
@@ -346,8 +364,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                                           d_output,
                                           num_items,
                                           difference_op,
-                                          stream,
-                                          debug_synchronous);
+                                          stream);
 
       // Dispatch to chained policy
       if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
@@ -357,6 +374,28 @@ struct DispatchAdjacentDifference : public SelectedPolicy
     } while (0);
 
     return error;
+  }
+
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION
+  static cudaError_t Dispatch(void *d_temp_storage,
+                              std::size_t &temp_storage_bytes,
+                              InputIteratorT d_input,
+                              OutputIteratorT d_output,
+                              OffsetT num_items,
+                              DifferenceOpT difference_op,
+                              cudaStream_t stream,
+                              bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Dispatch(d_temp_storage,
+                    temp_storage_bytes,
+                    d_input,
+                    d_output,
+                    num_items,
+                    difference_op,
+                    stream);
   }
 };
 

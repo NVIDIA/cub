@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2021, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,9 +37,10 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/dispatch_select_if.cuh"
-#include "dispatch/dispatch_three_way_partition.cuh"
-#include "../config.cuh"
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_select_if.cuh>
+#include <cub/device/dispatch/dispatch_three_way_partition.cuh>
+#include <cub/util_deprecated.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -169,11 +170,6 @@ struct DevicePartition
      * @param[in] stream
      *   **[optional]** CUDA stream to launch kernels within.
      *   Default is stream<sub>0</sub>.
-     *
-     * @param[in] debug_synchronous
-     *   **[optional]** Whether or not to synchronize the stream after every
-     *   kernel launch to check for errors. May cause significant slowdown.
-     *   Default is @p false.
      */
     template <typename InputIteratorT,
               typename FlagIterator,
@@ -187,8 +183,7 @@ struct DevicePartition
             OutputIteratorT d_out,
             NumSelectedIteratorT d_num_selected_out,
             int num_items,
-            cudaStream_t stream    = 0,
-            bool debug_synchronous = false)
+            cudaStream_t stream = 0)
     {
       using OffsetT    = int;      // Signed integer type for global offsets
       using SelectOp   = NullType; // Selection op (not used)
@@ -211,8 +206,38 @@ struct DevicePartition
                                          SelectOp{},
                                          EqualityOp{},
                                          num_items,
-                                         stream,
-                                         debug_synchronous);
+                                         stream);
+    }
+
+    template <typename InputIteratorT,
+              typename FlagIterator,
+              typename OutputIteratorT,
+              typename NumSelectedIteratorT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Flagged(void *d_temp_storage,
+            size_t &temp_storage_bytes,
+            InputIteratorT d_in,
+            FlagIterator d_flags,
+            OutputIteratorT d_out,
+            NumSelectedIteratorT d_num_selected_out,
+            int num_items,
+            cudaStream_t stream,
+            bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return Flagged<InputIteratorT,
+                     FlagIterator,
+                     OutputIteratorT,
+                     NumSelectedIteratorT>(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_in,
+                                           d_flags,
+                                           d_out,
+                                           d_num_selected_out,
+                                           num_items,
+                                           stream);
     }
 
 
@@ -341,11 +366,6 @@ struct DevicePartition
      * @param[in] stream
      *   **[optional]** CUDA stream to launch kernels within.
      *   Default is stream<sub>0</sub>.
-     *
-     * @param[in] debug_synchronous
-     *   **[optional]** Whether or not to synchronize the stream after every
-     *   kernel launch to check for errors. May cause significant slowdown.
-     *   Default is @p false.
      */
     template <typename InputIteratorT,
               typename OutputIteratorT,
@@ -359,8 +379,7 @@ struct DevicePartition
        NumSelectedIteratorT d_num_selected_out,
        int num_items,
        SelectOp select_op,
-       cudaStream_t stream    = 0,
-       bool debug_synchronous = false)
+       cudaStream_t stream = 0)
     {
         using OffsetT      = int; // Signed integer type for global offsets
         using FlagIterator = NullType *; // FlagT iterator type (not used)
@@ -384,10 +403,37 @@ struct DevicePartition
                                            select_op,
                                            EqualityOp{},
                                            num_items,
-                                           stream,
-                                           debug_synchronous);
+                                           stream);
     }
 
+    template <typename InputIteratorT,
+              typename OutputIteratorT,
+              typename NumSelectedIteratorT,
+              typename SelectOp>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    If(void *d_temp_storage,
+       size_t &temp_storage_bytes,
+       InputIteratorT d_in,
+       OutputIteratorT d_out,
+       NumSelectedIteratorT d_num_selected_out,
+       int num_items,
+       SelectOp select_op,
+       cudaStream_t stream,
+       bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
+        d_temp_storage,
+        temp_storage_bytes,
+        d_in,
+        d_out,
+        d_num_selected_out,
+        num_items,
+        select_op,
+        stream);
+    }
 
     /**
      * @brief Uses two functors to split the corresponding items from @p d_in
@@ -572,11 +618,6 @@ struct DevicePartition
      * @param[in] stream
      *   **[optional]** CUDA stream to launch kernels within.
      *   Default is stream<sub>0</sub>.
-     *
-     * @param[in] debug_synchronous
-     *   **[optional]** Whether or not to synchronize the stream after every
-     *   kernel launch to check for errors. May cause significant slowdown.
-     *   Default is @p false.
      */
     template <typename InputIteratorT,
               typename FirstOutputIteratorT,
@@ -596,8 +637,7 @@ struct DevicePartition
        int num_items,
        SelectFirstPartOp select_first_part_op,
        SelectSecondPartOp select_second_part_op,
-       cudaStream_t stream    = 0,
-       bool debug_synchronous = false)
+       cudaStream_t stream = 0)
     {
       using OffsetT = int;
       using DispatchThreeWayPartitionIfT =
@@ -620,8 +660,50 @@ struct DevicePartition
                                                     select_first_part_op,
                                                     select_second_part_op,
                                                     num_items,
-                                                    stream,
-                                                    debug_synchronous);
+                                                    stream);
+    }
+
+    template <typename InputIteratorT,
+              typename FirstOutputIteratorT,
+              typename SecondOutputIteratorT,
+              typename UnselectedOutputIteratorT,
+              typename NumSelectedIteratorT,
+              typename SelectFirstPartOp,
+              typename SelectSecondPartOp>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    If(void *d_temp_storage,
+       std::size_t &temp_storage_bytes,
+       InputIteratorT d_in,
+       FirstOutputIteratorT d_first_part_out,
+       SecondOutputIteratorT d_second_part_out,
+       UnselectedOutputIteratorT d_unselected_out,
+       NumSelectedIteratorT d_num_selected_out,
+       int num_items,
+       SelectFirstPartOp select_first_part_op,
+       SelectSecondPartOp select_second_part_op,
+       cudaStream_t stream,
+       bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return If<InputIteratorT,
+                FirstOutputIteratorT,
+                SecondOutputIteratorT,
+                UnselectedOutputIteratorT,
+                NumSelectedIteratorT,
+                SelectFirstPartOp,
+                SelectSecondPartOp>(d_temp_storage,
+                                    temp_storage_bytes,
+                                    d_in,
+                                    d_first_part_out,
+                                    d_second_part_out,
+                                    d_unselected_out,
+                                    d_num_selected_out,
+                                    num_items,
+                                    select_first_part_op,
+                                    select_second_part_op,
+                                    stream);
     }
 };
 

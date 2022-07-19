@@ -38,7 +38,7 @@
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/device/dispatch/dispatch_scan_by_key.cuh>
 #include <cub/thread/thread_operators.cuh>
-
+#include <cub/util_deprecated.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -180,11 +180,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown. 
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -194,8 +189,7 @@ struct DeviceScan
                InputIteratorT d_in,
                OutputIteratorT d_out,
                int num_items,
-               cudaStream_t stream    = 0,
-               bool debug_synchronous = false)
+               cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -211,7 +205,28 @@ struct DeviceScan
         InputIteratorT, OutputIteratorT, Sum, detail::InputValue<OutputT>,
         OffsetT>::Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out,
                            Sum(), detail::InputValue<OutputT>(init_value),
-                           num_items, stream, debug_synchronous);
+                           num_items, stream);
+  }
+
+  template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveSum(void *d_temp_storage,
+               size_t &temp_storage_bytes,
+               InputIteratorT d_in,
+               OutputIteratorT d_out,
+               int num_items,
+               cudaStream_t stream,
+               bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_in,
+                                                         d_out,
+                                                         num_items,
+                                                         stream);
   }
 
   /**
@@ -287,11 +302,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown. 
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename IteratorT>
@@ -300,16 +310,34 @@ struct DeviceScan
                size_t &temp_storage_bytes,
                IteratorT d_data,
                int num_items,
-               cudaStream_t stream    = 0,
-               bool debug_synchronous = false)
+               cudaStream_t stream = 0)
   {
     return ExclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
                         d_data,
                         num_items,
-                        stream,
-                        debug_synchronous);
+                        stream);
+  }
+
+  template <typename IteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveSum(void *d_temp_storage,
+               size_t &temp_storage_bytes,
+               IteratorT d_data,
+               int num_items,
+               cudaStream_t stream,
+               bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveSum(d_temp_storage,
+                        temp_storage_bytes,
+                        d_data,
+                        d_data,
+                        num_items,
+                        stream);
   }
 
   /**
@@ -417,11 +445,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. Default is 
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename InputIteratorT,
@@ -436,8 +459,7 @@ struct DeviceScan
                 ScanOpT scan_op,
                 InitValueT init_value,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int ;
@@ -454,8 +476,36 @@ struct DeviceScan
                                            detail::InputValue<InitValueT>(
                                              init_value),
                                            num_items,
-                                           stream,
-                                           debug_synchronous);
+                                           stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename ScanOpT,
+            typename InitValueT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                InputIteratorT d_in,
+                OutputIteratorT d_out,
+                ScanOpT scan_op,
+                InitValueT init_value,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT, InitValueT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_in,
+      d_out,
+      scan_op,
+      init_value,
+      num_items,
+      stream);
   }
 
   /**
@@ -552,11 +602,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. Default is 
    *   stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename IteratorT,
@@ -569,8 +614,7 @@ struct DeviceScan
                 ScanOpT scan_op,
                 InitValueT init_value,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     return ExclusiveScan(d_temp_storage,
                          temp_storage_bytes,
@@ -579,8 +623,32 @@ struct DeviceScan
                          scan_op,
                          init_value,
                          num_items,
-                         stream,
-                         debug_synchronous);
+                         stream);
+  }
+
+  template <typename IteratorT,
+            typename ScanOpT,
+            typename InitValueT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                IteratorT d_data,
+                ScanOpT scan_op,
+                InitValueT init_value,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveScan<IteratorT, ScanOpT, InitValueT>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_data,
+                                                         scan_op,
+                                                         init_value,
+                                                         num_items,
+                                                         stream);
   }
 
   /**
@@ -693,11 +761,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename InputIteratorT,
@@ -713,8 +776,7 @@ struct DeviceScan
                 ScanOpT scan_op,
                 FutureValue<InitValueT, InitValueIterT> init_value,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -731,8 +793,40 @@ struct DeviceScan
                                            detail::InputValue<InitValueT>(
                                              init_value),
                                            num_items,
-                                           stream,
-                                           debug_synchronous);
+                                           stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename ScanOpT,
+            typename InitValueT,
+            typename InitValueIterT = InitValueT *>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                InputIteratorT d_in,
+                OutputIteratorT d_out,
+                ScanOpT scan_op,
+                FutureValue<InitValueT, InitValueIterT> init_value,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveScan<InputIteratorT,
+                         OutputIteratorT,
+                         ScanOpT,
+                         InitValueT,
+                         InitValueIterT>(d_temp_storage,
+                                         temp_storage_bytes,
+                                         d_in,
+                                         d_out,
+                                         scan_op,
+                                         init_value,
+                                         num_items,
+                                         stream);
   }
 
   /**
@@ -834,11 +928,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename IteratorT,
@@ -852,8 +941,7 @@ struct DeviceScan
                 ScanOpT scan_op,
                 FutureValue<InitValueT, InitValueIterT> init_value,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     return ExclusiveScan(d_temp_storage,
                          temp_storage_bytes,
@@ -862,8 +950,34 @@ struct DeviceScan
                          scan_op,
                          init_value,
                          num_items,
-                         stream,
-                         debug_synchronous);
+                         stream);
+  }
+
+  template <typename IteratorT,
+            typename ScanOpT,
+            typename InitValueT,
+            typename InitValueIterT = InitValueT *>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                IteratorT d_data,
+                ScanOpT scan_op,
+                FutureValue<InitValueT, InitValueIterT> init_value,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveScan<IteratorT, ScanOpT, InitValueT, InitValueIterT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_data,
+      scan_op,
+      init_value,
+      num_items,
+      stream);
   }
 
   //@}  end member group
@@ -951,11 +1065,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -965,8 +1074,7 @@ struct DeviceScan
                InputIteratorT d_in,
                OutputIteratorT d_out,
                int num_items,
-               cudaStream_t stream    = 0,
-               bool debug_synchronous = false)
+               cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -982,8 +1090,28 @@ struct DeviceScan
                                            Sum(),
                                            NullType(),
                                            num_items,
-                                           stream,
-                                           debug_synchronous);
+                                           stream);
+  }
+
+  template <typename InputIteratorT, typename OutputIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveSum(void *d_temp_storage,
+               size_t &temp_storage_bytes,
+               InputIteratorT d_in,
+               OutputIteratorT d_out,
+               int num_items,
+               cudaStream_t stream,
+               bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_in,
+                                                         d_out,
+                                                         num_items,
+                                                         stream);
   }
 
   /**
@@ -1053,11 +1181,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename IteratorT>
@@ -1066,16 +1189,34 @@ struct DeviceScan
                size_t &temp_storage_bytes,
                IteratorT d_data,
                int num_items,
-               cudaStream_t stream    = 0,
-               bool debug_synchronous = false)
+               cudaStream_t stream = 0)
   {
     return InclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
                         d_data,
                         num_items,
-                        stream,
-                        debug_synchronous);
+                        stream);
+  }
+
+  template <typename IteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveSum(void *d_temp_storage,
+               size_t &temp_storage_bytes,
+               IteratorT d_data,
+               int num_items,
+               cudaStream_t stream,
+               bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveSum(d_temp_storage,
+                        temp_storage_bytes,
+                        d_data,
+                        d_data,
+                        num_items,
+                        stream);
   }
 
   /**
@@ -1176,12 +1317,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename InputIteratorT, typename OutputIteratorT, typename ScanOpT>
@@ -1192,8 +1327,7 @@ struct DeviceScan
                 OutputIteratorT d_out,
                 ScanOpT scan_op,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -1209,8 +1343,31 @@ struct DeviceScan
                                            scan_op,
                                            NullType(),
                                            num_items,
-                                           stream,
-                                           debug_synchronous);
+                                           stream);
+  }
+
+  template <typename InputIteratorT, typename OutputIteratorT, typename ScanOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                InputIteratorT d_in,
+                OutputIteratorT d_out,
+                ScanOpT scan_op,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_in,
+      d_out,
+      scan_op,
+      num_items,
+      stream);
   }
 
   /**
@@ -1300,12 +1457,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename IteratorT, typename ScanOpT>
@@ -1315,8 +1466,7 @@ struct DeviceScan
                 IteratorT d_data,
                 ScanOpT scan_op,
                 int num_items,
-                cudaStream_t stream    = 0,
-                bool debug_synchronous = false)
+                cudaStream_t stream = 0)
   {
     return InclusiveScan(d_temp_storage,
                          temp_storage_bytes,
@@ -1324,8 +1474,28 @@ struct DeviceScan
                          d_data,
                          scan_op,
                          num_items,
-                         stream,
-                         debug_synchronous);
+                         stream);
+  }
+
+  template <typename IteratorT, typename ScanOpT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveScan(void *d_temp_storage,
+                size_t &temp_storage_bytes,
+                IteratorT d_data,
+                ScanOpT scan_op,
+                int num_items,
+                cudaStream_t stream,
+                bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveScan<IteratorT, ScanOpT>(d_temp_storage,
+                                             temp_storage_bytes,
+                                             d_data,
+                                             scan_op,
+                                             num_items,
+                                             stream);
   }
 
   /**
@@ -1428,11 +1598,6 @@ struct DeviceScan
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
    *
-   * @param[in] debug_synchronous 
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename KeysInputIteratorT,
@@ -1447,8 +1612,7 @@ struct DeviceScan
                     ValuesOutputIteratorT d_values_out,
                     int num_items,
                     EqualityOpT equality_op = EqualityOpT(),
-                    cudaStream_t stream     = 0,
-                    bool debug_synchronous  = false)
+                    cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -1475,8 +1639,38 @@ struct DeviceScan
                                                 Sum(),
                                                 init_value,
                                                 num_items,
-                                                stream,
-                                                debug_synchronous);
+                                                stream);
+  }
+
+  template <typename KeysInputIteratorT,
+            typename ValuesInputIteratorT,
+            typename ValuesOutputIteratorT,
+            typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveSumByKey(void *d_temp_storage,
+                    size_t &temp_storage_bytes,
+                    KeysInputIteratorT d_keys_in,
+                    ValuesInputIteratorT d_values_in,
+                    ValuesOutputIteratorT d_values_out,
+                    int num_items,
+                    EqualityOpT equality_op,
+                    cudaStream_t stream,
+                    bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveSumByKey<KeysInputIteratorT,
+                             ValuesInputIteratorT,
+                             ValuesOutputIteratorT,
+                             EqualityOpT>(d_temp_storage,
+                                          temp_storage_bytes,
+                                          d_keys_in,
+                                          d_values_in,
+                                          d_values_out,
+                                          num_items,
+                                          equality_op,
+                                          stream);
   }
 
   /**
@@ -1621,11 +1815,6 @@ struct DeviceScan
    *    **[optional]** CUDA stream to launch kernels within.  
    *    Default is stream<sub>0</sub>.
    *
-   *  @param[in] debug_synchronous       
-   *    **[optional]** Whether or not to synchronize the stream after every 
-   *    kernel launch to check for errors. May cause significant slowdown.  
-   *    Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename KeysInputIteratorT,
@@ -1644,8 +1833,7 @@ struct DeviceScan
                      InitValueT init_value,
                      int num_items,
                      EqualityOpT equality_op = EqualityOpT(),
-                     cudaStream_t stream     = 0,
-                     bool debug_synchronous  = false)
+                     cudaStream_t stream = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int ;
@@ -1665,8 +1853,46 @@ struct DeviceScan
                                                   scan_op,
                                                   init_value,
                                                   num_items,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeysInputIteratorT,
+            typename ValuesInputIteratorT,
+            typename ValuesOutputIteratorT,
+            typename ScanOpT,
+            typename InitValueT,
+            typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ExclusiveScanByKey(void *d_temp_storage,
+                     size_t &temp_storage_bytes,
+                     KeysInputIteratorT d_keys_in,
+                     ValuesInputIteratorT d_values_in,
+                     ValuesOutputIteratorT d_values_out,
+                     ScanOpT scan_op,
+                     InitValueT init_value,
+                     int num_items,
+                     EqualityOpT equality_op,
+                     cudaStream_t stream,
+                     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ExclusiveScanByKey<KeysInputIteratorT,
+                              ValuesInputIteratorT,
+                              ValuesOutputIteratorT,
+                              ScanOpT,
+                              InitValueT,
+                              EqualityOpT>(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_keys_in,
+                                           d_values_in,
+                                           d_values_out,
+                                           scan_op,
+                                           init_value,
+                                           num_items,
+                                           equality_op,
+                                           stream);
   }
 
   /**
@@ -1767,11 +1993,6 @@ struct DeviceScan
    *    **[optional]** CUDA stream to launch kernels within.  
    *    Default is stream<sub>0</sub>.
    * 
-   *  @param[in] debug_synchronous
-   *    **[optional]** Whether or not to synchronize the stream after every 
-   *    kernel launch to check for errors. May cause significant slowdown.  
-   *    Default is `false`.
-   *
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename KeysInputIteratorT,
@@ -1786,8 +2007,7 @@ struct DeviceScan
                     ValuesOutputIteratorT d_values_out,
                     int num_items,
                     EqualityOpT equality_op = EqualityOpT(),
-                    cudaStream_t stream     = 0,
-                    bool debug_synchronous  = false)
+                    cudaStream_t stream = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int ;
@@ -1807,8 +2027,38 @@ struct DeviceScan
                                                   Sum(),
                                                   NullType(),
                                                   num_items,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeysInputIteratorT,
+            typename ValuesInputIteratorT,
+            typename ValuesOutputIteratorT,
+            typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveSumByKey(void *d_temp_storage,
+                    size_t &temp_storage_bytes,
+                    KeysInputIteratorT d_keys_in,
+                    ValuesInputIteratorT d_values_in,
+                    ValuesOutputIteratorT d_values_out,
+                    int num_items,
+                    EqualityOpT equality_op,
+                    cudaStream_t stream,
+                    bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveSumByKey<KeysInputIteratorT,
+                             ValuesInputIteratorT,
+                             ValuesOutputIteratorT,
+                             EqualityOpT>(d_temp_storage,
+                                          temp_storage_bytes,
+                                          d_keys_in,
+                                          d_values_in,
+                                          d_values_out,
+                                          num_items,
+                                          equality_op,
+                                          stream);
   }
 
   /**
@@ -1940,11 +2190,6 @@ struct DeviceScan
    *    **[optional]** CUDA stream to launch kernels within.  
    *    Default is stream<sub>0</sub>.
    * 
-   *  @param[in] debug_synchronous 
-   *    **[optional]** Whether or not to synchronize the stream after every 
-   *    kernel launch to check for errors. May cause significant slowdown.  
-   *    Default is `false`.
-   * 
    * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
    */
   template <typename KeysInputIteratorT,
@@ -1961,8 +2206,7 @@ struct DeviceScan
                      ScanOpT scan_op,
                      int num_items,
                      EqualityOpT equality_op = EqualityOpT(),
-                     cudaStream_t stream     = 0,
-                     bool debug_synchronous  = false)
+                     cudaStream_t stream = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int;
@@ -1982,8 +2226,42 @@ struct DeviceScan
                                                   scan_op,
                                                   NullType(),
                                                   num_items,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeysInputIteratorT,
+            typename ValuesInputIteratorT,
+            typename ValuesOutputIteratorT,
+            typename ScanOpT,
+            typename EqualityOpT = Equality>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  InclusiveScanByKey(void *d_temp_storage,
+                     size_t &temp_storage_bytes,
+                     KeysInputIteratorT d_keys_in,
+                     ValuesInputIteratorT d_values_in,
+                     ValuesOutputIteratorT d_values_out,
+                     ScanOpT scan_op,
+                     int num_items,
+                     EqualityOpT equality_op,
+                     cudaStream_t stream,
+                     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return InclusiveScanByKey<KeysInputIteratorT,
+                              ValuesInputIteratorT,
+                              ValuesOutputIteratorT,
+                              ScanOpT,
+                              EqualityOpT>(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_keys_in,
+                                           d_values_in,
+                                           d_values_out,
+                                           scan_op,
+                                           num_items,
+                                           equality_op,
+                                           stream);
   }
 
   //@}  end member group

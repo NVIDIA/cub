@@ -39,6 +39,7 @@
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_search.cuh>
 #include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
@@ -527,8 +528,7 @@ public:
         DeviceHistogramInitKernelT          histogram_init_kernel,                          ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramInitKernel
         DeviceHistogramSweepKernelT         histogram_sweep_kernel,                         ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
         KernelConfig                        histogram_sweep_config,                         ///< [in] Dispatch parameters that match the policy that \p histogram_sweep_kernel was compiled for
-        cudaStream_t                        stream,                                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                                debug_synchronous)                              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        cudaStream_t                        stream)                                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         cudaError error = cudaSuccess;
         do
@@ -628,8 +628,10 @@ public:
             int histogram_init_grid_dims        = (max_num_output_bins + histogram_init_block_threads - 1) / histogram_init_block_threads;
 
             // Log DeviceHistogramInitKernel configuration
-            if (debug_synchronous) _CubLog("Invoking DeviceHistogramInitKernel<<<%d, %d, 0, %lld>>>()\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking DeviceHistogramInitKernel<<<%d, %d, 0, %lld>>>()\n",
                 histogram_init_grid_dims, histogram_init_block_threads, (long long) stream);
+            #endif
 
             // Invoke histogram_init_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -645,9 +647,11 @@ public:
                 break;
 
             // Log histogram_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
                 sweep_grid_dims.x, sweep_grid_dims.y, sweep_grid_dims.z,
                 histogram_sweep_config.block_threads, (long long) stream, histogram_sweep_config.pixels_per_thread, histogram_sweep_sm_occupancy);
+            #endif
 
             // Invoke histogram_sweep_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -673,7 +677,7 @@ public:
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
                 break;
@@ -684,6 +688,53 @@ public:
         return error;
     }
 
+    template <typename PrivatizedDecodeOpT,
+              typename OutputDecodeOpT,
+              typename DeviceHistogramInitKernelT,
+              typename DeviceHistogramSweepKernelT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t PrivatizedDispatch(
+      void *d_temp_storage,
+      size_t &temp_storage_bytes,
+      SampleIteratorT d_samples,
+      CounterT *d_output_histograms[NUM_ACTIVE_CHANNELS],
+      int num_privatized_levels[NUM_ACTIVE_CHANNELS],
+      PrivatizedDecodeOpT privatized_decode_op[NUM_ACTIVE_CHANNELS],
+      int num_output_levels[NUM_ACTIVE_CHANNELS],
+      OutputDecodeOpT output_decode_op[NUM_ACTIVE_CHANNELS],
+      int max_num_output_bins,
+      OffsetT num_row_pixels,
+      OffsetT num_rows,
+      OffsetT row_stride_samples,
+      DeviceHistogramInitKernelT histogram_init_kernel,
+      DeviceHistogramSweepKernelT histogram_sweep_kernel,
+      KernelConfig histogram_sweep_config,
+      cudaStream_t stream,
+      bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return PrivatizedDispatch<PrivatizedDecodeOpT,
+                                OutputDecodeOpT,
+                                DeviceHistogramInitKernelT,
+                                DeviceHistogramSweepKernelT>(
+        d_temp_storage,
+        temp_storage_bytes,
+        d_samples,
+        d_output_histograms,
+        num_privatized_levels,
+        privatized_decode_op,
+        num_output_levels,
+        output_decode_op,
+        max_num_output_bins,
+        num_row_pixels,
+        num_rows,
+        row_stride_samples,
+        histogram_init_kernel,
+        histogram_sweep_kernel,
+        histogram_sweep_config,
+        stream);
+    }
 
 
     /**
@@ -701,7 +752,6 @@ public:
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
         Int2Type<false>     /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
@@ -756,8 +806,7 @@ public:
                     DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
-                    stream,
-                    debug_synchronous))) break;
+                    stream))) break;
             }
             else
             {
@@ -780,8 +829,7 @@ public:
                     DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
-                    stream,
-                    debug_synchronous))) break;
+                    stream))) break;
             }
 
         } while (0);
@@ -789,6 +837,36 @@ public:
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t
+    DispatchRange(void *d_temp_storage,
+                  size_t &temp_storage_bytes,
+                  SampleIteratorT d_samples,
+                  CounterT *d_output_histograms[NUM_ACTIVE_CHANNELS],
+                  int num_output_levels[NUM_ACTIVE_CHANNELS],
+                  LevelT *d_levels[NUM_ACTIVE_CHANNELS],
+                  OffsetT num_row_pixels,
+                  OffsetT num_rows,
+                  OffsetT row_stride_samples,
+                  cudaStream_t stream,
+                  bool debug_synchronous,
+                  Int2Type<false> is_byte_sample)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return DispatchRange(d_temp_storage,
+                           temp_storage_bytes,
+                           d_samples,
+                           d_output_histograms,
+                           num_output_levels,
+                           d_levels,
+                           num_row_pixels,
+                           num_rows,
+                           row_stride_samples,
+                           stream,
+                           is_byte_sample);
+    }
 
     /**
      * Dispatch routine for HistogramRange, specialized for 8-bit sample types (computes 256-bin privatized histograms and then reduces to user-specified levels)
@@ -805,7 +883,6 @@ public:
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
         Int2Type<true>      /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
@@ -859,14 +936,43 @@ public:
                 DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                 DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                 histogram_sweep_config,
-                stream,
-                debug_synchronous))) break;
+                stream))) break;
 
         } while (0);
 
         return error;
     }
 
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t
+    DispatchRange(void *d_temp_storage,
+                  size_t &temp_storage_bytes,
+                  SampleIteratorT d_samples,
+                  CounterT *d_output_histograms[NUM_ACTIVE_CHANNELS],
+                  int num_output_levels[NUM_ACTIVE_CHANNELS],
+                  LevelT *d_levels[NUM_ACTIVE_CHANNELS],
+                  OffsetT num_row_pixels,
+                  OffsetT num_rows,
+                  OffsetT row_stride_samples,
+                  cudaStream_t stream,
+                  bool debug_synchronous,
+                  Int2Type<true> is_byte_sample)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return DispatchRange(d_temp_storage,
+                           temp_storage_bytes,
+                           d_samples,
+                           d_output_histograms,
+                           num_output_levels,
+                           d_levels,
+                           num_row_pixels,
+                           num_rows,
+                           row_stride_samples,
+                           stream,
+                           is_byte_sample);
+    }
 
     /**
      * Dispatch routine for HistogramEven, specialized for sample types larger than 8-bit
@@ -884,7 +990,6 @@ public:
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
         Int2Type<false>     /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
@@ -942,8 +1047,7 @@ public:
                     DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
-                    stream,
-                    debug_synchronous))) break;
+                    stream))) break;
             }
             else
             {
@@ -966,13 +1070,45 @@ public:
                     DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
-                    stream,
-                    debug_synchronous))) break;
+                    stream))) break;
             }
         }
         while (0);
 
         return error;
+    }
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__
+    static cudaError_t DispatchEven(
+        void*               d_temp_storage,                         
+        size_t&             temp_storage_bytes,                      
+        SampleIteratorT     d_samples,                                
+        CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  
+        int                 num_output_levels[NUM_ACTIVE_CHANNELS],   
+        LevelT              lower_level[NUM_ACTIVE_CHANNELS],          
+        LevelT              upper_level[NUM_ACTIVE_CHANNELS],           
+        OffsetT             num_row_pixels,                            
+        OffsetT             num_rows,                                   
+        OffsetT             row_stride_samples,                        
+        cudaStream_t        stream,                                     
+        bool                debug_synchronous,                          
+        Int2Type<false>     is_byte_sample)                    
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return DispatchEven(d_temp_storage,
+                          temp_storage_bytes,
+                          d_samples,
+                          d_output_histograms,
+                          num_output_levels,
+                          lower_level,
+                          upper_level,
+                          num_row_pixels,
+                          num_rows,
+                          row_stride_samples,
+                          stream,
+                          is_byte_sample);
     }
 
 
@@ -992,7 +1128,6 @@ public:
         OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
         Int2Type<true>      /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
@@ -1049,8 +1184,7 @@ public:
                 DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
                 DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                 histogram_sweep_config,
-                stream,
-                debug_synchronous))) break;
+                stream))) break;
 
         }
         while (0);
@@ -1058,6 +1192,37 @@ public:
         return error;
     }
 
+    CUB_RUNTIME_FUNCTION __forceinline__
+    static cudaError_t DispatchEven(
+        void*               d_temp_storage,                         
+        size_t&             temp_storage_bytes,                      
+        SampleIteratorT     d_samples,                                
+        CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  
+        int                 num_output_levels[NUM_ACTIVE_CHANNELS],     
+        LevelT              lower_level[NUM_ACTIVE_CHANNELS],          
+        LevelT              upper_level[NUM_ACTIVE_CHANNELS],           
+        OffsetT             num_row_pixels,                            
+        OffsetT             num_rows,                                   
+        OffsetT             row_stride_samples,                        
+        cudaStream_t        stream,                                     
+        bool                debug_synchronous,                          
+        Int2Type<true>      is_byte_sample)                         
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return DispatchEven(d_temp_storage,
+                          temp_storage_bytes,
+                          d_samples,
+                          d_output_histograms,
+                          num_output_levels,
+                          lower_level,
+                          upper_level,
+                          num_row_pixels,
+                          num_rows,
+                          row_stride_samples,
+                          stream,
+                          is_byte_sample);
+    }
 };
 
 

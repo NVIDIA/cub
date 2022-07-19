@@ -40,6 +40,7 @@
 #include <cub/config.cuh>
 #include <cub/device/dispatch/dispatch_select_if.cuh>
 #include <cub/device/dispatch/dispatch_unique_by_key.cuh>
+#include <cub/util_deprecated.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -174,11 +175,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename InputIteratorT,
             typename FlagIterator,
@@ -192,8 +188,7 @@ struct DeviceSelect
           OutputIteratorT d_out,
           NumSelectedIteratorT d_num_selected_out,
           int num_items,
-          cudaStream_t stream    = 0,
-          bool debug_synchronous = false)
+          cudaStream_t stream = 0)
   {
     using OffsetT    = int;      // Signed integer type for global offsets
     using SelectOp   = NullType; // Selection op (not used)
@@ -215,8 +210,38 @@ struct DeviceSelect
                                              SelectOp(),
                                              EqualityOp(),
                                              num_items,
-                                             stream,
-                                             debug_synchronous);
+                                             stream);
+  }
+
+  template <typename InputIteratorT,
+            typename FlagIterator,
+            typename OutputIteratorT,
+            typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Flagged(void *d_temp_storage,
+          size_t &temp_storage_bytes,
+          InputIteratorT d_in,
+          FlagIterator d_flags,
+          OutputIteratorT d_out,
+          NumSelectedIteratorT d_num_selected_out,
+          int num_items,
+          cudaStream_t stream,
+          bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Flagged<InputIteratorT,
+                   FlagIterator,
+                   OutputIteratorT,
+                   NumSelectedIteratorT>(d_temp_storage,
+                                         temp_storage_bytes,
+                                         d_in,
+                                         d_flags,
+                                         d_out,
+                                         d_num_selected_out,
+                                         num_items,
+                                         stream);
   }
    
   /**
@@ -304,11 +329,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename IteratorT,
             typename FlagIterator,
@@ -320,8 +340,7 @@ struct DeviceSelect
           FlagIterator d_flags,
           NumSelectedIteratorT d_num_selected_out,
           int num_items,
-          cudaStream_t stream    = 0,
-          bool debug_synchronous = false)
+          cudaStream_t stream = 0)
   {
     using OffsetT    = int;      // Signed integer type for global offsets
     using SelectOp   = NullType; // Selection op (not used)
@@ -346,8 +365,33 @@ struct DeviceSelect
                                                  SelectOp(),
                                                  EqualityOp(),
                                                  num_items,
-                                                 stream,
-                                                 debug_synchronous);
+                                                 stream);
+  }
+
+  template <typename IteratorT,
+            typename FlagIterator,
+            typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Flagged(void *d_temp_storage,
+          size_t &temp_storage_bytes,
+          IteratorT d_data,
+          FlagIterator d_flags,
+          NumSelectedIteratorT d_num_selected_out,
+          int num_items,
+          cudaStream_t stream,
+          bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Flagged<IteratorT, FlagIterator, NumSelectedIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_data,
+      d_flags,
+      d_num_selected_out,
+      num_items,
+      stream);
   }
 
   /**
@@ -468,11 +512,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -486,8 +525,7 @@ struct DeviceSelect
      NumSelectedIteratorT d_num_selected_out,
      int num_items,
      SelectOp select_op,
-     cudaStream_t stream    = 0,
-     bool debug_synchronous = false)
+     cudaStream_t stream = 0)
   {
     using OffsetT      = int;        // Signed integer type for global offsets
     using FlagIterator = NullType *; // FlagT iterator type (not used)
@@ -509,8 +547,36 @@ struct DeviceSelect
                                              select_op,
                                              EqualityOp(),
                                              num_items,
-                                             stream,
-                                             debug_synchronous);
+                                             stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename NumSelectedIteratorT,
+            typename SelectOp>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  If(void *d_temp_storage,
+     size_t &temp_storage_bytes,
+     InputIteratorT d_in,
+     OutputIteratorT d_out,
+     NumSelectedIteratorT d_num_selected_out,
+     int num_items,
+     SelectOp select_op,
+     cudaStream_t stream,
+     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_in,
+      d_out,
+      d_num_selected_out,
+      num_items,
+      select_op,
+      stream);
   }
 
   /**
@@ -606,11 +672,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename IteratorT,
             typename NumSelectedIteratorT,
@@ -622,8 +683,7 @@ struct DeviceSelect
      NumSelectedIteratorT d_num_selected_out,
      int num_items,
      SelectOp select_op,
-     cudaStream_t stream    = 0,
-     bool debug_synchronous = false)
+     cudaStream_t stream = 0)
   {
     using OffsetT      = int;        // Signed integer type for global offsets
     using FlagIterator = NullType *; // FlagT iterator type (not used)
@@ -648,8 +708,32 @@ struct DeviceSelect
                                                  select_op,
                                                  EqualityOp(),
                                                  num_items,
-                                                 stream,
-                                                 debug_synchronous);
+                                                 stream);
+  }
+
+  template <typename IteratorT,
+            typename NumSelectedIteratorT,
+            typename SelectOp>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  If(void *d_temp_storage,
+     size_t &temp_storage_bytes,
+     IteratorT d_data,
+     NumSelectedIteratorT d_num_selected_out,
+     int num_items,
+     SelectOp select_op,
+     cudaStream_t stream,
+     bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return If<IteratorT, NumSelectedIteratorT, SelectOp>(d_temp_storage,
+                                                         temp_storage_bytes,
+                                                         d_data,
+                                                         d_num_selected_out,
+                                                         num_items,
+                                                         select_op,
+                                                         stream);
   }
 
   /**
@@ -752,11 +836,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -768,8 +847,7 @@ struct DeviceSelect
          OutputIteratorT d_out,
          NumSelectedIteratorT d_num_selected_out,
          int num_items,
-         cudaStream_t stream    = 0,
-         bool debug_synchronous = false)
+         cudaStream_t stream = 0)
   {
     using OffsetT      = int;        // Signed integer type for global offsets
     using FlagIterator = NullType *; // FlagT iterator type (not used)
@@ -792,8 +870,33 @@ struct DeviceSelect
                                              SelectOp(),
                                              EqualityOp(),
                                              num_items,
-                                             stream,
-                                             debug_synchronous);
+                                             stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Unique(void *d_temp_storage,
+         size_t &temp_storage_bytes,
+         InputIteratorT d_in,
+         OutputIteratorT d_out,
+         NumSelectedIteratorT d_num_selected_out,
+         int num_items,
+         cudaStream_t stream,
+         bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Unique<InputIteratorT, OutputIteratorT, NumSelectedIteratorT>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_in,
+      d_out,
+      d_num_selected_out,
+      num_items,
+      stream);
   }
 
   /**
@@ -907,11 +1010,6 @@ struct DeviceSelect
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. May cause significant slowdown.  
-   *   Default is `false`.
    */
   template <typename KeyInputIteratorT,
             typename ValueInputIteratorT,
@@ -927,8 +1025,7 @@ struct DeviceSelect
               ValueOutputIteratorT d_values_out,
               NumSelectedIteratorT d_num_selected_out,
               int num_items,
-              cudaStream_t stream    = 0,
-              bool debug_synchronous = false)
+              cudaStream_t stream = 0)
   {
     using OffsetT    = int;
     using EqualityOp = Equality;
@@ -948,8 +1045,42 @@ struct DeviceSelect
                                                   d_num_selected_out,
                                                   EqualityOp(),
                                                   num_items,
-                                                  stream,
-                                                  debug_synchronous);
+                                                  stream);
+  }
+
+  template <typename KeyInputIteratorT,
+            typename ValueInputIteratorT,
+            typename KeyOutputIteratorT,
+            typename ValueOutputIteratorT,
+            typename NumSelectedIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  UniqueByKey(void *d_temp_storage,
+              size_t &temp_storage_bytes,
+              KeyInputIteratorT d_keys_in,
+              ValueInputIteratorT d_values_in,
+              KeyOutputIteratorT d_keys_out,
+              ValueOutputIteratorT d_values_out,
+              NumSelectedIteratorT d_num_selected_out,
+              int num_items,
+              cudaStream_t stream,
+              bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return UniqueByKey<KeyInputIteratorT,
+                       ValueInputIteratorT,
+                       KeyOutputIteratorT,
+                       ValueOutputIteratorT,
+                       NumSelectedIteratorT>(d_temp_storage,
+                                             temp_storage_bytes,
+                                             d_keys_in,
+                                             d_values_in,
+                                             d_keys_out,
+                                             d_values_out,
+                                             d_num_selected_out,
+                                             num_items,
+                                             stream);
   }
 };
 

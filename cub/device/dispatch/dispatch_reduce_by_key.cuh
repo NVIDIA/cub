@@ -38,6 +38,7 @@
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
@@ -254,7 +255,6 @@ struct DispatchReduceByKey
         ReductionOpT                reduction_op,               ///< [in] ValueT reduction operator
         OffsetT                     num_items,                  ///< [in] Total number of items to select from
         cudaStream_t                stream,                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         /*ptx_version*/,            ///< [in] PTX version of dispatch kernels
         ScanInitKernelT                init_kernel,                ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
         ReduceByKeyKernelT             reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
@@ -290,7 +290,9 @@ struct DispatchReduceByKey
 
             // Log init_kernel configuration
             int init_grid_size = CUB_MAX(1, cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS));
-            if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            #endif
 
             // Invoke init_kernel to initialize tile descriptors
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -307,7 +309,7 @@ struct DispatchReduceByKey
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -335,8 +337,10 @@ struct DispatchReduceByKey
             for (int start_tile = 0; start_tile < num_tiles; start_tile += scan_grid_size)
             {
                 // Log reduce_by_key_kernel configuration
-                if (debug_synchronous) _CubLog("Invoking %d reduce_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+                _CubLog("Invoking %d reduce_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                     start_tile, scan_grid_size, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
+                #endif
 
                 // Invoke reduce_by_key_kernel
                 THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -361,7 +365,7 @@ struct DispatchReduceByKey
                 }
 
                 // Sync the stream if specified to flush runtime errors
-                error = detail::DebugSyncStream(stream, debug_synchronous);
+                error = detail::DebugSyncStream(stream);
                 if (CubDebug(error))
                 {
                   break;
@@ -373,6 +377,44 @@ struct DispatchReduceByKey
         return error;
     }
 
+    template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             KeysInputIteratorT d_keys_in,
+             UniqueOutputIteratorT d_unique_out,
+             ValuesInputIteratorT d_values_in,
+             AggregatesOutputIteratorT d_aggregates_out,
+             NumRunsOutputIteratorT d_num_runs_out,
+             EqualityOpT equality_op,
+             ReductionOpT reduction_op,
+             OffsetT num_items,
+             cudaStream_t stream,
+             bool debug_synchronous,
+             int ptx_version,
+             ScanInitKernelT init_kernel,
+             ReduceByKeyKernelT reduce_by_key_kernel,
+             KernelConfig reduce_by_key_config)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return Dispatch<ScanInitKernelT, ReduceByKeyKernelT>(d_temp_storage,
+                                                           temp_storage_bytes,
+                                                           d_keys_in,
+                                                           d_unique_out,
+                                                           d_values_in,
+                                                           d_aggregates_out,
+                                                           d_num_runs_out,
+                                                           equality_op,
+                                                           reduction_op,
+                                                           num_items,
+                                                           stream,
+                                                           ptx_version,
+                                                           init_kernel,
+                                                           reduce_by_key_kernel,
+                                                           reduce_by_key_config);
+    }
 
     /**
      * Internal dispatch routine
@@ -389,8 +431,7 @@ struct DispatchReduceByKey
         EqualityOpT                 equality_op,                    ///< [in] KeyT equality operator
         ReductionOpT                reduction_op,                   ///< [in] ValueT reduction operator
         OffsetT                     num_items,                      ///< [in] Total number of items to select from
-        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous)              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t                stream)                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         cudaError error = cudaSuccess;
         do
@@ -416,7 +457,6 @@ struct DispatchReduceByKey
                 reduction_op,
                 num_items,
                 stream,
-                debug_synchronous,
                 ptx_version,
                 DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
                 DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT>,
@@ -425,6 +465,36 @@ struct DispatchReduceByKey
         while (0);
 
         return error;
+    }
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             KeysInputIteratorT d_keys_in,
+             UniqueOutputIteratorT d_unique_out,
+             ValuesInputIteratorT d_values_in,
+             AggregatesOutputIteratorT d_aggregates_out,
+             NumRunsOutputIteratorT d_num_runs_out,
+             EqualityOpT equality_op,
+             ReductionOpT reduction_op,
+             OffsetT num_items,
+             cudaStream_t stream,
+             bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_keys_in,
+                      d_unique_out,
+                      d_values_in,
+                      d_aggregates_out,
+                      d_num_runs_out,
+                      equality_op,
+                      reduction_op,
+                      num_items,
+                      stream);
     }
 };
 

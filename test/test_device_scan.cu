@@ -110,9 +110,7 @@ Dispatch(Int2Type<true> /*in_place*/,
          OutputIteratorT /* d_out */,
          ScanOpT scan_op,
          InitialValueT initial_value,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -122,9 +120,7 @@ Dispatch(Int2Type<true> /*in_place*/,
                                       d_in,
                                       scan_op,
                                       initial_value,
-                                      num_items,
-                                      stream,
-                                      debug_synchronous);
+                                      num_items);
   }
   return error;
 }
@@ -148,9 +144,7 @@ Dispatch(Int2Type<false> /*in_place*/,
          OutputIteratorT d_out,
          ScanOpT scan_op,
          InitialValueT initial_value,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -161,9 +155,7 @@ Dispatch(Int2Type<false> /*in_place*/,
                                       d_out,
                                       scan_op,
                                       initial_value,
-                                      num_items,
-                                      stream,
-                                      debug_synchronous);
+                                      num_items);
   }
   return error;
 }
@@ -188,9 +180,7 @@ Dispatch(Int2Type<true> /*in_place*/,
          OutputIteratorT /* d_out */,
          Sum /*scan_op*/,
          InitialValueT /*initial_value*/,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -198,9 +188,7 @@ Dispatch(Int2Type<true> /*in_place*/,
     error = DeviceScan::ExclusiveSum(d_temp_storage,
                                      temp_storage_bytes,
                                      d_in,
-                                     num_items,
-                                     stream,
-                                     debug_synchronous);
+                                     num_items);
   }
   return error;
 }
@@ -222,9 +210,7 @@ Dispatch(Int2Type<false> /*in_place*/,
          OutputIteratorT d_out,
          Sum /*scan_op*/,
          InitialValueT /*initial_value*/,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -233,9 +219,7 @@ Dispatch(Int2Type<false> /*in_place*/,
                                      temp_storage_bytes,
                                      d_in,
                                      d_out,
-                                     num_items,
-                                     stream,
-                                     debug_synchronous);
+                                     num_items);
   }
   return error;
 }
@@ -261,9 +245,7 @@ Dispatch(Int2Type<true> /*in_place*/,
          OutputIteratorT /* d_out */,
          ScanOpT scan_op,
          NullType /* initial_value */,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -272,9 +254,7 @@ Dispatch(Int2Type<true> /*in_place*/,
                                       temp_storage_bytes,
                                       d_in,
                                       scan_op,
-                                      num_items,
-                                      stream,
-                                      debug_synchronous);
+                                      num_items);
   }
   return error;
 }
@@ -297,9 +277,7 @@ Dispatch(Int2Type<false> /*in_place*/,
          OutputIteratorT d_out,
          ScanOpT scan_op,
          NullType /*initial_value*/,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -309,9 +287,7 @@ Dispatch(Int2Type<false> /*in_place*/,
                                       d_in,
                                       d_out,
                                       scan_op,
-                                      num_items,
-                                      stream,
-                                      debug_synchronous);
+                                      num_items);
   }
   return error;
 }
@@ -333,9 +309,7 @@ Dispatch(Int2Type<true> /*in_place*/,
          OutputIteratorT /* d_out */,
          Sum /*scan_op*/,
          NullType /*initial_value*/,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -343,9 +317,7 @@ Dispatch(Int2Type<true> /*in_place*/,
     error = DeviceScan::InclusiveSum(d_temp_storage,
                                      temp_storage_bytes,
                                      d_in,
-                                     num_items,
-                                     stream,
-                                     debug_synchronous);
+                                     num_items);
   }
   return error;
 }
@@ -364,9 +336,7 @@ Dispatch(Int2Type<false> /*in_place*/,
          OutputIteratorT d_out,
          Sum /*scan_op*/,
          NullType /*initial_value*/,
-         OffsetT num_items,
-         cudaStream_t stream,
-         bool debug_synchronous)
+         OffsetT num_items)
 {
   cudaError_t error = cudaSuccess;
   for (int i = 0; i < timing_timing_iterations; ++i)
@@ -375,9 +345,7 @@ Dispatch(Int2Type<false> /*in_place*/,
                                      temp_storage_bytes,
                                      d_in,
                                      d_out,
-                                     num_items,
-                                     stream,
-                                     debug_synchronous);
+                                     num_items);
   }
   return error;
 }
@@ -412,8 +380,7 @@ __global__ void CDPDispatchKernel(InPlaceT     in_place,
                                   OutputIteratorT d_out,
                                   ScanOpT         scan_op,
                                   InitialValueT   initial_value,
-                                  OffsetT         num_items,
-                                  bool            debug_synchronous)
+                                  OffsetT         num_items)
 {
   *d_cdp_error = Dispatch(in_place,
                           cub_backend,
@@ -427,9 +394,7 @@ __global__ void CDPDispatchKernel(InPlaceT     in_place,
                           d_out,
                           scan_op,
                           initial_value,
-                          num_items,
-                          0,
-                          debug_synchronous);
+                          num_items);
 
   *d_temp_storage_bytes = temp_storage_bytes;
 }
@@ -457,16 +422,14 @@ cudaError_t Dispatch(InPlaceT      in_place,
                      OutputIteratorT d_out,
                      ScanOpT         scan_op,
                      InitialValueT   initial_value,
-                     OffsetT         num_items,
-                     cudaStream_t    stream,
-                     bool            debug_synchronous)
+                     OffsetT         num_items)
 {
   // Invoke kernel to invoke device-side dispatch to CUB backend:
   (void)dispatch_to;
   using CubBackendT = Int2Type<CUB>;
   CubBackendT cub_backend;
   cudaError_t   retval =
-    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, 0)
       .doit(CDPDispatchKernel<InPlaceT,
                               CubBackendT,
                               IsPrimitiveT,
@@ -487,8 +450,7 @@ cudaError_t Dispatch(InPlaceT      in_place,
             d_out,
             scan_op,
             initial_value,
-            num_items,
-            debug_synchronous);
+            num_items);
   CubDebugExit(retval);
 
   // Copy out temp_storage_bytes
@@ -659,9 +621,7 @@ void Test(
         d_out,
         scan_op,
         initial_value,
-        num_items,
-        0,
-        true));
+        num_items));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     if (!InPlace)
@@ -684,9 +644,7 @@ void Test(
         d_out,
         scan_op,
         initial_value,
-        num_items,
-        0,
-        true));
+        num_items));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
@@ -713,9 +671,7 @@ void Test(
                             d_out,
                             scan_op,
                             initial_value,
-                            num_items,
-                            0,
-                            false));
+                            num_items));
       gpu_timer.Stop();
       float elapsed_millis = gpu_timer.ElapsedMillis();
 

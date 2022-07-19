@@ -36,13 +36,14 @@
 
 #include <iterator>
 
-#include "../../agent/agent_scan.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../config.cuh"
-#include "../../util_debug.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
+#include <cub/agent/agent_scan.cuh>
+#include <cub/config.cuh>
+#include <cub/grid/grid_queue.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -244,7 +245,6 @@ struct DispatchScan:
     InitValueT      init_value;             ///< [in] Initial value to seed the exclusive scan
     OffsetT         num_items;              ///< [in] Total number of input items (i.e., the length of \p d_in)
     cudaStream_t    stream;                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool            debug_synchronous;
     int             ptx_version;
 
     CUB_RUNTIME_FUNCTION __forceinline__
@@ -257,7 +257,6 @@ struct DispatchScan:
         ScanOpT         scan_op,                ///< [in] Binary scan functor
         InitValueT      init_value,             ///< [in] Initial value to seed the exclusive scan
         cudaStream_t    stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous,
         int             ptx_version
     ):
         d_temp_storage(d_temp_storage),
@@ -268,9 +267,33 @@ struct DispatchScan:
         init_value(init_value),
         num_items(num_items),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
     {}
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchScan(void *d_temp_storage,
+                 size_t &temp_storage_bytes,
+                 InputIteratorT d_in,
+                 OutputIteratorT d_out,
+                 OffsetT num_items,
+                 ScanOpT scan_op,
+                 InitValueT init_value,
+                 cudaStream_t stream,
+                 bool debug_synchronous,
+                 int ptx_version)
+        : d_temp_storage(d_temp_storage)
+        , temp_storage_bytes(temp_storage_bytes)
+        , d_in(d_in)
+        , d_out(d_out)
+        , scan_op(scan_op)
+        , init_value(init_value)
+        , num_items(num_items)
+        , stream(stream)
+        , ptx_version(ptx_version)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
@@ -319,7 +342,10 @@ struct DispatchScan:
 
             // Log init_kernel configuration
             int init_grid_size = cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS);
-            if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            #endif
 
             // Invoke init_kernel to initialize tile descriptors
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -335,7 +361,7 @@ struct DispatchScan:
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -357,8 +383,10 @@ struct DispatchScan:
             for (int start_tile = 0; start_tile < num_tiles; start_tile += scan_grid_size)
             {
                 // Log scan_kernel configuration
-                if (debug_synchronous) _CubLog("Invoking %d scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+                _CubLog("Invoking %d scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                     start_tile, scan_grid_size, Policy::BLOCK_THREADS, (long long) stream, Policy::ITEMS_PER_THREAD, scan_sm_occupancy);
+                #endif
 
                 // Invoke scan_kernel
                 THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -379,7 +407,7 @@ struct DispatchScan:
                 }
 
                 // Sync the stream if specified to flush runtime errors
-                error = detail::DebugSyncStream(stream, debug_synchronous);
+                error = detail::DebugSyncStream(stream);
                 if (CubDebug(error))
                 {
                   break;
@@ -417,8 +445,7 @@ struct DispatchScan:
         ScanOpT         scan_op,                ///< [in] Binary scan functor
         InitValueT      init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
-        cudaStream_t    stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous)      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t    stream)                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchScan::MaxPolicy MaxPolicyT;
 
@@ -439,7 +466,6 @@ struct DispatchScan:
                 scan_op,
                 init_value,
                 stream,
-                debug_synchronous,
                 ptx_version
             );
             // Dispatch to chained policy
@@ -448,6 +474,30 @@ struct DispatchScan:
         while (0);
 
         return error;
+    }
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             InputIteratorT d_in,
+             OutputIteratorT d_out,
+             ScanOpT scan_op,
+             InitValueT init_value,
+             OffsetT num_items,
+             cudaStream_t stream,
+             bool debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_in,
+                      d_out,
+                      scan_op,
+                      init_value,
+                      num_items,
+                      stream);
     }
 };
 

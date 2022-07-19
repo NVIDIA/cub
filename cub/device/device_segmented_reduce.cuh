@@ -40,6 +40,7 @@
 #include <cub/device/dispatch/dispatch_reduce.cuh>
 #include <cub/device/dispatch/dispatch_reduce_by_key.cuh>
 #include <cub/iterator/arg_index_input_iterator.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_type.cuh>
 
 CUB_NAMESPACE_BEGIN
@@ -193,11 +194,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -215,8 +211,7 @@ struct DeviceSegmentedReduce
          EndOffsetIteratorT d_end_offsets,
          ReductionOp reduction_op,
          T initial_value,
-         cudaStream_t stream    = 0,
-         bool debug_synchronous = false)
+         cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -235,8 +230,46 @@ struct DeviceSegmentedReduce
                                                           d_end_offsets,
                                                           reduction_op,
                                                           initial_value,
-                                                          stream,
-                                                          debug_synchronous);
+                                                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT,
+            typename ReductionOp,
+            typename T>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  Reduce(void *d_temp_storage,
+         size_t &temp_storage_bytes,
+         InputIteratorT d_in,
+         OutputIteratorT d_out,
+         int num_segments,
+         BeginOffsetIteratorT d_begin_offsets,
+         EndOffsetIteratorT d_end_offsets,
+         ReductionOp reduction_op,
+         T initial_value,
+         cudaStream_t stream,
+         bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Reduce<InputIteratorT,
+                  OutputIteratorT,
+                  BeginOffsetIteratorT,
+                  EndOffsetIteratorT,
+                  ReductionOp,
+                  T>(d_temp_storage,
+                     temp_storage_bytes,
+                     d_in,
+                     d_out,
+                     num_segments,
+                     d_begin_offsets,
+                     d_end_offsets,
+                     reduction_op,
+                     initial_value,
+                     stream);
   }
 
   /**
@@ -340,11 +373,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream
    *   **[optional]</b> CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous                   
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -358,8 +386,7 @@ struct DeviceSegmentedReduce
       int num_segments,
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
-      cudaStream_t stream    = 0,
-      bool debug_synchronous = false)
+      cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -384,8 +411,38 @@ struct DeviceSegmentedReduce
                           d_end_offsets,
                           cub::Sum(),
                           OutputT(), // zero-initialize
-                          stream,
-                          debug_synchronous);
+                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  Sum(void *d_temp_storage,
+      size_t &temp_storage_bytes,
+      InputIteratorT d_in,
+      OutputIteratorT d_out,
+      int num_segments,
+      BeginOffsetIteratorT d_begin_offsets,
+      EndOffsetIteratorT d_end_offsets,
+      cudaStream_t stream,
+      bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Sum<InputIteratorT,
+               OutputIteratorT,
+               BeginOffsetIteratorT,
+               EndOffsetIteratorT>(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_in,
+                                   d_out,
+                                   num_segments,
+                                   d_begin_offsets,
+                                   d_end_offsets,
+                                   stream);
   }
 
   /**
@@ -490,11 +547,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -508,8 +560,7 @@ struct DeviceSegmentedReduce
       int num_segments,
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
-      cudaStream_t stream    = 0,
-      bool debug_synchronous = false)
+      cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -535,8 +586,38 @@ struct DeviceSegmentedReduce
                                                  // std::numeric_limits<T>::max()
                                                  // when C++11 support is more
                                                  // prevalent
-                          stream,
-                          debug_synchronous);
+                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  Min(void *d_temp_storage,
+      size_t &temp_storage_bytes,
+      InputIteratorT d_in,
+      OutputIteratorT d_out,
+      int num_segments,
+      BeginOffsetIteratorT d_begin_offsets,
+      EndOffsetIteratorT d_end_offsets,
+      cudaStream_t stream,
+      bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Min<InputIteratorT,
+               OutputIteratorT,
+               BeginOffsetIteratorT,
+               EndOffsetIteratorT>(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_in,
+                                   d_out,
+                                   num_segments,
+                                   d_begin_offsets,
+                                   d_end_offsets,
+                                   stream);
   }
 
   /**
@@ -647,11 +728,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -665,8 +741,7 @@ struct DeviceSegmentedReduce
          int num_segments,
          BeginOffsetIteratorT d_begin_offsets,
          EndOffsetIteratorT d_end_offsets,
-         cudaStream_t stream    = 0,
-         bool debug_synchronous = false)
+         cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -709,8 +784,38 @@ struct DeviceSegmentedReduce
                                                           d_end_offsets,
                                                           cub::ArgMin(),
                                                           initial_value,
-                                                          stream,
-                                                          debug_synchronous);
+                                                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ArgMin(void *d_temp_storage,
+         size_t &temp_storage_bytes,
+         InputIteratorT d_in,
+         OutputIteratorT d_out,
+         int num_segments,
+         BeginOffsetIteratorT d_begin_offsets,
+         EndOffsetIteratorT d_end_offsets,
+         cudaStream_t stream,
+         bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ArgMin<InputIteratorT,
+                  OutputIteratorT,
+                  BeginOffsetIteratorT,
+                  EndOffsetIteratorT>(d_temp_storage,
+                                      temp_storage_bytes,
+                                      d_in,
+                                      d_out,
+                                      num_segments,
+                                      d_begin_offsets,
+                                      d_end_offsets,
+                                      stream);
   }
 
   /**
@@ -815,11 +920,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within.  
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -833,8 +933,7 @@ struct DeviceSegmentedReduce
       int num_segments,
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
-      cudaStream_t stream    = 0,
-      bool debug_synchronous = false)
+      cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -860,8 +959,38 @@ struct DeviceSegmentedReduce
                                                     // std::numeric_limits<T>::lowest()
                                                     // when C++11 support is
                                                     // more prevalent
-                          stream,
-                          debug_synchronous);
+                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  Max(void *d_temp_storage,
+      size_t &temp_storage_bytes,
+      InputIteratorT d_in,
+      OutputIteratorT d_out,
+      int num_segments,
+      BeginOffsetIteratorT d_begin_offsets,
+      EndOffsetIteratorT d_end_offsets,
+      cudaStream_t stream,
+      bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Max<InputIteratorT,
+               OutputIteratorT,
+               BeginOffsetIteratorT,
+               EndOffsetIteratorT>(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_in,
+                                   d_out,
+                                   num_segments,
+                                   d_begin_offsets,
+                                   d_end_offsets,
+                                   stream);
   }
 
   /**
@@ -972,11 +1101,6 @@ struct DeviceSegmentedReduce
    * @param[in] stream  
    *   **[optional]** CUDA stream to launch kernels within. 
    *   Default is stream<sub>0</sub>.
-   *
-   * @param[in] debug_synchronous  
-   *   **[optional]** Whether or not to synchronize the stream after every 
-   *   kernel launch to check for errors. Also causes launch configurations to 
-   *   be printed to the console. Default is `false`.
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
@@ -990,8 +1114,7 @@ struct DeviceSegmentedReduce
          int num_segments,
          BeginOffsetIteratorT d_begin_offsets,
          EndOffsetIteratorT d_end_offsets,
-         cudaStream_t stream    = 0,
-         bool debug_synchronous = false)
+         cudaStream_t stream = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
@@ -1031,8 +1154,38 @@ struct DeviceSegmentedReduce
                                                           d_end_offsets,
                                                           cub::ArgMax(),
                                                           initial_value,
-                                                          stream,
-                                                          debug_synchronous);
+                                                          stream);
+  }
+
+  template <typename InputIteratorT,
+            typename OutputIteratorT,
+            typename BeginOffsetIteratorT,
+            typename EndOffsetIteratorT>
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  ArgMax(void *d_temp_storage,
+         size_t &temp_storage_bytes,
+         InputIteratorT d_in,
+         OutputIteratorT d_out,
+         int num_segments,
+         BeginOffsetIteratorT d_begin_offsets,
+         EndOffsetIteratorT d_end_offsets,
+         cudaStream_t stream,
+         bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return ArgMax<InputIteratorT,
+                  OutputIteratorT,
+                  BeginOffsetIteratorT,
+                  EndOffsetIteratorT>(d_temp_storage,
+                                      temp_storage_bytes,
+                                      d_in,
+                                      d_out,
+                                      num_segments,
+                                      d_begin_offsets,
+                                      d_end_offsets,
+                                      stream);
   }
 };
 

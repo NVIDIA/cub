@@ -529,14 +529,13 @@ namespace detail
  * If syncs are not supported then no sync is performed, but a message is logged
  * via _CubLog and cudaSuccess is returned.
  */
-CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream,
-                                                        bool debug_synchronous)
+CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream)
 {
-  if (!debug_synchronous)
-  {
-    return cudaSuccess;
-  }
+#ifndef CUB_DETAIL_DEBUG_ENABLE_SYNC
+  (void)stream;
 
+  return cudaSuccess;
+#else
 #if 1 // All valid targets currently support device-side synchronization
   _CubLog("%s\n", "Synchronizing...");
   return SyncStream(stream);
@@ -546,6 +545,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream,
           "WARNING: Skipping CUB `debug_synchronous` synchronization "
           "(unsupported target).");
   return cudaSuccess;
+#endif
 #endif
 }
 

@@ -34,9 +34,11 @@
 #include <cub/block/block_radix_rank.cuh>
 #include <cub/block/block_scan.cuh>
 #include <cub/detail/device_double_buffer.cuh>
-#include <cub/device/device_partition.cuh>
 #include <cub/detail/temporary_storage.cuh>
+#include <cub/device/device_partition.cuh>
 #include <cub/thread/thread_sort.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 #include <cub/util_namespace.cuh>
@@ -561,8 +563,7 @@ DeviceSegmentedSortContinuation(
     unsigned int *group_sizes,
     unsigned int *large_and_medium_segments_indices,
     unsigned int *small_segments_indices,
-    cudaStream_t stream,
-    bool debug_synchronous)
+    cudaStream_t stream)
 {
   cudaError error = cudaSuccess;
 
@@ -573,14 +574,13 @@ DeviceSegmentedSortContinuation(
     // One CTA per segment
     const unsigned int blocks_in_grid = large_segments;
 
-    if (debug_synchronous)
-    {
-      _CubLog("Invoking "
-              "DeviceSegmentedSortKernelLarge<<<%d, %d, 0, %lld>>>()\n",
-              static_cast<int>(blocks_in_grid),
-              LargeSegmentPolicyT::BLOCK_THREADS,
-              (long long)stream);
-    }
+    #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+    _CubLog("Invoking "
+            "DeviceSegmentedSortKernelLarge<<<%d, %d, 0, %lld>>>()\n",
+            static_cast<int>(blocks_in_grid),
+            LargeSegmentPolicyT::BLOCK_THREADS,
+            (long long)stream);
+    #endif
 
     THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
       blocks_in_grid,
@@ -605,7 +605,7 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    error = detail::DebugSyncStream(stream, debug_synchronous);
+    error = detail::DebugSyncStream(stream);
     if (CubDebug(error))
     {
       return error;
@@ -630,14 +630,13 @@ DeviceSegmentedSortContinuation(
 
   if (small_and_medium_blocks_in_grid)
   {
-    if (debug_synchronous)
-    {
-      _CubLog("Invoking "
-              "DeviceSegmentedSortKernelSmall<<<%d, %d, 0, %lld>>>()\n",
-              static_cast<int>(small_and_medium_blocks_in_grid),
-              SmallAndMediumPolicyT::BLOCK_THREADS,
-              (long long)stream);
-    }
+    #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+    _CubLog("Invoking "
+            "DeviceSegmentedSortKernelSmall<<<%d, %d, 0, %lld>>>()\n",
+            static_cast<int>(small_and_medium_blocks_in_grid),
+            SmallAndMediumPolicyT::BLOCK_THREADS,
+            (long long)stream);
+    #endif
 
     THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
       small_and_medium_blocks_in_grid,
@@ -664,7 +663,7 @@ DeviceSegmentedSortContinuation(
     }
 
     // Sync the stream if specified to flush runtime errors
-    error = detail::DebugSyncStream(stream, debug_synchronous);
+    error = detail::DebugSyncStream(stream);
     if (CubDebug(error))
     {
       return error;
@@ -701,8 +700,7 @@ DeviceSegmentedSortContinuationKernel(
   EndOffsetIteratorT d_end_offsets,
   unsigned int *group_sizes,
   unsigned int *large_and_medium_segments_indices,
-  unsigned int *small_segments_indices,
-  bool debug_synchronous)
+  unsigned int *small_segments_indices)
 {
   using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
   using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
@@ -734,8 +732,7 @@ DeviceSegmentedSortContinuationKernel(
       group_sizes,
       large_and_medium_segments_indices,
       small_segments_indices,
-      0, // always launching on the main stream (see motivation above)
-      debug_synchronous);
+      0); // always launching on the main stream (see motivation above)
 
   CubDebug(error);
 }
@@ -1190,12 +1187,30 @@ struct DispatchSegmentedSort : SelectedPolicy
   /// CUDA stream to launch kernels within.
   cudaStream_t stream;
 
-  /**
-   * Whether or not to synchronize the stream after every kernel launch to check
-   * for errors. Also causes launch configurations to be printed to the console.
-   */
-  bool debug_synchronous;
+  CUB_RUNTIME_FUNCTION __forceinline__
+  DispatchSegmentedSort(void *d_temp_storage,
+                        std::size_t &temp_storage_bytes,
+                        DoubleBuffer<KeyT> &d_keys,
+                        DoubleBuffer<ValueT> &d_values,
+                        OffsetT num_items,
+                        int num_segments,
+                        BeginOffsetIteratorT d_begin_offsets,
+                        EndOffsetIteratorT d_end_offsets,
+                        bool is_overwrite_okay,
+                        cudaStream_t stream)
+      : d_temp_storage(d_temp_storage)
+      , temp_storage_bytes(temp_storage_bytes)
+      , d_keys(d_keys)
+      , d_values(d_values)
+      , num_items(num_items)
+      , num_segments(num_segments)
+      , d_begin_offsets(d_begin_offsets)
+      , d_end_offsets(d_end_offsets)
+      , is_overwrite_okay(is_overwrite_okay)
+      , stream(stream)
+  {}
 
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchSegmentedSort(void *d_temp_storage,
                         std::size_t &temp_storage_bytes,
@@ -1218,8 +1233,9 @@ struct DispatchSegmentedSort : SelectedPolicy
       , d_end_offsets(d_end_offsets)
       , is_overwrite_okay(is_overwrite_okay)
       , stream(stream)
-      , debug_synchronous(debug_synchronous)
-  {}
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+  }
 
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
@@ -1321,8 +1337,7 @@ struct DispatchSegmentedSort : SelectedPolicy
           num_segments,
           large_segments_selector,
           small_segments_selector,
-          stream,
-          debug_synchronous);
+          stream);
 
         device_partition_temp_storage.grow(
           three_way_partition_temp_storage_bytes);
@@ -1475,8 +1490,7 @@ struct DispatchSegmentedSort : SelectedPolicy
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            bool is_overwrite_okay,
-           cudaStream_t stream,
-           bool debug_synchronous)
+           cudaStream_t stream)
   {
     using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
 
@@ -1501,8 +1515,7 @@ struct DispatchSegmentedSort : SelectedPolicy
                                      d_begin_offsets,
                                      d_end_offsets,
                                      is_overwrite_okay,
-                                     stream,
-                                     debug_synchronous);
+                                     stream);
 
       // Dispatch to chained policy
       if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
@@ -1512,6 +1525,34 @@ struct DispatchSegmentedSort : SelectedPolicy
     } while (false);
 
     return error;
+  }
+
+  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Dispatch(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           DoubleBuffer<KeyT> &d_keys,
+           DoubleBuffer<ValueT> &d_values,
+           OffsetT num_items,
+           int num_segments,
+           BeginOffsetIteratorT d_begin_offsets,
+           EndOffsetIteratorT d_end_offsets,
+           bool is_overwrite_okay,
+           cudaStream_t stream,
+           bool debug_synchronous)
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+    return Dispatch(d_temp_storage,
+                    temp_storage_bytes,
+                    d_keys,
+                    d_values,
+                    num_items,
+                    num_segments,
+                    d_begin_offsets,
+                    d_end_offsets,
+                    is_overwrite_okay,
+                    stream);
   }
 
 private:
@@ -1580,8 +1621,7 @@ private:
       num_segments,
       large_segments_selector,
       small_segments_selector,
-      stream,
-      debug_synchronous);
+      stream);
     if (CubDebug(error))
     {
       return error;
@@ -1620,15 +1660,14 @@ private:
             d_end_offsets,                                                     \
             group_sizes.get(),                                                 \
             large_and_medium_segments_indices.get(),                           \
-            small_segments_indices.get(),                                      \
-            debug_synchronous);                                                \
+            small_segments_indices.get());                                     \
                                                                                \
   if (CubDebug(error))                                                         \
   {                                                                            \
     return error;                                                              \
   }                                                                            \
                                                                                \
-  error = detail::DebugSyncStream(stream, debug_synchronous);                  \
+  error = detail::DebugSyncStream(stream);                                     \
   if (CubDebug(error))                                                         \
   {                                                                            \
     return error;                                                              \
@@ -1674,8 +1713,7 @@ private:
           h_group_sizes,
           large_and_medium_segments_indices.get(),
           small_segments_indices.get(),
-          stream,
-          debug_synchronous);),
+          stream);),
       // NV_IS_DEVICE:
       (CUB_TEMP_DEVICE_CODE));
     // clang-format on
@@ -1699,16 +1737,15 @@ private:
       static_cast<unsigned int>(LargeSegmentPolicyT::BLOCK_THREADS);
 
     // Log kernel configuration
-    if (debug_synchronous)
-    {
-      _CubLog("Invoking DeviceSegmentedSortFallbackKernel<<<%d, %d, "
-              "0, %lld>>>(), %d items per thread, bit_grain %d\n",
-              blocks_in_grid,
-              threads_in_block,
-              (long long)stream,
-              LargeSegmentPolicyT::ITEMS_PER_THREAD,
-              LargeSegmentPolicyT::RADIX_BITS);
-    }
+    #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+    _CubLog("Invoking DeviceSegmentedSortFallbackKernel<<<%d, %d, "
+            "0, %lld>>>(), %d items per thread, bit_grain %d\n",
+            blocks_in_grid,
+            threads_in_block,
+            (long long)stream,
+            LargeSegmentPolicyT::ITEMS_PER_THREAD,
+            LargeSegmentPolicyT::RADIX_BITS);
+    #endif
 
     // Invoke fallback kernel
     THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(blocks_in_grid,
@@ -1732,7 +1769,7 @@ private:
     }
 
     // Sync the stream if specified to flush runtime errors
-    error = detail::DebugSyncStream(stream, debug_synchronous);
+    error = detail::DebugSyncStream(stream);
     if (CubDebug(error))
     {
       return error;

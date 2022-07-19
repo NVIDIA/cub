@@ -245,7 +245,6 @@ struct DispatchScanByKey:
     InitValueT            init_value;             ///< [in] Initial value to seed the exclusive scan
     OffsetT               num_items;              ///< [in] Total number of input items (i.e., the length of \p d_in)
     cudaStream_t          stream;                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                  debug_synchronous;
     int                   ptx_version;
 
     CUB_RUNTIME_FUNCTION __forceinline__
@@ -260,7 +259,6 @@ struct DispatchScanByKey:
         InitValueT            init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT               num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t          stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                  debug_synchronous,
         int                   ptx_version
     ):
         d_temp_storage(d_temp_storage),
@@ -273,9 +271,37 @@ struct DispatchScanByKey:
         init_value(init_value),
         num_items(num_items),
         stream(stream),
-        debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
     {}
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchScanByKey(void *d_temp_storage,
+                      size_t &temp_storage_bytes,
+                      KeysInputIteratorT d_keys_in,
+                      ValuesInputIteratorT d_values_in,
+                      ValuesOutputIteratorT d_values_out,
+                      EqualityOp equality_op,
+                      ScanOpT scan_op,
+                      InitValueT init_value,
+                      OffsetT num_items,
+                      cudaStream_t stream,
+                      bool debug_synchronous,
+                      int ptx_version)
+        : d_temp_storage(d_temp_storage)
+        , temp_storage_bytes(temp_storage_bytes)
+        , d_keys_in(d_keys_in)
+        , d_values_in(d_values_in)
+        , d_values_out(d_values_out)
+        , equality_op(equality_op)
+        , scan_op(scan_op)
+        , init_value(init_value)
+        , num_items(num_items)
+        , stream(stream)
+        , ptx_version(ptx_version)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
@@ -322,7 +348,10 @@ struct DispatchScanByKey:
 
             // Log init_kernel configuration
             int init_grid_size = cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS);
-            if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+
+            #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+            _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            #endif
 
             // Invoke init_kernel to initialize tile descriptors
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -336,7 +365,7 @@ struct DispatchScanByKey:
             }
 
             // Sync the stream if specified to flush runtime errors
-            error = detail::DebugSyncStream(stream, debug_synchronous);
+            error = detail::DebugSyncStream(stream);
             if (CubDebug(error))
             {
               break;
@@ -358,8 +387,10 @@ struct DispatchScanByKey:
             for (int start_tile = 0; start_tile < num_tiles; start_tile += scan_grid_size)
             {
                 // Log scan_kernel configuration
-                if (debug_synchronous) _CubLog("Invoking %d scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+                _CubLog("Invoking %d scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                     start_tile, scan_grid_size, Policy::BLOCK_THREADS, (long long) stream, Policy::ITEMS_PER_THREAD, scan_sm_occupancy);
+                #endif
 
                 // Invoke scan_kernel
                 THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -384,7 +415,7 @@ struct DispatchScanByKey:
                 }
 
                 // Sync the stream if specified to flush runtime errors
-                error = detail::DebugSyncStream(stream, debug_synchronous);
+                error = detail::DebugSyncStream(stream);
                 if (CubDebug(error))
                 {
                   break;
@@ -426,8 +457,7 @@ struct DispatchScanByKey:
         ScanOpT               scan_op,                ///< [in] Binary scan functor
         InitValueT            init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT               num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
-        cudaStream_t          stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                  debug_synchronous)
+        cudaStream_t          stream)                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
         typedef typename DispatchScanByKey::MaxPolicy MaxPolicyT;
 
@@ -450,7 +480,6 @@ struct DispatchScanByKey:
                 init_value,
                 num_items,
                 stream,
-                debug_synchronous,
                 ptx_version
             );
             // Dispatch to chained policy
@@ -459,6 +488,35 @@ struct DispatchScanByKey:
         while (0);
 
         return error;
+    }
+
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
+    CUB_RUNTIME_FUNCTION __forceinline__
+    static cudaError_t Dispatch(
+        void*                 d_temp_storage,      
+        size_t&               temp_storage_bytes,   
+        KeysInputIteratorT    d_keys_in,             
+        ValuesInputIteratorT  d_values_in,            
+        ValuesOutputIteratorT d_values_out,          
+        EqualityOp            equality_op,            
+        ScanOpT               scan_op,               
+        InitValueT            init_value,             
+        OffsetT               num_items,             
+        cudaStream_t          stream,                 
+        bool                  debug_synchronous)
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
+      return Dispatch(d_temp_storage,
+                      temp_storage_bytes,
+                      d_keys_in,
+                      d_values_in,
+                      d_values_out,
+                      equality_op,
+                      scan_op,
+                      init_value,
+                      num_items,
+                      stream);
     }
 };
 
