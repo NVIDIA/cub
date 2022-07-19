@@ -252,8 +252,10 @@ struct DeviceRunLengthEncode
          NumRunsOutputIteratorT d_num_runs_out,
          int num_items,
          cudaStream_t stream,
-         bool /* debug_synchronous */)
+         bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Encode<InputIteratorT,
                   UniqueOutputIteratorT,
                   LengthsOutputIteratorT,
@@ -418,8 +420,10 @@ struct DeviceRunLengthEncode
                  NumRunsOutputIteratorT d_num_runs_out,
                  int num_items,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return NonTrivialRuns<InputIteratorT,
                           OffsetsOutputIteratorT,
                           LengthsOutputIteratorT,

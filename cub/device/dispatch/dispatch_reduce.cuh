@@ -382,7 +382,7 @@ struct DispatchReduce :
         ReductionOpT            reduction_op,
         OutputT                 init,
         cudaStream_t            stream,
-        bool                    /* debug_synchronous */,
+        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -394,7 +394,9 @@ struct DispatchReduce :
         init(init),
         stream(stream),
         ptx_version(ptx_version)
-    { }
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
 
     //------------------------------------------------------------------------------
@@ -663,8 +665,10 @@ struct DispatchReduce :
              ReductionOpT reduction_op,
              OutputT init,
              cudaStream_t stream,
-             bool /* debug_synchronous */)
+             bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_in,
@@ -764,7 +768,7 @@ struct DispatchSegmentedReduce :
         ReductionOpT            reduction_op,
         OutputT                 init,
         cudaStream_t            stream,
-        bool                    /* debug_synchronous */,
+        bool                    debug_synchronous,
         int                     ptx_version)
     :
         d_temp_storage(d_temp_storage),
@@ -778,7 +782,9 @@ struct DispatchSegmentedReduce :
         init(init),
         stream(stream),
         ptx_version(ptx_version)
-    {}
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
 
     //------------------------------------------------------------------------------
@@ -922,8 +928,10 @@ struct DispatchSegmentedReduce :
              ReductionOpT reduction_op,
              OutputT init,
              cudaStream_t stream,
-             bool /* debug_synchronous */)
+             bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       &temp_storage_bytes,
                       d_in,

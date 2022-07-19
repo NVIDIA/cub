@@ -1222,7 +1222,7 @@ struct DispatchSegmentedSort : SelectedPolicy
                         EndOffsetIteratorT d_end_offsets,
                         bool is_overwrite_okay,
                         cudaStream_t stream,
-                        bool /* debug_synchronous */)
+                        bool debug_synchronous)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_keys(d_keys)
@@ -1233,7 +1233,9 @@ struct DispatchSegmentedSort : SelectedPolicy
       , d_end_offsets(d_end_offsets)
       , is_overwrite_okay(is_overwrite_okay)
       , stream(stream)
-  {}
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+  }
 
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
@@ -1537,8 +1539,10 @@ struct DispatchSegmentedSort : SelectedPolicy
            EndOffsetIteratorT d_end_offsets,
            bool is_overwrite_okay,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_keys,

@@ -455,12 +455,14 @@ struct DispatchThreeWayPartitionIf
            SelectSecondPartOp select_second_part_op,
            OffsetT num_items,
            cudaStream_t stream,
-           bool /*debug_synchronous*/,
+           bool debug_synchronous,
            int ptx_version,
            ScanInitKernelPtrT three_way_partition_init_kernel,
            SelectIfKernelPtrT three_way_partition_kernel,
            KernelConfig three_way_partition_config)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Dispatch<ScanInitKernelPtrT, SelectIfKernelPtrT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -561,8 +563,10 @@ struct DispatchThreeWayPartitionIf
     SelectSecondPartOp          select_second_part_op,
     OffsetT                     num_items,
     cudaStream_t                stream,
-    bool                        /* debug_synchronous */)
+    bool                        debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_in,

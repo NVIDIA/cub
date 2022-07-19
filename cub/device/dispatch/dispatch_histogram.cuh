@@ -710,8 +710,10 @@ public:
       DeviceHistogramSweepKernelT histogram_sweep_kernel,
       KernelConfig histogram_sweep_config,
       cudaStream_t stream,
-      bool /* debug_synchronous */)
+      bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return PrivatizedDispatch<PrivatizedDecodeOpT,
                                 OutputDecodeOpT,
                                 DeviceHistogramInitKernelT,
@@ -848,9 +850,11 @@ public:
                   OffsetT num_rows,
                   OffsetT row_stride_samples,
                   cudaStream_t stream,
-                  bool /* debug_synchronous */,
+                  bool debug_synchronous,
                   Int2Type<false> is_byte_sample)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return DispatchRange(d_temp_storage,
                            temp_storage_bytes,
                            d_samples,
@@ -952,9 +956,11 @@ public:
                   OffsetT num_rows,
                   OffsetT row_stride_samples,
                   cudaStream_t stream,
-                  bool /* debug_synchronous */,
+                  bool debug_synchronous,
                   Int2Type<true> is_byte_sample)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return DispatchRange(d_temp_storage,
                            temp_storage_bytes,
                            d_samples,
@@ -1086,9 +1092,11 @@ public:
         OffsetT             num_rows,                                   
         OffsetT             row_stride_samples,                        
         cudaStream_t        stream,                                     
-        bool                /* debug_synchronous */,                          
+        bool                debug_synchronous,                          
         Int2Type<false>     is_byte_sample)                    
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return DispatchEven(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,
@@ -1197,9 +1205,11 @@ public:
         OffsetT             num_rows,                                   
         OffsetT             row_stride_samples,                        
         cudaStream_t        stream,                                     
-        bool                /* debug_synchronous */,                          
+        bool                debug_synchronous,                          
         Int2Type<true>      is_byte_sample)                         
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return DispatchEven(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,

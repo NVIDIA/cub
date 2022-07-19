@@ -724,7 +724,7 @@ struct DispatchSpmv
              size_t &temp_storage_bytes,
              SpmvParamsT &spmv_params,
              cudaStream_t stream,
-             bool /* debug_synchronous */,
+             bool debug_synchronous,
              Spmv1ColKernelT spmv_1col_kernel,
              SpmvSearchKernelT spmv_search_kernel,
              SpmvKernelT spmv_kernel,
@@ -732,6 +732,8 @@ struct DispatchSpmv
              KernelConfig spmv_config,
              KernelConfig segment_fixup_config)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch<Spmv1ColKernelT,
                       SpmvSearchKernelT,
                       SpmvKernelT,
@@ -788,8 +790,10 @@ struct DispatchSpmv
              size_t &temp_storage_bytes,
              SpmvParamsT &spmv_params,
              cudaStream_t stream,
-             bool /* debug_synchronous */)
+             bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage, temp_storage_bytes, spmv_params, stream);
     }
 };

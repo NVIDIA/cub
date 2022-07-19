@@ -36,6 +36,7 @@
 #include <cub/detail/type_traits.cuh>
 #include <cub/util_compiler.cuh>
 #include <cub/util_cpp_dialect.cuh>
+#include <cub/util_debug.cuh>
 
 
 #if defined(THRUST_IGNORE_DEPRECATED_API) && !defined(CUB_IGNORE_DEPRECATED_API)
@@ -67,4 +68,12 @@
     "CUB no longer accepts `debug_synchronous` parameter. "                    \
     "Define CUB_DEBUG_SYNC instead, or silence this message with "             \
     "CUB_IGNORE_DEPRECATED_API.")
+
+#define CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG                                \
+  if (debug_synchronous)                                                       \
+  {                                                                            \
+    _CubLog("%s\n",                                                            \
+            "CUB no longer accepts `debug_synchronous` parameter. "            \
+            "Define CUB_DEBUG_SYNC instead.");                                 \
+  }
 

@@ -223,8 +223,10 @@ struct DevicePartition
             NumSelectedIteratorT d_num_selected_out,
             int num_items,
             cudaStream_t stream,
-            bool /* debug_synchronous */)
+            bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Flagged<InputIteratorT,
                      FlagIterator,
                      OutputIteratorT,
@@ -418,8 +420,10 @@ struct DevicePartition
        int num_items,
        SelectOp select_op,
        cudaStream_t stream,
-       bool /* debug_synchronous */)
+       bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
         d_temp_storage,
         temp_storage_bytes,
@@ -679,8 +683,10 @@ struct DevicePartition
        SelectFirstPartOp select_first_part_op,
        SelectSecondPartOp select_second_part_op,
        cudaStream_t stream,
-       bool /* debug_synchronous */)
+       bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return If<InputIteratorT,
                 FirstOutputIteratorT,
                 SecondOutputIteratorT,

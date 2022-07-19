@@ -214,8 +214,10 @@ struct DeviceHistogram
                 LevelT upper_level,
                 OffsetT num_samples,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return HistogramEven(d_temp_storage,
                          temp_storage_bytes,
                          d_samples,
@@ -393,8 +395,10 @@ struct DeviceHistogram
                 OffsetT num_rows,
                 size_t row_stride_bytes,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return HistogramEven(d_temp_storage,
                          temp_storage_bytes,
                          d_samples,
@@ -584,8 +588,10 @@ struct DeviceHistogram
                      LevelT upper_level[NUM_ACTIVE_CHANNELS],
                      OffsetT num_pixels,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return MultiHistogramEven(d_temp_storage,
                               temp_storage_bytes,
                               d_samples,
@@ -828,8 +834,10 @@ struct DeviceHistogram
                      OffsetT num_rows,
                      size_t row_stride_bytes,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return MultiHistogramEven(d_temp_storage,
                               temp_storage_bytes,
                               d_samples,
@@ -991,8 +999,10 @@ struct DeviceHistogram
                  LevelT *d_levels,
                  OffsetT num_samples,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return HistogramRange(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,
@@ -1164,8 +1174,10 @@ struct DeviceHistogram
                  OffsetT num_rows,
                  size_t row_stride_bytes,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return HistogramRange(d_temp_storage,
                           temp_storage_bytes,
                           d_samples,
@@ -1352,8 +1364,10 @@ struct DeviceHistogram
                       LevelT *d_levels[NUM_ACTIVE_CHANNELS],
                       OffsetT num_pixels,
                       cudaStream_t stream,
-                      bool /* debug_synchronous */)
+                      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return MultiHistogramRange(d_temp_storage,
                                temp_storage_bytes,
                                d_samples,
@@ -1592,8 +1606,10 @@ struct DeviceHistogram
                       OffsetT num_rows,
                       size_t row_stride_bytes,
                       cudaStream_t stream,
-                      bool /* debug_synchronous */)
+                      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return MultiHistogramRange(d_temp_storage,
                                temp_storage_bytes,
                                d_samples,

@@ -170,8 +170,10 @@ struct DeviceSpmv
                                                   int num_cols,
                                                   int num_nonzeros,
                                                   cudaStream_t stream,
-                                                  bool /* debug_synchronous */)
+                                                  bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return CsrMV<ValueT>(d_temp_storage,
                            temp_storage_bytes,
                            d_values,

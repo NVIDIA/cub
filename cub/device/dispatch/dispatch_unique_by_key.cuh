@@ -222,7 +222,7 @@ struct DispatchUniqueByKey: SelectedPolicy
         EqualityOpT             equality_op,            
         OffsetT                 num_items,           
         cudaStream_t            stream,               
-        bool                    /* debug_synchronous */
+        bool                    debug_synchronous
     ):
         d_temp_storage(d_temp_storage),
         temp_storage_bytes(temp_storage_bytes),
@@ -234,7 +234,9 @@ struct DispatchUniqueByKey: SelectedPolicy
         equality_op(equality_op),
         num_items(num_items),
         stream(stream)
-    {}
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
 
     /******************************************************************************
@@ -465,8 +467,10 @@ struct DispatchUniqueByKey: SelectedPolicy
         EqualityOpT             equality_op,        
         OffsetT                 num_items,              
         cudaStream_t            stream,                
-        bool                    /* debug_synchronous */)    
+        bool                    debug_synchronous)    
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys_in,

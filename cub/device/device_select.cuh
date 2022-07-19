@@ -227,8 +227,10 @@ struct DeviceSelect
           NumSelectedIteratorT d_num_selected_out,
           int num_items,
           cudaStream_t stream,
-          bool /* debug_synchronous */)
+          bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Flagged<InputIteratorT,
                    FlagIterator,
                    OutputIteratorT,
@@ -378,8 +380,10 @@ struct DeviceSelect
           NumSelectedIteratorT d_num_selected_out,
           int num_items,
           cudaStream_t stream,
-          bool /* debug_synchronous */)
+          bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Flagged<IteratorT, FlagIterator, NumSelectedIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -560,8 +564,10 @@ struct DeviceSelect
      int num_items,
      SelectOp select_op,
      cudaStream_t stream,
-     bool /* debug_synchronous */)
+     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return If<InputIteratorT, OutputIteratorT, NumSelectedIteratorT, SelectOp>(
       d_temp_storage,
       temp_storage_bytes,
@@ -717,8 +723,10 @@ struct DeviceSelect
      int num_items,
      SelectOp select_op,
      cudaStream_t stream,
-     bool /* debug_synchronous */)
+     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return If<IteratorT, NumSelectedIteratorT, SelectOp>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_data,
@@ -877,8 +885,10 @@ struct DeviceSelect
          NumSelectedIteratorT d_num_selected_out,
          int num_items,
          cudaStream_t stream,
-         bool /* debug_synchronous */)
+         bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Unique<InputIteratorT, OutputIteratorT, NumSelectedIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1054,8 +1064,10 @@ struct DeviceSelect
               NumSelectedIteratorT d_num_selected_out,
               int num_items,
               cudaStream_t stream,
-              bool /* debug_synchronous */)
+              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return UniqueByKey<KeyInputIteratorT,
                        ValueInputIteratorT,
                        KeyOutputIteratorT,

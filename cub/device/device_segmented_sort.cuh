@@ -272,8 +272,10 @@ struct DeviceSegmentedSort
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -441,8 +443,10 @@ struct DeviceSegmentedSort
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -618,8 +622,10 @@ struct DeviceSegmentedSort
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -794,8 +800,10 @@ struct DeviceSegmentedSort
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeysDescending<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -951,8 +959,10 @@ struct DeviceSegmentedSort
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1110,8 +1120,10 @@ struct DeviceSegmentedSort
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
                            cudaStream_t stream,
-                           bool /* debug_synchronous */)
+                           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortKeysDescending<KeyT,
                                     BeginOffsetIteratorT,
                                     EndOffsetIteratorT>(d_temp_storage,
@@ -1276,8 +1288,10 @@ struct DeviceSegmentedSort
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1441,8 +1455,10 @@ struct DeviceSegmentedSort
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
                            cudaStream_t stream,
-                           bool /* debug_synchronous */)
+                           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortKeysDescending<KeyT,
                                     BeginOffsetIteratorT,
                                     EndOffsetIteratorT>(d_temp_storage,
@@ -1641,8 +1657,10 @@ struct DeviceSegmentedSort
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1836,8 +1854,10 @@ struct DeviceSegmentedSort
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
                       cudaStream_t stream,
-                      bool /* debug_synchronous */)
+                      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairsDescending<KeyT,
                                ValueT,
                                BeginOffsetIteratorT,
@@ -2035,8 +2055,10 @@ struct DeviceSegmentedSort
             BeginOffsetIteratorT d_begin_offsets,
             EndOffsetIteratorT d_end_offsets,
             cudaStream_t stream,
-            bool /* debug_synchronous */)
+            bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2230,8 +2252,10 @@ struct DeviceSegmentedSort
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
                       cudaStream_t stream,
-                      bool /* debug_synchronous */)
+                      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairsDescending<KeyT,
                                ValueT,
                                BeginOffsetIteratorT,
@@ -2417,8 +2441,10 @@ struct DeviceSegmentedSort
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
                   cudaStream_t stream,
-                  bool /* debug_synchronous */)
+                  bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2606,8 +2632,10 @@ struct DeviceSegmentedSort
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
                             cudaStream_t stream,
-                            bool /* debug_synchronous */)
+                            bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortPairsDescending<KeyT,
                                      ValueT,
                                      BeginOffsetIteratorT,
@@ -2799,8 +2827,10 @@ struct DeviceSegmentedSort
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
                   cudaStream_t stream,
-                  bool /* debug_synchronous */)
+                  bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortPairs<KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -2987,8 +3017,10 @@ struct DeviceSegmentedSort
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
                             cudaStream_t stream,
-                            bool /* debug_synchronous */)
+                            bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortPairsDescending<KeyT,
                                      ValueT,
                                      BeginOffsetIteratorT,

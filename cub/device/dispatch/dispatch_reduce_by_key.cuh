@@ -391,12 +391,14 @@ struct DispatchReduceByKey
              ReductionOpT reduction_op,
              OffsetT num_items,
              cudaStream_t stream,
-             bool /* debug_synchronous */,
+             bool debug_synchronous,
              int ptx_version,
              ScanInitKernelT init_kernel,
              ReduceByKeyKernelT reduce_by_key_kernel,
              KernelConfig reduce_by_key_config)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch<ScanInitKernelT, ReduceByKeyKernelT>(d_temp_storage,
                                                            temp_storage_bytes,
                                                            d_keys_in,
@@ -478,8 +480,10 @@ struct DispatchReduceByKey
              ReductionOpT reduction_op,
              OffsetT num_items,
              cudaStream_t stream,
-             bool /* debug_synchronous */)
+             bool debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys_in,

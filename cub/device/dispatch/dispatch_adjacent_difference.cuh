@@ -186,7 +186,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                              OffsetT num_items,
                              DifferenceOpT difference_op,
                              cudaStream_t stream,
-                             bool /* debug_synchronous */)
+                             bool debug_synchronous)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_input(d_input)
@@ -194,7 +194,9 @@ struct DispatchAdjacentDifference : public SelectedPolicy
       , num_items(num_items)
       , difference_op(difference_op)
       , stream(stream)
-  { }
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+  }
 
   /// Invocation
   template <typename ActivePolicyT>
@@ -383,8 +385,10 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                               OffsetT num_items,
                               DifferenceOpT difference_op,
                               cudaStream_t stream,
-                              bool /* debug_synchronous */)
+                              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_input,

@@ -251,8 +251,10 @@ struct DeviceSegmentedReduce
          ReductionOp reduction_op,
          T initial_value,
          cudaStream_t stream,
-         bool /* debug_synchronous */)
+         bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Reduce<InputIteratorT,
                   OutputIteratorT,
                   BeginOffsetIteratorT,
@@ -426,8 +428,10 @@ struct DeviceSegmentedReduce
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
       cudaStream_t stream,
-      bool /* debug_synchronous */)
+      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Sum<InputIteratorT,
                OutputIteratorT,
                BeginOffsetIteratorT,
@@ -599,8 +603,10 @@ struct DeviceSegmentedReduce
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
       cudaStream_t stream,
-      bool /* debug_synchronous */)
+      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Min<InputIteratorT,
                OutputIteratorT,
                BeginOffsetIteratorT,
@@ -795,8 +801,10 @@ struct DeviceSegmentedReduce
          BeginOffsetIteratorT d_begin_offsets,
          EndOffsetIteratorT d_end_offsets,
          cudaStream_t stream,
-         bool /* debug_synchronous */)
+         bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ArgMin<InputIteratorT,
                   OutputIteratorT,
                   BeginOffsetIteratorT,
@@ -968,8 +976,10 @@ struct DeviceSegmentedReduce
       BeginOffsetIteratorT d_begin_offsets,
       EndOffsetIteratorT d_end_offsets,
       cudaStream_t stream,
-      bool /* debug_synchronous */)
+      bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Max<InputIteratorT,
                OutputIteratorT,
                BeginOffsetIteratorT,
@@ -1161,8 +1171,10 @@ struct DeviceSegmentedReduce
          BeginOffsetIteratorT d_begin_offsets,
          EndOffsetIteratorT d_end_offsets,
          cudaStream_t stream,
-         bool /* debug_synchronous */)
+         bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ArgMax<InputIteratorT,
                   OutputIteratorT,
                   BeginOffsetIteratorT,

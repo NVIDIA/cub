@@ -286,7 +286,7 @@ struct DispatchScanByKey:
                       InitValueT init_value,
                       OffsetT num_items,
                       cudaStream_t stream,
-                      bool /* debug_synchronous */,
+                      bool debug_synchronous,
                       int ptx_version)
         : d_temp_storage(d_temp_storage)
         , temp_storage_bytes(temp_storage_bytes)
@@ -299,7 +299,9 @@ struct DispatchScanByKey:
         , num_items(num_items)
         , stream(stream)
         , ptx_version(ptx_version)
-    { }
+    {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+    }
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
@@ -501,8 +503,10 @@ struct DispatchScanByKey:
         InitValueT            init_value,             
         OffsetT               num_items,             
         cudaStream_t          stream,                 
-        bool                  /* debug_synchronous */)
+        bool                  debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_keys_in,

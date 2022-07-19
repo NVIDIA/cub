@@ -227,8 +227,10 @@ struct DeviceReduce
                                                  ReductionOpT reduction_op,
                                                  T init,
                                                  cudaStream_t stream,
-                                                 bool /* debug_synchronous */)
+                                                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Reduce<InputIteratorT, OutputIteratorT, ReductionOpT, T>(
       d_temp_storage,
       temp_storage_bytes,
@@ -356,8 +358,10 @@ struct DeviceReduce
                                               OutputIteratorT d_out,
                                               int num_items,
                                               cudaStream_t stream,
-                                              bool /* debug_synchronous */)
+                                              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Sum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -475,8 +479,10 @@ struct DeviceReduce
                                               OutputIteratorT d_out,
                                               int num_items,
                                               cudaStream_t stream,
-                                              bool /* debug_synchronous */)
+                                              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Min<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -621,8 +627,10 @@ struct DeviceReduce
                                                  OutputIteratorT d_out,
                                                  int num_items,
                                                  cudaStream_t stream,
-                                                 bool /* debug_synchronous */)
+                                                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ArgMin<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,
                                                    d_in,
@@ -741,8 +749,10 @@ struct DeviceReduce
                                               OutputIteratorT d_out,
                                               int num_items,
                                               cudaStream_t stream,
-                                              bool /* debug_synchronous */)
+                                              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Max<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_in,
@@ -890,8 +900,10 @@ struct DeviceReduce
                                                  OutputIteratorT d_out,
                                                  int num_items,
                                                  cudaStream_t stream,
-                                                 bool /* debug_synchronous */)
+                                                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ArgMax<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,
                                                    d_in,
@@ -1123,8 +1135,10 @@ struct DeviceReduce
               ReductionOpT reduction_op,
               int num_items,
               cudaStream_t stream,
-              bool /* debug_synchronous */)
+              bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ReduceByKey<KeysInputIteratorT,
                        UniqueOutputIteratorT,
                        ValuesInputIteratorT,

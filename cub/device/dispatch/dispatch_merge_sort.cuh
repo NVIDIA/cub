@@ -520,7 +520,7 @@ struct DispatchMergeSort : SelectedPolicy
                     OffsetT num_items,
                     CompareOpT compare_op,
                     cudaStream_t stream,
-                    bool /* debug_synchronous */,
+                    bool debug_synchronous,
                     int ptx_version)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
@@ -532,7 +532,9 @@ struct DispatchMergeSort : SelectedPolicy
       , compare_op(compare_op)
       , stream(stream)
       , ptx_version(ptx_version)
-  {}
+  {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+  }
 
   // Invocation
   template <typename ActivePolicyT>
@@ -876,8 +878,10 @@ struct DispatchMergeSort : SelectedPolicy
            OffsetT num_items,
            CompareOpT compare_op,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return Dispatch(d_temp_storage,
                     temp_storage_bytes,
                     d_input_keys,

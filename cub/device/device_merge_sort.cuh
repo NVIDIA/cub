@@ -241,8 +241,10 @@ struct DeviceMergeSort
             OffsetT num_items,
             CompareOpT compare_op,
             cudaStream_t stream,
-            bool /* debug_synchronous */)
+            bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -416,8 +418,10 @@ struct DeviceMergeSort
                 OffsetT num_items,
                 CompareOpT compare_op,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortPairsCopy<KeyInputIteratorT,
                          ValueInputIteratorT,
                          KeyIteratorT,
@@ -557,8 +561,10 @@ struct DeviceMergeSort
            OffsetT num_items,
            CompareOpT compare_op,
            cudaStream_t stream,
-           bool /* debug_synchronous */)
+           bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
                                                        temp_storage_bytes,
                                                        d_keys,
@@ -707,8 +713,10 @@ struct DeviceMergeSort
                OffsetT num_items,
                CompareOpT compare_op,
                cudaStream_t stream,
-               bool /* debug_synchronous */)
+               bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return SortKeysCopy<KeyInputIteratorT, KeyIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -847,8 +855,10 @@ struct DeviceMergeSort
                   OffsetT num_items,
                   CompareOpT compare_op,
                   cudaStream_t stream,
-                  bool /* debug_synchronous */)
+                  bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortPairs<KeyIteratorT, ValueIteratorT, OffsetT, CompareOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -973,8 +983,10 @@ struct DeviceMergeSort
                  OffsetT num_items,
                  CompareOpT compare_op,
                  cudaStream_t stream,
-                 bool /* debug_synchronous */)
+                 bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return StableSortKeys<KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
                                                              temp_storage_bytes,
                                                              d_keys,

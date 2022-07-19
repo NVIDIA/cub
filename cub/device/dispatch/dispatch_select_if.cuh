@@ -393,12 +393,14 @@ struct DispatchSelectIf
              EqualityOpT equality_op,
              OffsetT num_items,
              cudaStream_t stream,
-             bool /* debug_synchronous */,
+             bool debug_synchronous,
              int ptx_version,
              ScanInitKernelPtrT scan_init_kernel,
              SelectIfKernelPtrT select_if_kernel,
              KernelConfig select_if_config)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch<ScanInitKernelPtrT, SelectIfKernelPtrT>(
         d_temp_storage,
         temp_storage_bytes,
@@ -478,8 +480,10 @@ struct DispatchSelectIf
         EqualityOpT                 equality_op,                    
         OffsetT                     num_items,            
         cudaStream_t                stream,                
-        bool                        /* debug_synchronous */)
+        bool                        debug_synchronous)
     {
+      CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
       return Dispatch(d_temp_storage,
                       temp_storage_bytes,
                       d_in,

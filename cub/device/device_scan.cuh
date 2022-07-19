@@ -217,8 +217,10 @@ struct DeviceScan
                OutputIteratorT d_out,
                int num_items,
                cudaStream_t stream,
-               bool /* debug_synchronous */)
+               bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_in,
@@ -326,8 +328,10 @@ struct DeviceScan
                IteratorT d_data,
                int num_items,
                cudaStream_t stream,
-               bool /* debug_synchronous */)
+               bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
@@ -489,8 +493,10 @@ struct DeviceScan
                 InitValueT init_value,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT, InitValueT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -632,8 +638,10 @@ struct DeviceScan
                 InitValueT init_value,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveScan<IteratorT, ScanOpT, InitValueT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_data,
@@ -803,8 +811,10 @@ struct DeviceScan
                 FutureValue<InitValueT, InitValueIterT> init_value,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveScan<InputIteratorT,
                          OutputIteratorT,
                          ScanOpT,
@@ -956,8 +966,10 @@ struct DeviceScan
                 FutureValue<InitValueT, InitValueIterT> init_value,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveScan<IteratorT, ScanOpT, InitValueT, InitValueIterT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1090,8 +1102,10 @@ struct DeviceScan
                OutputIteratorT d_out,
                int num_items,
                cudaStream_t stream,
-               bool /* debug_synchronous */)
+               bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveSum<InputIteratorT, OutputIteratorT>(d_temp_storage,
                                                          temp_storage_bytes,
                                                          d_in,
@@ -1193,8 +1207,10 @@ struct DeviceScan
                IteratorT d_data,
                int num_items,
                cudaStream_t stream,
-               bool /* debug_synchronous */)
+               bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveSum(d_temp_storage,
                         temp_storage_bytes,
                         d_data,
@@ -1340,8 +1356,10 @@ struct DeviceScan
                 ScanOpT scan_op,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveScan<InputIteratorT, OutputIteratorT, ScanOpT>(
       d_temp_storage,
       temp_storage_bytes,
@@ -1468,8 +1486,10 @@ struct DeviceScan
                 ScanOpT scan_op,
                 int num_items,
                 cudaStream_t stream,
-                bool /* debug_synchronous */)
+                bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveScan<IteratorT, ScanOpT>(d_temp_storage,
                                              temp_storage_bytes,
                                              d_data,
@@ -1636,8 +1656,10 @@ struct DeviceScan
                     int num_items,
                     EqualityOpT equality_op,
                     cudaStream_t stream,
-                    bool /* debug_synchronous */)
+                    bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveSumByKey<KeysInputIteratorT,
                              ValuesInputIteratorT,
                              ValuesOutputIteratorT,
@@ -1852,8 +1874,10 @@ struct DeviceScan
                      int num_items,
                      EqualityOpT equality_op,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return ExclusiveScanByKey<KeysInputIteratorT,
                               ValuesInputIteratorT,
                               ValuesOutputIteratorT,
@@ -2020,8 +2044,10 @@ struct DeviceScan
                     int num_items,
                     EqualityOpT equality_op,
                     cudaStream_t stream,
-                    bool /* debug_synchronous */)
+                    bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveSumByKey<KeysInputIteratorT,
                              ValuesInputIteratorT,
                              ValuesOutputIteratorT,
@@ -2219,8 +2245,10 @@ struct DeviceScan
                      int num_items,
                      EqualityOpT equality_op,
                      cudaStream_t stream,
-                     bool /* debug_synchronous */)
+                     bool debug_synchronous)
   {
+    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
+
     return InclusiveScanByKey<KeysInputIteratorT,
                               ValuesInputIteratorT,
                               ValuesOutputIteratorT,
