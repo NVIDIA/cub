@@ -65,6 +65,9 @@ CUB_NAMESPACE_BEGIN
  * DeviceSegmentedRadixSort shares its implementation with DeviceRadixSort. See
  * that algorithm's documentation for more information.
  *
+ * @par Segments are not required to be contiguous. Any element of input(s) or 
+ * output(s) outside the specified segments will not be accessed nor modified.  
+ *
  * @par Usage Considerations
  * @cdp_class{DeviceSegmentedRadixSort}
  *
@@ -96,6 +99,9 @@ struct DeviceSegmentedRadixSort
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys_in[i]`, `d_values_in[i]`, 
+   *   `d_keys_out[i]`, `d_values_out[i]` will not be accessed nor modified.   
    * - @devicestorage
    *
    * @par Snippet
@@ -318,6 +324,10 @@ struct DeviceSegmentedRadixSort
    *   `[alt, alt + num_items)`. Both ranges shall not overlap
    *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys.Current()[i]`, 
+   *   `d_values.Current()[i]`, `d_keys.Alternate()[i]`, 
+   *   `d_values.Alternate()[i]` will not be accessed nor modified.   
    * - @devicestorageP
    * - @devicestorage
    *
@@ -522,6 +532,9 @@ struct DeviceSegmentedRadixSort
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys_in[i]`, `d_values_in[i]`, 
+   *   `d_keys_out[i]`, `d_values_out[i]` will not be accessed nor modified.   
    * - @devicestorage
    *
    * @par Snippet
@@ -746,6 +759,11 @@ struct DeviceSegmentedRadixSort
    *   `[alt, alt + num_items)`. Both ranges shall not overlap
    *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys.Current()[i]`, 
+   *   `d_values.Current()[i]`, `d_keys.Alternate()[i]`, 
+   *   `d_values.Alternate()[i]` will not be accessed nor modified.   
+   *   not to be modified. 
    * - @devicestorageP
    * - @devicestorage
    *
@@ -957,6 +975,9 @@ struct DeviceSegmentedRadixSort
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys_in[i]`, `d_keys_out[i]` will not 
+   *   be accessed nor modified.   
    * - @devicestorage
    *
    * @par Snippet
@@ -1149,6 +1170,9 @@ struct DeviceSegmentedRadixSort
    *   `[alt, alt + num_items)`. Both ranges shall not overlap
    *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys.Current()[i]`, 
+   *   `d_keys[i].Alternate()[i]` will not be accessed nor modified.   
    * - @devicestorageP
    * - @devicestorage
    *
@@ -1337,6 +1361,9 @@ struct DeviceSegmentedRadixSort
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
    * - @devicestorageNP For sorting using only `O(P)` temporary storage, see 
    *   the sorting interface using DoubleBuffer wrappers below.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys_in[i]`, `d_keys_out[i]` will not 
+   *   be accessed nor modified.   
    * - @devicestorage
    *
    * @par Snippet
@@ -1534,6 +1561,9 @@ struct DeviceSegmentedRadixSort
    *   `[alt, alt + num_items)`. Both ranges shall not overlap
    *   `[d_begin_offsets, d_begin_offsets + num_segments)` nor
    *   `[d_end_offsets, d_end_offsets + num_segments)` in any way.
+   * - Segments are not required to be contiguous. For all index values `i` 
+   *   outside the specified segments `d_keys.Current()[i]`, 
+   *   `d_keys[i].Alternate()[i]` will not be accessed nor modified.   
    * - @devicestorageP
    * - @devicestorage
    *

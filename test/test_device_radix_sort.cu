@@ -59,6 +59,10 @@
 #include <cub/iterator/transform_input_iterator.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/sequence.h>
+#include <thrust/sort.h>
 
 #include "test_util.h"
 
@@ -1716,6 +1720,173 @@ void Test(
     if (d_segment_offsets) CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
 }
 
+#if TEST_VALUE_TYPE == 0
+void TestUnspecifiedRanges()
+{
+  const std::size_t num_items = 1024 * 1024;
+  const std::size_t max_segments = 42;
+  const std::size_t avg_segment_size = num_items / max_segments;
+
+  for (int iteration = 0; iteration < 4; iteration++)
+  {
+    thrust::host_vector<int> h_offsets_begin;
+    thrust::host_vector<int> h_offsets_end;
+
+    h_offsets_begin.reserve(max_segments + 1);
+    h_offsets_end.reserve(max_segments + 1);
+
+    {
+      int offset = 0;
+
+      for (std::size_t sid = 0; sid < max_segments; sid++)
+      {
+        const int segment_size = 
+          static_cast<int>(RandomValue(avg_segment_size));
+
+        const bool segment_is_utilized = segment_size > 0 
+                                       && RandomValue(100) > 60;
+
+        if (segment_is_utilized)
+        {
+          h_offsets_begin.push_back(offset);
+          h_offsets_end.push_back(offset + segment_size);
+        }
+
+        offset += segment_size;
+      }
+
+      if (h_offsets_begin.empty())
+      {
+        h_offsets_begin.push_back(avg_segment_size);
+        h_offsets_end.push_back(num_items);
+      }
+    }
+
+    thrust::device_vector<int> keys(num_items);
+    thrust::device_vector<int> values(num_items);
+
+    thrust::sequence(keys.rbegin(), keys.rend());
+    thrust::sequence(values.rbegin(), values.rend());
+
+    thrust::device_vector<int> d_offsets_begin = h_offsets_begin;
+    thrust::device_vector<int> d_offsets_end = h_offsets_end;
+
+    thrust::device_vector<int> expected_keys = keys;
+    thrust::device_vector<int> expected_values = values;
+
+    const int num_segments = static_cast<int>(h_offsets_begin.size());
+
+    thrust::device_vector<int> result_keys = keys;
+    thrust::device_vector<int> result_values = values;
+
+    for (int sid = 0; sid < num_segments; sid++)
+    {
+      const int segment_begin = h_offsets_begin[sid];
+      const int segment_end = h_offsets_end[sid];
+
+      thrust::sort_by_key(expected_keys.begin() + segment_begin,
+                          expected_keys.begin() + segment_end,
+                          expected_values.begin() + segment_begin);
+    }
+
+    {
+      cub::DoubleBuffer<int> keys_buffer(
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()));
+
+      cub::DoubleBuffer<int> values_buffer(
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()));
+
+      std::size_t temp_storage_bytes{};
+      std::uint8_t *d_temp_storage{nullptr};
+
+      CubDebugExit(cub::DeviceSegmentedRadixSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          keys_buffer, values_buffer, 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data()),
+          0, sizeof(int) * 8));
+
+      thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+      d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+      CubDebugExit(cub::DeviceSegmentedRadixSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          keys_buffer, values_buffer, 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data()),
+          0, sizeof(int) * 8));
+
+      for (int sid = 0; sid < num_segments; sid++)
+      {
+        const int segment_begin = h_offsets_begin[sid];
+        const int segment_end = h_offsets_end[sid];
+
+        if (keys_buffer.selector == 0)
+        {
+          thrust::copy(
+              keys.begin() + segment_begin,
+              keys.begin() + segment_end,
+              result_keys.begin() + segment_begin);
+        }
+                       
+        if (values_buffer.selector == 0)
+        {
+          thrust::copy(
+              values.begin() + segment_begin,
+              values.begin() + segment_end,
+              result_values.begin() + segment_begin);
+        }
+      }
+    }
+
+    AssertEquals(result_keys, expected_keys); 
+    AssertEquals(result_values, expected_values);
+
+    thrust::sequence(keys.rbegin(), keys.rend());
+    thrust::sequence(values.rbegin(), values.rend());
+
+    result_keys = keys;
+    result_values = values;
+
+    {
+      std::size_t temp_storage_bytes{};
+      std::uint8_t *d_temp_storage{};
+
+      CubDebugExit(cub::DeviceSegmentedRadixSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()), 
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()), 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data()),
+          0, sizeof(int) * 8));
+
+      thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+      d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+      CubDebugExit(cub::DeviceSegmentedRadixSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()), 
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()), 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data()),
+          0, sizeof(int) * 8));
+    }
+
+    AssertEquals(result_values, expected_values);
+    AssertEquals(result_keys, expected_keys);
+  }
+}
+#endif
 
 
 //---------------------------------------------------------------------
@@ -1801,6 +1972,10 @@ int main(int argc, char** argv)
 #elif TEST_KEY_BYTES == 4
 
     TestGen<int, true>                (num_items, num_segments);
+
+#if TEST_VALUE_TYPE == 0
+    TestUnspecifiedRanges();
+#endif
 
 #ifdef TEST_EXTENDED_KEY_TYPES
     TestGen<float, false>             (num_items, num_segments);

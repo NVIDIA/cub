@@ -845,7 +845,7 @@ std::size_t Sort(bool pairs,
 }
 
 
-constexpr bool keys = false;
+constexpr bool keys_only = false;
 constexpr bool pairs = true;
 
 constexpr bool ascending = false;
@@ -868,7 +868,7 @@ void TestZeroSegments()
 
   for (bool stable_sort: { unstable, stable })
   {
-    for (bool sort_pairs: { keys, pairs })
+    for (bool sort_pairs: { keys_only, pairs })
     {
       for (bool sort_descending: { ascending, descending })
       {
@@ -914,7 +914,7 @@ void TestEmptySegments(int segments)
 
   for (bool sort_stable: { unstable, stable })
   {
-    for (bool sort_pairs: { keys, pairs })
+    for (bool sort_pairs: { keys_only, pairs })
     {
       for (bool sort_descending: { ascending, descending })
       {
@@ -983,7 +983,7 @@ void TestSameSizeSegments(int segment_size,
 
   for (bool stable_sort: { unstable, stable })
   {
-    for (bool sort_pairs: { keys, pairs })
+    for (bool sort_pairs: { keys_only, pairs })
     {
       if (sort_pairs)
       {
@@ -1100,7 +1100,7 @@ void InputTest(bool sort_descending,
 
   for (bool stable_sort: { unstable, stable })
   {
-    for (bool sort_pairs : {keys, pairs})
+    for (bool sort_pairs : { keys_only, pairs })
     {
       for (bool sort_buffers : {pointers, double_buffer})
       {
@@ -1355,7 +1355,7 @@ void InputTestRandom(Input<KeyT, ValueT> &input)
 
   for (bool stable_sort: { unstable, stable })
   {
-    for (bool sort_pairs: { keys, pairs })
+    for (bool sort_pairs: { keys_only, pairs })
     {
       for (bool sort_descending: { ascending, descending })
       {
@@ -1742,6 +1742,165 @@ void TestDeviceSideLaunch()
 
 #endif // TEST_CDP
 
+void TestUnspecifiedRanges()
+{
+  const std::size_t num_items = 1024 * 1024;
+  const std::size_t max_segments = 42;
+  const std::size_t avg_segment_size = num_items / max_segments;
+
+  for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++)
+  {
+    thrust::host_vector<int> h_offsets_begin;
+    thrust::host_vector<int> h_offsets_end;
+
+    h_offsets_begin.reserve(max_segments + 1);
+    h_offsets_end.reserve(max_segments + 1);
+
+    {
+      int offset = 0;
+
+      for (std::size_t sid = 0; sid < max_segments; sid++)
+      {
+        const int segment_size =
+          RandomValue(static_cast<int>(avg_segment_size));
+        const bool segment_is_utilized = RandomValue(100) > 60;
+
+        if (segment_is_utilized)
+        {
+          h_offsets_begin.push_back(offset);
+          h_offsets_end.push_back(offset + segment_size);
+        }
+
+        offset += segment_size;
+      }
+
+      if (h_offsets_begin.empty())
+      {
+        h_offsets_begin.push_back(avg_segment_size);
+        h_offsets_end.push_back(num_items);
+      }
+    }
+
+    thrust::device_vector<int> keys(num_items);
+    thrust::device_vector<int> values(num_items);
+
+    thrust::sequence(keys.rbegin(), keys.rend());
+    thrust::sequence(values.rbegin(), values.rend());
+
+    thrust::device_vector<int> d_offsets_begin = h_offsets_begin;
+    thrust::device_vector<int> d_offsets_end = h_offsets_end;
+
+    thrust::device_vector<int> expected_keys = keys;
+    thrust::device_vector<int> expected_values = values;
+
+    const int num_segments = static_cast<int>(h_offsets_begin.size());
+
+    for (int sid = 0; sid < num_segments; sid++)
+    {
+      const int segment_begin = h_offsets_begin[sid];
+      const int segment_end = h_offsets_end[sid];
+
+      thrust::sort_by_key(expected_keys.begin() + segment_begin,
+                          expected_keys.begin() + segment_end,
+                          expected_values.begin() + segment_begin);
+    }
+
+    thrust::device_vector<int> result_keys = keys;
+    thrust::device_vector<int> result_values = values;
+
+    {
+      cub::DoubleBuffer<int> keys_buffer(
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()));
+
+      cub::DoubleBuffer<int> values_buffer(
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()));
+
+      std::size_t temp_storage_bytes{};
+      std::uint8_t *d_temp_storage{};
+
+      CubDebugExit(cub::DeviceSegmentedSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          keys_buffer, values_buffer, 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data())));
+
+      thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+      d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+      CubDebugExit(cub::DeviceSegmentedSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          keys_buffer, values_buffer, 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data())));
+
+      for (int sid = 0; sid < num_segments; sid++)
+      {
+        const int segment_begin = h_offsets_begin[sid];
+        const int segment_end = h_offsets_end[sid];
+
+        if (keys_buffer.selector == 0)
+        {
+          thrust::copy(
+              keys.begin() + segment_begin,
+              keys.begin() + segment_end,
+              result_keys.begin() + segment_begin);
+        }
+                       
+        if (values_buffer.selector == 0)
+        {
+          thrust::copy(
+              values.begin() + segment_begin,
+              values.begin() + segment_end,
+              result_values.begin() + segment_begin);
+        }
+      }
+    }
+
+    AssertEquals(result_values, expected_values);
+    AssertEquals(result_keys, expected_keys);
+
+    thrust::sequence(keys.rbegin(), keys.rend());
+    thrust::sequence(values.rbegin(), values.rend());
+
+    result_keys = keys;
+    result_values = values;
+
+    {
+      std::size_t temp_storage_bytes{};
+      std::uint8_t *d_temp_storage{};
+
+      CubDebugExit(cub::DeviceSegmentedSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()), 
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()), 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data())));
+
+      thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+      d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+      CubDebugExit(cub::DeviceSegmentedSort::SortPairs(
+          d_temp_storage, temp_storage_bytes, 
+          thrust::raw_pointer_cast(keys.data()), 
+          thrust::raw_pointer_cast(result_keys.data()), 
+          thrust::raw_pointer_cast(values.data()), 
+          thrust::raw_pointer_cast(result_values.data()), 
+          num_items, num_segments, 
+          thrust::raw_pointer_cast(d_offsets_begin.data()),
+          thrust::raw_pointer_cast(d_offsets_end.data())));
+    }
+
+    AssertEquals(result_values, expected_values);
+    AssertEquals(result_keys, expected_keys);
+  }
+}
 
 int main(int argc, char** argv)
 {
@@ -1771,6 +1930,8 @@ int main(int argc, char** argv)
 #elif TEST_CDP == 1
   TestDeviceSideLaunch<int>();
 #endif // TEST_CDP
+
+  TestUnspecifiedRanges();
 
   return 0;
 }
