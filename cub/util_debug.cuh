@@ -185,7 +185,22 @@ cudaError_t Debug(cudaError_t error, const char *filename, int line)
 {
   // Clear the global CUDA error state which may have been set by the last
   // call. Otherwise, errors may "leak" to unrelated kernel launches.
-  cudaGetLastError();
+
+  // clang-format off
+  #ifndef CUB_RDC_ENABLED
+  #define CUB_TEMP_DEVICE_CODE
+  #else
+  #define CUB_TEMP_DEVICE_CODE cudaGetLastError()
+  #endif
+
+  NV_IF_TARGET(
+    NV_IS_HOST, 
+    (cudaGetLastError();),
+    (CUB_TEMP_DEVICE_CODE;)
+  );
+  
+  #undef CUB_TEMP_DEVICE_CODE
+  // clang-format on
 
 #ifdef CUB_STDERR
   if (error)
