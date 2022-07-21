@@ -43,9 +43,7 @@ function(cub_add_example target_name_var example_name example_src cub_target)
   endif()
   add_dependencies(${example_meta_target} ${example_target})
 
-  if (CUB_ENABLE_EXAMPLES_WITH_RDC)
-    cub_enable_rdc_for_cuda_target(${example_target})
-  endif()
+  cub_set_rdc_state(${example_target} ${CUB_ENABLE_EXAMPLES_WITH_RDC})
 
   add_test(NAME ${example_target}
     COMMAND "$<TARGET_FILE:${example_target}>"

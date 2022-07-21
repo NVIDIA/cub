@@ -20,27 +20,53 @@ foreach (header IN LISTS headers)
   list(APPEND headertest_srcs "${headertest_src}")
 endforeach()
 
-function(cub_add_header_test label definitions)
-  foreach(cub_target IN LISTS CUB_TARGETS)
-    cub_get_target_property(config_prefix ${cub_target} PREFIX)
+function(cub_add_header_test target_name srcs cub_target)
+  add_library(${target_name} OBJECT ${srcs})
+  target_link_libraries(${target_name} PUBLIC ${cub_target})
 
-    set(headertest_target ${config_prefix}.headers.${label})
-    add_library(${headertest_target} OBJECT ${headertest_srcs})
-    target_link_libraries(${headertest_target} PUBLIC ${cub_target})
-    target_compile_definitions(${headertest_target} PRIVATE ${definitions})
-    cub_clone_target_properties(${headertest_target} ${cub_target})
-
-    add_dependencies(cub.all.headers ${headertest_target})
-    add_dependencies(${config_prefix}.all ${headertest_target})
-  endforeach()
+  # Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
+  target_compile_definitions(${target_name} PRIVATE
+    "THRUST_WRAPPED_NAMESPACE=wrapped_thrust"
+    "CUB_WRAPPED_NAMESPACE=wrapped_cub"
+    )
+  cub_clone_target_properties(${target_name} ${cub_target})
 endfunction()
 
-# Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
-set(header_definitions 
-  "THRUST_WRAPPED_NAMESPACE=wrapped_thrust" 
-  "CUB_WRAPPED_NAMESPACE=wrapped_cub")
-cub_add_header_test(base "${header_definitions}")
+foreach(cub_target IN LISTS CUB_TARGETS)
+  cub_get_target_property(config_prefix ${cub_target} PREFIX)
 
-list(APPEND header_definitions "CUB_DISABLE_BF16_SUPPORT")
-cub_add_header_test(bf16 "${header_definitions}")
+  set(headertest_target ${config_prefix}.headers) # Metatarget
+  add_custom_target(${headertest_target})
+  add_dependencies(cub.all.headers ${headertest_target})
+  add_dependencies(${config_prefix}.all ${headertest_target})
 
+  set(headertest_rdc_target ${headertest_target}.rdc)
+  cub_add_header_test(
+    ${headertest_rdc_target}
+    "${headertest_srcs}"
+    ${cub_target}
+  )
+  cub_set_rdc_state(${headertest_rdc_target} ON)
+  add_dependencies(${headertest_target} ${headertest_rdc_target})
+
+  set(headertest_no_rdc_target ${headertest_target}.no_rdc)
+  cub_add_header_test(
+    ${headertest_no_rdc_target}
+    "${headertest_srcs}"
+    ${cub_target}
+  )
+  cub_set_rdc_state(${headertest_no_rdc_target} OFF)
+  add_dependencies(${headertest_target} ${headertest_no_rdc_target})
+
+  set(headertest_no_bf16_target ${headertest_target}.no_bf16)
+  cub_add_header_test(
+    ${headertest_no_bf16_target}
+    "${headertest_srcs}"
+    ${cub_target}
+  )
+  cub_set_rdc_state(${headertest_no_bf16_target} OFF)
+  target_compile_definitions(${headertest_no_bf16_target}
+    PRIVATE "CUB_DISABLE_BF16_SUPPORT"
+  )
+  add_dependencies(${headertest_target} ${headertest_no_bf16_target})
+endforeach()
