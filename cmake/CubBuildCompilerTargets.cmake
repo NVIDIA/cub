@@ -74,11 +74,9 @@ function(cub_build_compiler_targets)
   endif()
 
   if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
-    # Today:
-    # * NVCC accepts CUDA C++ in .cu files but not .cpp files.
-    # * NVC++ accepts CUDA C++ in .cpp files but not .cu files.
-    # TODO: This won't be necessary in the future.
-    list(APPEND cxx_compile_options -cppsuffix=cu)
+    list(APPEND cxx_compile_options -cuda)
+    list(APPEND cxx_compile_options -Mnodaz)
+    # TODO: Managed memory is currently not supported on windows with WSL
     list(APPEND cxx_compile_options -gpu=nomanaged)
   endif()
 
