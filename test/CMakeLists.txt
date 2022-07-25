@@ -1,3 +1,11 @@
+# Some tests always build with RDC, so make sure that the sm_XX flags are
+# compatible. See note in CubCudaConfig.cmake.
+# TODO once we're using CUDA_ARCHITECTURES, we can setup non-rdc fallback
+# tests to build for non-rdc arches. But for now, all files in a given directory
+# must build with the same `CMAKE_CUDA_FLAGS` due to CMake constraints around
+# how CUDA_FLAGS works.
+set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_RDC}")
+
 # The function below reads the filepath `src`, extracts the %PARAM% comments,
 # and fills `labels_var` with a list of `label1_value1.label2_value2...`
 # strings, and puts the corresponding `DEFINITION=value1:DEFINITION=value2`
