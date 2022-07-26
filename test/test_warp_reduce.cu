@@ -418,6 +418,8 @@ void Initialize(
         RandomBits(bits, flag_entropy);
         h_flags[i] = bits & 0x1;
     }
+    h_flags[warps * warp_threads] = {};
+    h_tail_out[warps * warp_threads] = {};
 
     // Accumulate segments (lane 0 of each warp is implicitly a segment head)
     for (int warp = 0; warp < warps; ++warp)
@@ -483,9 +485,9 @@ void TestReduce(
 
     // Allocate host arrays
     T   *h_in           = new T[BLOCK_THREADS];
-    int *h_flags        = new int[BLOCK_THREADS];
+    int *h_flags        = new int[BLOCK_THREADS + 1];
     T   *h_out          = new T[BLOCK_THREADS];
-    T   *h_tail_out     = new T[BLOCK_THREADS];
+    T   *h_tail_out     = new T[BLOCK_THREADS + 1];
 
     // Initialize problem
     Initialize(gen_mode, -1, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, valid_warp_threads, reduction_op, h_out, h_tail_out);
@@ -578,9 +580,9 @@ void TestSegmentedReduce(
     // Allocate host arrays
     int compare;
     T   *h_in           = new T[BLOCK_THREADS];
-    int *h_flags        = new int[BLOCK_THREADS];
-    T   *h_head_out     = new T[BLOCK_THREADS];
-    T   *h_tail_out     = new T[BLOCK_THREADS];
+    int *h_flags        = new int[BLOCK_THREADS + 1];
+    T   *h_head_out     = new T[BLOCK_THREADS + 1];
+    T   *h_tail_out     = new T[BLOCK_THREADS + 1];
 
     // Initialize problem
     Initialize(gen_mode, flag_entropy, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, LOGICAL_WARP_THREADS, reduction_op, h_head_out, h_tail_out);
@@ -817,6 +819,7 @@ int main(int argc, char** argv)
     Test<16>();
     Test<9>();
     Test<7>();
+    Test<1>();
 
     return 0;
 }

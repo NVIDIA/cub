@@ -603,6 +603,71 @@ public:
     //@}  end member group
 };
 
+template <typename T, int LEGACY_PTX_ARCH>
+class WarpReduce<T, 1, LEGACY_PTX_ARCH>
+{
+private:
+  using _TempStorage = cub::NullType;
+
+public:
+  struct TempStorage : Uninitialized<_TempStorage>
+  {};
+
+  __device__ __forceinline__ WarpReduce(TempStorage & /*temp_storage */)
+  {}
+
+  __device__ __forceinline__ T Sum(T input) { return input; }
+
+  __device__ __forceinline__ T Sum(T input, int /* valid_items */)
+  {
+    return input;
+  }
+
+  template <typename FlagT>
+  __device__ __forceinline__ T HeadSegmentedSum(T input, FlagT /* head_flag */)
+  {
+    return input;
+  }
+
+  template <typename FlagT>
+  __device__ __forceinline__ T TailSegmentedSum(T input, FlagT /* tail_flag */)
+  {
+    return input;
+  }
+
+  template <typename ReductionOp>
+  __device__ __forceinline__ T Reduce(T input, ReductionOp /* reduction_op */)
+  {
+    return input;
+  }
+
+  template <typename ReductionOp>
+  __device__ __forceinline__ T Reduce(T input,
+                                      ReductionOp /* reduction_op */,
+                                      int /* valid_items */)
+  {
+    return input;
+  }
+
+  template <typename ReductionOp, typename FlagT>
+  __device__ __forceinline__ T
+  HeadSegmentedReduce(T input,
+                      FlagT /* head_flag */,
+                      ReductionOp /* reduction_op */)
+  {
+    return input;
+  }
+
+  template <typename ReductionOp, typename FlagT>
+  __device__ __forceinline__ T
+  TailSegmentedReduce(T input,
+                      FlagT /* tail_flag */,
+                      ReductionOp /* reduction_op */)
+  {
+    return input;
+  }
+};
+
 /** @} */       // end group WarpModule
 
 CUB_NAMESPACE_END
