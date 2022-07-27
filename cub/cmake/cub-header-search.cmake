@@ -1,7 +1,6 @@
-unset(_CUB_VERSION_INCLUDE_DIR CACHE) # Clear old result to force search
-find_path(_CUB_VERSION_INCLUDE_DIR cub/version.cuh
-  NO_DEFAULT_PATH # Only search explicit paths below:
-  PATHS
-    "${CMAKE_CURRENT_LIST_DIR}/../.."            # Source tree
-)
-set_property(CACHE _CUB_VERSION_INCLUDE_DIR PROPERTY TYPE INTERNAL)
+# Parse version information from version.h in source tree
+set(_CUB_VERSION_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
+if(EXISTS "${_CUB_VERSION_INCLUDE_DIR}/cub/version.cuh")
+  set(_CUB_VERSION_INCLUDE_DIR "${_CUB_VERSION_INCLUDE_DIR}" CACHE FILEPATH "" FORCE) # Clear old result
+  set_property(CACHE _CUB_VERSION_INCLUDE_DIR PROPERTY TYPE INTERNAL)
+endif()
