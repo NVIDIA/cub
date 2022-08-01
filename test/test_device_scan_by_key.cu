@@ -87,7 +87,7 @@ struct WrapperFunctor
     template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
-        return op(a, b);
+        return static_cast<T>(op(a, b));
     }
 };
 
@@ -420,7 +420,7 @@ void Solve(
         for (int i = 0; i < num_items;) {
             AccumT val         = static_cast<AccumT>(h_values_in[i]);
             h_reference[i]     = initial_value;
-            AccumT inclusive   = scan_op(initial_value, val);
+            AccumT inclusive   = static_cast<AccumT>(scan_op(initial_value, val));
 
             ++i;
 
@@ -428,7 +428,7 @@ void Solve(
             {
                 val = static_cast<AccumT>(h_values_in[i]);
                 h_reference[i] = static_cast<OutputT>(inclusive);
-                inclusive = scan_op(inclusive, val);
+                inclusive = static_cast<AccumT>(scan_op(inclusive, val));
             }
         }
     }
@@ -468,7 +468,7 @@ void Solve(
             for (; i < num_items && equality_op(h_keys_in[i - 1], h_keys_in[i]); ++i)
             {
                 AccumT val = h_values_in[i];
-                inclusive = scan_op(inclusive, val);
+                inclusive = static_cast<AccumT>(scan_op(inclusive, val));
                 h_reference[i] = static_cast<OutputT>(inclusive);
             }
         }

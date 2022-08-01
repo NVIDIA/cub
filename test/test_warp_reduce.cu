@@ -78,7 +78,7 @@ struct WrapperFunctor
               }
         ));
 
-        return op(a, b);
+        return static_cast<T>(op(a, b));
     }
 
 };
@@ -444,7 +444,7 @@ void Initialize(
             }
             else
             {
-                head_aggregate = reduction_op(head_aggregate, h_in[item_offset]);
+                head_aggregate = static_cast<T>(reduction_op(head_aggregate, h_in[item_offset]));
             }
 
             if (h_flags[item_offset])
@@ -455,7 +455,7 @@ void Initialize(
             }
             else
             {
-                tail_aggregate = reduction_op(tail_aggregate, h_in[item_offset]);
+                tail_aggregate = static_cast<T>(reduction_op(tail_aggregate, h_in[item_offset]));
             }
 
             item_offset--;

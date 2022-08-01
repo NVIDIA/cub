@@ -143,7 +143,7 @@ struct BlockReduceWarpReductions
         // Share lane aggregates
         if (lane_id == 0)
         {
-            temp_storage.warp_aggregates[warp_id] = warp_aggregate;
+            new (temp_storage.warp_aggregates + warp_id) T(warp_aggregate);
         }
 
         CTA_SYNC();

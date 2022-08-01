@@ -337,7 +337,7 @@ int Solve(
         }
         else
         {
-            aggregate = reduction_op(aggregate, h_values_in[i]);
+            aggregate = static_cast<ValueT>(reduction_op(aggregate, h_values_in[i]));
         }
         previous = h_keys_in[i];
     }

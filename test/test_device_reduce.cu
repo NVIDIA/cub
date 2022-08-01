@@ -101,8 +101,9 @@ inline const char* BackendToString(Backend b)
 struct CustomMax
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
-    template <typename OutputT>
-    __host__ __device__ __forceinline__ OutputT operator()(const OutputT &a, const OutputT &b)
+    template <typename T, typename C>
+    __host__ __device__ auto operator()(T&& a, C&& b) 
+      -> cub::detail::accumulator_t<cub::Max, T, C>
     {
         return CUB_MAX(a, b);
     }
@@ -696,7 +697,9 @@ void Initialize(
 template <typename ReductionOpT, typename InputT, typename _OutputT>
 struct Solution
 {
-    typedef _OutputT OutputT;
+    using OutputT = _OutputT;
+    using InitT = OutputT;
+    using AccumT = cub::detail::accumulator_t<ReductionOpT, InitT, InputT>;
 
     template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
     static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
@@ -704,7 +707,7 @@ struct Solution
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+            AccumT aggregate = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
             for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
@@ -716,7 +719,9 @@ struct Solution
 template <typename InputT, typename _OutputT>
 struct Solution<cub::Min, InputT, _OutputT>
 {
-    typedef _OutputT OutputT;
+    using OutputT = _OutputT;
+    using InitT = OutputT;
+    using AccumT = cub::detail::accumulator_t<cub::Min, InitT, InputT>;
 
     template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
     static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
@@ -724,7 +729,7 @@ struct Solution<cub::Min, InputT, _OutputT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = Traits<InputT>::Max();    // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
+            AccumT aggregate = Traits<InputT>::Max();    // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
             for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
@@ -737,7 +742,9 @@ struct Solution<cub::Min, InputT, _OutputT>
 template <typename InputT, typename _OutputT>
 struct Solution<cub::Sum, InputT, _OutputT>
 {
-    typedef _OutputT OutputT;
+    using OutputT = _OutputT;
+    using InitT = OutputT;
+    using AccumT = cub::detail::accumulator_t<cub::Sum, InitT, InputT>;
 
     template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
     static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
@@ -745,11 +752,11 @@ struct Solution<cub::Sum, InputT, _OutputT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate;
+            AccumT aggregate;
             InitValue(INTEGER_SEED, aggregate, 0);
             for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
-                aggregate = reduction_op(aggregate, OutputT(h_in[j]));
-            h_reference[i] = aggregate;
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = static_cast<OutputT>(aggregate);
         }
     }
 };
@@ -855,6 +862,7 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_segments, g_verbose, g_verbose);
+
     printf("\t%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
@@ -1222,8 +1230,164 @@ void TestBySize(OffsetT max_items, OffsetT max_segments, OffsetT tile_size)
   TestProblem<Backend, InputT, OutputT>(occupancy, 1, RANDOM, Sum());
   TestProblem<Backend, InputT, OutputT>(occupancy + 1, 1, RANDOM, Sum());
   TestProblem<Backend, InputT, OutputT>(occupancy - 1, 1, RANDOM, Sum());
+};
+
+class CustomInputT
+{
+  char m_val{};
+
+public:
+  __host__ __device__ explicit CustomInputT(char val)
+      : m_val(val)
+  {}
+
+  __host__ __device__ int get() const { return static_cast<int>(m_val); }
+};
+
+class CustomAccumulatorT
+{
+  int m_val{0};
+  int m_magic_value{42};
+
+  __host__ __device__ CustomAccumulatorT(int val)
+      : m_val(val)
+  {}
+
+public:
+  __host__ __device__ CustomAccumulatorT()
+  {}
+
+  __host__ __device__ CustomAccumulatorT(const CustomAccumulatorT &in)
+    : m_val(in.is_valid() * in.get())
+    , m_magic_value(in.is_valid() * 42)
+  {}
+
+  __host__ __device__ void operator=(const CustomInputT &in)
+  {
+    if (this->is_valid())
+    {
+      m_val = in.get();
+    }
+  }
+
+  __host__ __device__ void operator=(const CustomAccumulatorT &in)
+  {
+    if (this->is_valid() && in.is_valid())
+    {
+      m_val = in.get();
+    }
+  }
+
+  __host__ __device__ CustomAccumulatorT 
+  operator+(const CustomInputT &in) const
+  {
+    const int multiplier = this->is_valid();
+    return {(m_val + in.get()) * multiplier};
+  }
+
+  __host__ __device__ CustomAccumulatorT
+  operator+(const CustomAccumulatorT &in) const
+  {
+    const int multiplier = this->is_valid() && in.is_valid();
+    return {(m_val + in.get()) * multiplier};
+  }
+
+  __host__ __device__ int get() const { return m_val; }
+
+  __host__ __device__ bool is_valid() const { return m_magic_value == 42; }
+};
+
+class CustomOutputT
+{
+  bool *m_d_flag{};
+  int m_expected{};
+
+public:
+  __host__ __device__ CustomOutputT(bool *d_flag, int expected)
+      : m_d_flag(d_flag)
+      , m_expected(expected)
+  {}
+
+  __host__ __device__ void operator=(const CustomAccumulatorT &accum) const
+  {
+    *m_d_flag = accum.is_valid() && (accum.get() == m_expected);
+  }
+};
+
+__global__ void InitializeTestAccumulatorTypes(int num_items,
+                                               int expected,
+                                               bool *d_flag,
+                                               CustomInputT *d_in,
+                                               CustomOutputT *d_out)
+{
+  const int idx = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
+
+  if (idx < num_items)
+  {
+    d_in[idx] = CustomInputT(1);
+  }
+
+  if (idx == 0)
+  {
+    *d_out = CustomOutputT{d_flag, expected};
+  }
 }
 
+void TestAccumulatorTypes()
+{
+  const int num_items  = 2 * 1024 * 1024;
+  const int expected   = num_items;
+  const int block_size = 256;
+  const int grid_size  = (num_items + block_size - 1) / block_size;
+
+  CustomInputT *d_in{};
+  CustomOutputT *d_out{};
+  CustomAccumulatorT init{};
+  bool *d_flag{};
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_out, sizeof(CustomOutputT)));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_flag, sizeof(bool)));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_in,
+                                          sizeof(CustomInputT) * num_items));
+
+  InitializeTestAccumulatorTypes<<<grid_size, block_size>>>(num_items,
+                                                            expected,
+                                                            d_flag,
+                                                            d_in,
+                                                            d_out);
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  CubDebugExit(cub::DeviceReduce::Reduce(d_temp_storage,
+                                         temp_storage_bytes,
+                                         d_in,
+                                         d_out,
+                                         num_items,
+                                         cub::Sum{},
+                                         init));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
+  CubDebugExit(cudaMemset(d_temp_storage, 1,  temp_storage_bytes));
+
+  CubDebugExit(cub::DeviceReduce::Reduce(d_temp_storage,
+                                         temp_storage_bytes,
+                                         d_in,
+                                         d_out,
+                                         num_items,
+                                         cub::Sum{},
+                                         init));
+
+  bool ok{};
+  CubDebugExit(cudaMemcpy(&ok, d_flag, sizeof(bool), cudaMemcpyDeviceToHost));
+
+  AssertTrue(ok);
+
+  CubDebugExit(g_allocator.DeviceFree(d_out));
+  CubDebugExit(g_allocator.DeviceFree(d_in));
+}
 
 template <typename InputT, typename OutputT, typename OffsetT>
 struct GetTileSize
@@ -1252,7 +1416,7 @@ void TestType(OffsetT max_items, OffsetT max_segments)
 {
   // Inspect the tuning policies to determine this arch's tile size:
   using MaxPolicyT =
-    typename DeviceReducePolicy<InputT, OutputT, OffsetT, cub::Sum>::MaxPolicy;
+    typename DeviceReducePolicy<InputT, OffsetT, cub::Sum>::MaxPolicy;
   GetTileSize<InputT, OutputT, OffsetT> dispatch(max_items, max_segments);
   CubDebugExit(MaxPolicyT::Invoke(g_ptx_version, dispatch));
 
@@ -1325,6 +1489,8 @@ int main(int argc, char** argv)
 #else // TEST_TYPES == 3
     TestType<TestFoo, TestFoo>(max_items, max_segments);
     TestType<TestBar, TestBar>(max_items, max_segments);
+
+    TestAccumulatorTypes();
 #endif
     printf("\n");
     return 0;

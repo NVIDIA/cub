@@ -204,14 +204,15 @@ struct DeviceReduce
     return DispatchReduce<InputIteratorT,
                           OutputIteratorT,
                           OffsetT,
-                          ReductionOpT>::Dispatch(d_temp_storage,
-                                                  temp_storage_bytes,
-                                                  d_in,
-                                                  d_out,
-                                                  num_items,
-                                                  reduction_op,
-                                                  init,
-                                                  stream);
+                          ReductionOpT,
+                          T>::Dispatch(d_temp_storage,
+                                       temp_storage_bytes,
+                                       d_in,
+                                       d_out,
+                                       num_items,
+                                       reduction_op,
+                                       init,
+                                       stream);
   }
 
   template <typename InputIteratorT,
@@ -339,15 +340,20 @@ struct DeviceReduce
       cub::detail::non_void_value_t<OutputIteratorT,
                                     cub::detail::value_t<InputIteratorT>>;
 
-    return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum>::
-      Dispatch(d_temp_storage,
-               temp_storage_bytes,
-               d_in,
-               d_out,
-               num_items,
-               cub::Sum(),
-               OutputT(), // zero-initialize
-               stream);
+    using InitT = OutputT; 
+
+    return DispatchReduce<InputIteratorT, 
+                          OutputIteratorT,  
+                          OffsetT, 
+                          cub::Sum, 
+                          InitT>::Dispatch(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_in,
+                                           d_out,
+                                           num_items,
+                                           cub::Sum(),
+                                           InitT{}, // zero-initialize
+                                           stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -458,17 +464,23 @@ struct DeviceReduce
     // The input value type
     using InputT = cub::detail::value_t<InputIteratorT>;
 
-    return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min>::
-      Dispatch(d_temp_storage,
-               temp_storage_bytes,
-               d_in,
-               d_out,
-               num_items,
-               cub::Min(),
-               Traits<InputT>::Max(), // replace with
-                                      // std::numeric_limits<T>::max() when
-                                      // C++11 support is more prevalent
-               stream);
+    using InitT = InputT;
+
+    return DispatchReduce<InputIteratorT,   
+                          OutputIteratorT,  
+                          OffsetT, 
+                          cub::Min,
+                          InitT>::Dispatch(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_in,
+                                           d_out,
+                                           num_items,
+                                           cub::Min(),
+                                           // replace with 
+                                           // std::numeric_limits<T>::max() when
+                                           // C++11 support is more prevalent
+                                           Traits<InitT>::Max(), 
+                                           stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -590,6 +602,8 @@ struct DeviceReduce
       cub::detail::non_void_value_t<OutputIteratorT,
                                     KeyValuePair<OffsetT, InputValueT>>;
 
+    using InitT = OutputTupleT;
+
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
 
@@ -600,23 +614,23 @@ struct DeviceReduce
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
     // Initial value
-    OutputTupleT initial_value(1, Traits<InputValueT>::Max()); // replace with
-                                                               // std::numeric_limits<T>::max()
-                                                               // when C++11
-                                                               // support is
-                                                               // more prevalent
+
+    // replace with std::numeric_limits<T>::max() when C++11 support is
+    // more prevalent
+    InitT initial_value(1, Traits<InputValueT>::Max()); 
 
     return DispatchReduce<ArgIndexInputIteratorT,
                           OutputIteratorT,
                           OffsetT,
-                          cub::ArgMin>::Dispatch(d_temp_storage,
-                                                 temp_storage_bytes,
-                                                 d_indexed_in,
-                                                 d_out,
-                                                 num_items,
-                                                 cub::ArgMin(),
-                                                 initial_value,
-                                                 stream);
+                          cub::ArgMin,
+                          InitT>::Dispatch(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_indexed_in,
+                                           d_out,
+                                           num_items,
+                                           cub::ArgMin(),
+                                           initial_value,
+                                           stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -728,17 +742,24 @@ struct DeviceReduce
     // The input value type
     using InputT = cub::detail::value_t<InputIteratorT>;
 
-    return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max>::
-      Dispatch(d_temp_storage,
-               temp_storage_bytes,
-               d_in,
-               d_out,
-               num_items,
-               cub::Max(),
-               Traits<InputT>::Lowest(), // replace with
-                                         // std::numeric_limits<T>::lowest()
-                                         // when C++11 support is more prevalent
-               stream);
+    using InitT = InputT;
+
+    return DispatchReduce<InputIteratorT,   
+                          OutputIteratorT,  
+                          OffsetT, 
+                          cub::Max,
+                          InitT>::Dispatch(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_in,
+                                           d_out,
+                                           num_items,
+                                           cub::Max(),
+                                           // replace with 
+                                           // std::numeric_limits<T>::lowest()
+                                           // when C++11 support is more 
+                                           // prevalent
+                                           Traits<InitT>::Lowest(), 
+                                           stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -864,6 +885,8 @@ struct DeviceReduce
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
 
+    using InitT = OutputTupleT;
+
     // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
     using ArgIndexInputIteratorT =
       ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT>;
@@ -871,25 +894,23 @@ struct DeviceReduce
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
     // Initial value
-    OutputTupleT initial_value(1, Traits<InputValueT>::Lowest()); // replace
-                                                                  // with
-                                                                  // std::numeric_limits<T>::lowest()
-                                                                  // when C++11
-                                                                  // support is
-                                                                  // more
-                                                                  // prevalent
+
+    // replace with std::numeric_limits<T>::lowest() when C++11 support is
+    // more prevalent
+    InitT initial_value(1, Traits<InputValueT>::Lowest()); 
 
     return DispatchReduce<ArgIndexInputIteratorT,
                           OutputIteratorT,
                           OffsetT,
-                          cub::ArgMax>::Dispatch(d_temp_storage,
-                                                 temp_storage_bytes,
-                                                 d_indexed_in,
-                                                 d_out,
-                                                 num_items,
-                                                 cub::ArgMax(),
-                                                 initial_value,
-                                                 stream);
+                          cub::ArgMax,
+                          InitT>::Dispatch(d_temp_storage,
+                                           temp_storage_bytes,
+                                           d_indexed_in,
+                                           d_out,
+                                           num_items,
+                                           cub::ArgMax(),
+                                           initial_value,
+                                           stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>

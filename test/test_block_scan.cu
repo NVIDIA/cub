@@ -91,7 +91,7 @@ struct WrapperFunctor
     template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
-        return op(a, b);
+        return static_cast<T>(op(a, b));
     }
 };
 
@@ -463,14 +463,14 @@ T Initialize(
 
     T block_aggregate   = h_in[0];
     h_reference[0]      = initial_value;
-    T inclusive         = scan_op(initial_value, h_in[0]);
+    T inclusive         = static_cast<T>(scan_op(initial_value, h_in[0]));
 
     for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         h_reference[i] = inclusive;
-        inclusive = scan_op(inclusive, h_in[i]);
-        block_aggregate = scan_op(block_aggregate, h_in[i]);
+        inclusive = static_cast<T>(scan_op(inclusive, h_in[i]));
+        block_aggregate = static_cast<T>(scan_op(block_aggregate, h_in[i]));
     }
 
     return block_aggregate;
@@ -493,14 +493,14 @@ T Initialize(
     InitValue(gen_mode, h_in[0], 0);
 
     T block_aggregate   = h_in[0];
-    T inclusive         = scan_op(initial_value, h_in[0]);
+    T inclusive         = static_cast<T>(scan_op(initial_value, h_in[0]));
     h_reference[0]      = inclusive;
 
     for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        inclusive = scan_op(inclusive, h_in[i]);
-        block_aggregate = scan_op(block_aggregate, h_in[i]);
+        inclusive = static_cast<T>(scan_op(inclusive, h_in[i]));
+        block_aggregate = static_cast<T>(scan_op(block_aggregate, h_in[i]));
         h_reference[i] = inclusive;
     }
 
@@ -616,7 +616,7 @@ void Test(
     {
         // Copy out and display updated prefix
         printf("\tScan running total: ");
-        T running_total = scan_op(initial_value, block_aggregate);
+        T running_total = static_cast<T>(scan_op(initial_value, block_aggregate));
         compare = CompareDeviceResults(&running_total, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);

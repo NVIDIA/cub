@@ -280,7 +280,7 @@ void Initialize(
         if (i == 0)
             h_reference[0] = h_in[0];
         else
-            h_reference[0] = reduction_op(h_reference[0], h_in[i]);
+            h_reference[0] = static_cast<T>(reduction_op(h_reference[0], h_in[i]));
     }
 
     if (g_verbose)
