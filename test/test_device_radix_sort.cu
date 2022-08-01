@@ -1418,6 +1418,11 @@ void TestBits(
         printf("Testing key bits [%d,%d)\n", begin_bit, end_bit); fflush(stdout);
         TestDirection(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
 
+        // Equal bits
+        begin_bit = end_bit = 0;
+        printf("Testing key bits [%d,%d)\n", begin_bit, end_bit); fflush(stdout);
+        TestDirection(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
+
         // Across subword boundaries
         int mid_bit = sizeof(KeyT) * 4;
         printf("Testing key bits [%d,%d)\n", mid_bit - 1, mid_bit + 1); fflush(stdout);
@@ -1587,7 +1592,7 @@ void TestGen(
 {
     if (max_items == ~std::size_t(0))
     {
-        max_items = 9000003;
+        max_items = 8000003;
     }
 
     if (max_segments < 0)
@@ -1650,7 +1655,6 @@ void TestGen(
         TestSizes(h_keys.get(), large_num_items, max_segments, true);
         fflush(stdout);
     }
-
 }
 
 

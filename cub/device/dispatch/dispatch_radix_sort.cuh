@@ -912,12 +912,12 @@ struct DeviceRadixSortPolicy
     struct Policy800 : ChainedPolicy<800, Policy800, Policy700>
     {
         enum {
-            PRIMARY_RADIX_BITS      = (sizeof(KeyT) > 1) ? 7 : 5,
-            SINGLE_TILE_RADIX_BITS  = (sizeof(KeyT) > 1) ? 6 : 5,
-            SEGMENTED_RADIX_BITS    = (sizeof(KeyT) > 1) ? 6 : 5,
-            ONESWEEP = sizeof(KeyT) >= sizeof(uint32_t),
-            ONESWEEP_RADIX_BITS = 8,
-            OFFSET_64BIT            = sizeof(OffsetT) == 8,
+            PRIMARY_RADIX_BITS     = (sizeof(KeyT) > 1) ? 7 : 5,
+            SINGLE_TILE_RADIX_BITS = (sizeof(KeyT) > 1) ? 6 : 5,
+            SEGMENTED_RADIX_BITS   = (sizeof(KeyT) > 1) ? 6 : 5,
+            ONESWEEP               = sizeof(KeyT) >= sizeof(uint32_t),
+            ONESWEEP_RADIX_BITS    = 8,
+            OFFSET_64BIT           = sizeof(OffsetT) == 8,
         };
 
         // Histogram policy
@@ -1366,7 +1366,7 @@ struct DispatchRadixSort :
         ValueT* d_values_tmp2 = (ValueT*)allocations[3];
         AtomicOffsetT* d_ctrs = (AtomicOffsetT*)allocations[4];
 
-        do { 
+        do {
             // initialization
             if (CubDebug(error = cudaMemsetAsync(
                    d_ctrs, 0, num_portions * num_passes * sizeof(AtomicOffsetT), stream))) break;
@@ -1498,6 +1498,8 @@ struct DispatchRadixSort :
                     }
                 }
 
+                if (CubDebug(error)) break;
+                
                 // use the temporary buffers if no overwrite is allowed
                 if (!is_overwrite_okay && pass == 0)
                 {
@@ -1671,6 +1673,42 @@ struct DispatchRadixSort :
         return InvokeOnesweep<ActivePolicyT>();
     }
 
+    CUB_RUNTIME_FUNCTION __forceinline__
+    cudaError_t InvokeCopy()
+    {
+        // is_overwrite_okay == false here
+        // Return the number of temporary bytes if requested
+        if (d_temp_storage == nullptr)
+        {
+            temp_storage_bytes = 1;
+            return cudaSuccess;
+        }
+        
+        // Copy keys
+        cudaError_t error = cudaSuccess;
+        error = cudaMemcpyAsync(d_keys.Alternate(), d_keys.Current(), num_items * sizeof(KeyT),
+                                cudaMemcpyDefault, stream);
+        if (CubDebug(error))
+        {
+            return error;
+        }
+        d_keys.selector ^= 1;
+
+        // Copy values if necessary
+        if (!KEYS_ONLY)
+        {
+            error = cudaMemcpyAsync(d_values.Alternate(), d_values.Current(),
+                                    num_items * sizeof(ValueT), cudaMemcpyDefault, stream);
+            if (CubDebug(error))
+            {
+                return error;
+            }
+        }
+        d_values.selector ^= 1;
+
+        return error;
+    }
+
     /// Invocation
     template <typename ActivePolicyT>
     CUB_RUNTIME_FUNCTION __forceinline__
@@ -1679,15 +1717,20 @@ struct DispatchRadixSort :
         typedef typename DispatchRadixSort::MaxPolicy       MaxPolicyT;
         typedef typename ActivePolicyT::SingleTilePolicy    SingleTilePolicyT;
 
-        // Return if empty problem
-        if (num_items == 0)
+        // Return if empty problem, or if no bits to sort and double-buffering is used
+        if (num_items == 0 || (begin_bit == end_bit && is_overwrite_okay))
         {
-          if (d_temp_storage == nullptr)
-          {
-            temp_storage_bytes = 1;
-          }
+            if (d_temp_storage == nullptr)
+            {
+                temp_storage_bytes = 1;
+            }
+            return cudaSuccess;
+        }
 
-          return cudaSuccess;
+        // Check if simple copy suffices (is_overwrite_okay == false at this point)
+        if (begin_bit == end_bit)
+        {
+            return InvokeCopy();
         }
 
         // Force kernel code-generation in all compiler passes
@@ -2021,7 +2064,7 @@ struct DispatchSegmentedRadixSort :
             int radix_bits          = ActivePolicyT::SegmentedPolicy::RADIX_BITS;
             int alt_radix_bits      = ActivePolicyT::AltSegmentedPolicy::RADIX_BITS;
             int num_bits            = end_bit - begin_bit;
-            int num_passes          = (num_bits + radix_bits - 1) / radix_bits;
+            int num_passes          = CUB_MAX(DivideAndRoundUp(num_bits, radix_bits), 1);
             bool is_num_passes_odd  = num_passes & 1;
             int max_alt_passes      = (num_passes * radix_bits) - num_bits;
             int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_radix_bits));
@@ -2082,15 +2125,14 @@ struct DispatchSegmentedRadixSort :
     {
         typedef typename DispatchSegmentedRadixSort::MaxPolicy MaxPolicyT;
 
-        // Return if empty problem
-        if (num_items == 0)
+        // Return if empty problem, or if no bits to sort and double-buffering is used
+        if (num_items == 0 || (begin_bit == end_bit && is_overwrite_okay))
         {
-          if (d_temp_storage == nullptr)
-          {
-            temp_storage_bytes = 1;
-          }
-
-          return cudaSuccess;
+            if (d_temp_storage == nullptr)
+            {
+                temp_storage_bytes = 1;
+            }
+            return cudaSuccess;
         }
 
         // Force kernel code-generation in all compiler passes
