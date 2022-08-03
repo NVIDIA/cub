@@ -1694,7 +1694,7 @@ struct DispatchRadixSort :
         #endif
         cudaError_t error = cudaSuccess;
         error = cudaMemcpyAsync(d_keys.Alternate(), d_keys.Current(), num_items * sizeof(KeyT),
-                                cudaMemcpyDeviceToDevice, stream);
+                                cudaMemcpyDefault, stream);
         if (CubDebug(error))
         {
             return error;
@@ -1713,7 +1713,7 @@ struct DispatchRadixSort :
                     (long long)num_items, (long long)stream);
             #endif
             error = cudaMemcpyAsync(d_values.Alternate(), d_values.Current(),
-                                    num_items * sizeof(ValueT), cudaMemcpyDeviceToDevice, stream);
+                                    num_items * sizeof(ValueT), cudaMemcpyDefault, stream);
             if (CubDebug(error))
             {
                 return error;
@@ -1747,7 +1747,10 @@ struct DispatchRadixSort :
         }
 
         // Check if simple copy suffices (is_overwrite_okay == false at this point)
-        if (begin_bit == end_bit)
+        cudaError_t error = cudaSuccess;
+        bool has_uva = false;
+        if ((error = HasUVA(has_uva)) != cudaSuccess) return error;
+        if (begin_bit == end_bit & has_uva)
         {
             return InvokeCopy();
         }

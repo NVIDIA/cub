@@ -125,6 +125,23 @@ CUB_RUNTIME_FUNCTION inline int CurrentDevice()
     return device;
 }
 
+/** \brief Gets whether the current device supports unified addressing */
+CUB_RUNTIME_FUNCTION cudaError_t HasUVA(bool& has_uva)
+{
+    has_uva = false;
+    cudaError_t error = cudaSuccess;
+    int device = -1;
+    if (CubDebug(error = cudaGetDevice(&device)) != cudaSuccess) return error;
+    int uva = 0;
+    if (CubDebug(error = cudaDeviceGetAttribute(&uva, cudaDevAttrUnifiedAddressing, device))
+        != cudaSuccess)
+    {
+        return error;
+    }
+    has_uva = uva == 1;
+    return error;
+}
+
 /**
  * \brief RAII helper which saves the current device and switches to the
  *        specified device on construction and switches to the saved device on
