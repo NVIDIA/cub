@@ -76,8 +76,9 @@ struct WrapperFunctor
 
     WrapperFunctor(OpT op) : op(op) {}
 
-    template <typename T>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+    template <typename T, typename U>
+    __host__ __device__ __forceinline__ auto operator()(const T &a, const U &b) const
+      -> decltype(op(a, b))
     {
         return static_cast<T>(op(a, b));
     }
@@ -511,8 +512,11 @@ void Solve(
     ScanOpT         scan_op,
     InitialValueT   initial_value)
 {
-    // Use the initial value type for accumulation per P0571
-    using AccumT = InitialValueT;
+    using AccumT = 
+      cub::detail::accumulator_t<
+        ScanOpT, 
+        InitialValueT, 
+        cub::detail::value_t<InputIteratorT>>;
 
     if (num_items > 0)
     {
@@ -544,9 +548,11 @@ void Solve(
     ScanOpT         scan_op,
     NullType)
 {
-    // When no initial value type is supplied, use InputT for accumulation
-    // per P0571
-    using AccumT = cub::detail::value_t<InputIteratorT>;
+    using AccumT = 
+      cub::detail::accumulator_t<
+        ScanOpT, 
+        cub::detail::value_t<InputIteratorT>, 
+        cub::detail::value_t<InputIteratorT>>;
 
     if (num_items > 0)
     {
@@ -1013,6 +1019,162 @@ void TestSize(
     }
 }
 
+class CustomInputT
+{
+  char m_val{};
+
+public:
+  __host__ __device__ explicit CustomInputT(char val)
+      : m_val(val)
+  {}
+
+  __host__ __device__ int get() const { return static_cast<int>(m_val); }
+};
+
+class CustomAccumulatorT
+{
+  int m_val{0};
+  int m_magic_value{42};
+
+  __host__ __device__ CustomAccumulatorT(int val)
+      : m_val(val)
+  {}
+
+public:
+  __host__ __device__ CustomAccumulatorT()
+  {}
+
+  __host__ __device__ CustomAccumulatorT(const CustomAccumulatorT &in)
+    : m_val(in.is_valid() * in.get())
+    , m_magic_value(in.is_valid() * 42)
+  {}
+
+  __host__ __device__ CustomAccumulatorT(const CustomInputT &in)
+    : m_val(in.get())
+    , m_magic_value(42)
+  {}
+
+  __host__ __device__ void operator=(const CustomInputT &in)
+  {
+    if (this->is_valid())
+    {
+      m_val = in.get();
+    }
+  }
+
+  __host__ __device__ void operator=(const CustomAccumulatorT &in)
+  {
+    if (this->is_valid() && in.is_valid())
+    {
+      m_val = in.get();
+    }
+  }
+
+  __host__ __device__ CustomAccumulatorT 
+  operator+(const CustomInputT &in) const
+  {
+    const int multiplier = this->is_valid();
+    return {(m_val + in.get()) * multiplier};
+  }
+
+  __host__ __device__ CustomAccumulatorT
+  operator+(const CustomAccumulatorT &in) const
+  {
+    const int multiplier = this->is_valid() && in.is_valid();
+    return {(m_val + in.get()) * multiplier};
+  }
+
+  __host__ __device__ int get() const { return m_val; }
+
+  __host__ __device__ bool is_valid() const { return m_magic_value == 42; }
+};
+
+class CustomOutputT
+{
+  int *m_d_ok_count{};
+  int m_expected{};
+
+public:
+  __host__ __device__ CustomOutputT(int *d_ok_count, int expected)
+      : m_d_ok_count(d_ok_count)
+      , m_expected(expected)
+  {}
+
+  __device__ void operator=(const CustomAccumulatorT &accum) const
+  {
+    const int ok = accum.is_valid() && (accum.get() == m_expected);
+    atomicAdd(m_d_ok_count, ok);
+  }
+};
+
+__global__ void InitializeTestAccumulatorTypes(int num_items,
+                                               int *d_ok_count,
+                                               CustomInputT *d_in,
+                                               CustomOutputT *d_out)
+{
+  const int idx = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
+
+  if (idx < num_items)
+  {
+    d_in[idx] = CustomInputT(1);
+    d_out[idx] = CustomOutputT{d_ok_count, idx};
+  }
+}
+
+void TestAccumulatorTypes()
+{
+  const int num_items  = 2 * 1024 * 1024;
+  const int block_size = 256;
+  const int grid_size  = (num_items + block_size - 1) / block_size;
+
+  CustomInputT *d_in{};
+  CustomOutputT *d_out{};
+  CustomAccumulatorT init{};
+  int *d_ok_count{};
+
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_ok_count, sizeof(int)));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_out,
+                                          sizeof(CustomOutputT) * num_items));
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_in,
+                                          sizeof(CustomInputT) * num_items));
+
+  InitializeTestAccumulatorTypes<<<grid_size, block_size>>>(num_items,
+                                                            d_ok_count,
+                                                            d_in,
+                                                            d_out);
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  CubDebugExit(cub::DeviceScan::ExclusiveScan(d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_in,
+                                              d_out,
+                                              cub::Sum{},
+                                              init,
+                                              num_items));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
+  CubDebugExit(cudaMemset(d_temp_storage, 1, temp_storage_bytes));
+
+  CubDebugExit(cub::DeviceScan::ExclusiveScan(d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_in,
+                                              d_out,
+                                              cub::Sum{},
+                                              init,
+                                              num_items));
+
+  int ok{};
+  CubDebugExit(cudaMemcpy(&ok, d_ok_count, sizeof(int), cudaMemcpyDeviceToHost));
+
+  AssertEquals(ok, num_items);
+
+  CubDebugExit(g_allocator.DeviceFree(d_out));
+  CubDebugExit(g_allocator.DeviceFree(d_in));
+  CubDebugExit(g_allocator.DeviceFree(d_ok_count));
+}
 
 
 //---------------------------------------------------------------------
@@ -1102,6 +1264,7 @@ int main(int argc, char** argv)
 
     TestSize<TestBar>(num_items, TestBar(0, 0), TestBar(1ll << 63, 1 << 31));
 
+    TestAccumulatorTypes();
 #endif
 
     return 0;

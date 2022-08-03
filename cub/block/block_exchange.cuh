@@ -33,10 +33,11 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
-#include "../warp/warp_exchange.cuh"
+#include <cub/config.cuh>
+#include <cub/detail/uninitialized_copy.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_type.cuh>
+#include <cub/warp/warp_exchange.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -209,7 +210,8 @@ private:
         {
             int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         CTA_SYNC();
@@ -250,7 +252,8 @@ private:
                 {
                     int item_offset = (lane_id * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    temp_storage.buff[item_offset] = input_items[ITEM];
+                    detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                               input_items[ITEM]);
                 }
             }
 
@@ -298,7 +301,8 @@ private:
         {
             int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         WARP_SYNC(0xffffffff);
@@ -328,7 +332,8 @@ private:
             {
                 int item_offset = ITEM + (lane_id * ITEMS_PER_THREAD);
                 if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                temp_storage.buff[item_offset] = input_items[ITEM];
+                detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                           input_items[ITEM]);
             }
 
             WARP_SYNC(0xffffffff);
@@ -354,7 +359,8 @@ private:
                 {
                     int item_offset = ITEM + (lane_id * ITEMS_PER_THREAD);
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    temp_storage.buff[item_offset] = input_items[ITEM];
+                    detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                               input_items[ITEM]);
                 }
 
                 WARP_SYNC(0xffffffff);
@@ -385,7 +391,8 @@ private:
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         CTA_SYNC();
@@ -434,7 +441,9 @@ private:
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        temp_storage.buff[item_offset] = input_items[ITEM];
+                        detail::uninitialized_copy(temp_storage.buff +
+                                                     item_offset,
+                                                   input_items[ITEM]);
                     }
                 }
             }
@@ -476,7 +485,8 @@ private:
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            new (&temp_storage.buff[item_offset]) InputT (input_items[ITEM]);
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         WARP_SYNC(0xffffffff);
@@ -486,7 +496,8 @@ private:
         {
             int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            new(&output_items[ITEM]) OutputT(temp_storage.buff[item_offset]);
+            detail::uninitialized_copy(output_items + ITEM,
+                                       temp_storage.buff[item_offset]);
         }
     }
 
@@ -512,7 +523,8 @@ private:
                 {
                     int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    temp_storage.buff[item_offset] = input_items[ITEM];
+                    detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                               input_items[ITEM]);
                 }
 
                 WARP_SYNC(0xffffffff);
@@ -544,7 +556,8 @@ private:
         {
             int item_offset = ranks[ITEM];
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         CTA_SYNC();
@@ -584,7 +597,8 @@ private:
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    temp_storage.buff[item_offset] = input_items[ITEM];
+                    detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                               input_items[ITEM]);
                 }
             }
 
@@ -626,7 +640,8 @@ private:
         {
             int item_offset = ranks[ITEM];
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                       input_items[ITEM]);
         }
 
         CTA_SYNC();
@@ -668,7 +683,8 @@ private:
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    temp_storage.buff[item_offset] = input_items[ITEM];
+                    detail::uninitialized_copy(temp_storage.buff + item_offset,
+                                               input_items[ITEM]);
                 }
             }
 

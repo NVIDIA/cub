@@ -146,6 +146,7 @@ __global__ void RadixSortScanBinsKernel(
             OffsetT*,
             cub::Sum,
             OffsetT,
+            OffsetT,
             OffsetT>
         AgentScanT;
 

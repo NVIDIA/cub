@@ -84,8 +84,9 @@ struct WrapperFunctor
 
     WrapperFunctor(OpT op) : op(op) {}
 
-    template <typename T>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+    template <typename T, typename U>
+    __host__ __device__ __forceinline__ auto operator()(const T &a, const U &b) const
+      -> decltype(op(a, b))
     {
         return static_cast<T>(op(a, b));
     }
@@ -412,8 +413,8 @@ void Solve(
     InitialValueT         initial_value,
     EqualityOpT           equality_op)
 {
-    // Use the initial value type for accumulation per P0571
-    using AccumT = InitialValueT;
+    using ValueT = cub::detail::value_t<ValuesInputIteratorT>;
+    using AccumT = cub::detail::accumulator_t<ScanOpT, InitialValueT, ValueT>;
 
     if (num_items > 0)
     {
@@ -453,9 +454,8 @@ void Solve(
     NullType              /*initial_value*/,
     EqualityOpT           equality_op)
 {
-    // When no initial value type is supplied, use InputT for accumulation
-    // per P0571
-    using AccumT = cub::detail::value_t<ValuesInputIteratorT>;
+    using ValueT = cub::detail::value_t<ValuesInputIteratorT>;
+    using AccumT = cub::detail::accumulator_t<ScanOpT, ValueT, ValueT>;
 
     if (num_items > 0)
     {

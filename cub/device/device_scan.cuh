@@ -193,18 +193,15 @@ struct DeviceScan
   {
     // Signed integer type for global offsets
     using OffsetT = int;
-
-    // The output value type -- used as the intermediate accumulator
-    // Use the input value type per https://wg21.link/P0571
-    using OutputT = cub::detail::value_t<InputIteratorT>;
+    using InitT = cub::detail::value_t<InputIteratorT>;
 
     // Initial value
-    OutputT init_value = 0;
+    InitT init_value{};
 
     return DispatchScan<
-        InputIteratorT, OutputIteratorT, Sum, detail::InputValue<OutputT>,
+        InputIteratorT, OutputIteratorT, Sum, detail::InputValue<InitT>,
         OffsetT>::Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out,
-                           Sum(), detail::InputValue<OutputT>(init_value),
+                           Sum(), detail::InputValue<InitT>(init_value),
                            num_items, stream);
   }
 
@@ -332,12 +329,11 @@ struct DeviceScan
   {
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
 
-    return ExclusiveSum(d_temp_storage,
-                        temp_storage_bytes,
-                        d_data,
-                        d_data,
-                        num_items,
-                        stream);
+    return ExclusiveSum<IteratorT>(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_data,
+                                   num_items,
+                                   stream);
   }
 
   /**
@@ -1211,12 +1207,11 @@ struct DeviceScan
   {
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
 
-    return InclusiveSum(d_temp_storage,
-                        temp_storage_bytes,
-                        d_data,
-                        d_data,
-                        num_items,
-                        stream);
+    return InclusiveSum<IteratorT>(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_data,
+                                   num_items,
+                                   stream);
   }
 
   /**
@@ -1612,24 +1607,21 @@ struct DeviceScan
                     ValuesOutputIteratorT d_values_out,
                     int num_items,
                     EqualityOpT equality_op = EqualityOpT(),
-                    cudaStream_t stream = 0)
+                    cudaStream_t stream     = 0)
   {
     // Signed integer type for global offsets
     using OffsetT = int;
-
-    // The output value type -- used as the intermediate accumulator
-    // Use the input value type per https://wg21.link/P0571
-    using OutputT = cub::detail::value_t<ValuesInputIteratorT>;
+    using InitT = cub::detail::value_t<ValuesInputIteratorT>;
 
     // Initial value
-    OutputT init_value = 0;
+    InitT init_value{}; 
 
     return DispatchScanByKey<KeysInputIteratorT,
                              ValuesInputIteratorT,
                              ValuesOutputIteratorT,
                              EqualityOpT,
                              Sum,
-                             OutputT,
+                             InitT,
                              OffsetT>::Dispatch(d_temp_storage,
                                                 temp_storage_bytes,
                                                 d_keys_in,
@@ -1833,7 +1825,7 @@ struct DeviceScan
                      InitValueT init_value,
                      int num_items,
                      EqualityOpT equality_op = EqualityOpT(),
-                     cudaStream_t stream = 0)
+                     cudaStream_t stream     = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int ;
@@ -2007,7 +1999,7 @@ struct DeviceScan
                     ValuesOutputIteratorT d_values_out,
                     int num_items,
                     EqualityOpT equality_op = EqualityOpT(),
-                    cudaStream_t stream = 0)
+                    cudaStream_t stream     = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int ;
@@ -2206,7 +2198,7 @@ struct DeviceScan
                      ScanOpT scan_op,
                      int num_items,
                      EqualityOpT equality_op = EqualityOpT(),
-                     cudaStream_t stream = 0)
+                     cudaStream_t stream     = 0)
   {
       // Signed integer type for global offsets
       using OffsetT = int;

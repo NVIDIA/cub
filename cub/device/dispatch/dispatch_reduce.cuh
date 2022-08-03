@@ -42,6 +42,7 @@
 #include <cub/grid/grid_even_share.cuh>
 #include <cub/iterator/arg_index_input_iterator.cuh>
 #include <cub/thread/thread_operators.cuh>
+#include <cub/thread/thread_store.cuh>
 #include <cub/util_debug.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
@@ -124,7 +125,7 @@ __global__ void DeviceReduceKernel(InputIteratorT d_in,
   // Output result
   if (threadIdx.x == 0)
   {
-    new (d_out + blockIdx.x) AccumT(block_aggregate);
+    detail::uninitialized_copy(d_out + blockIdx.x, block_aggregate);
   }
 }
 
