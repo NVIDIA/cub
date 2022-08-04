@@ -77,6 +77,9 @@ struct DeviceHistogram
    * - The ranges `[d_samples, d_samples + num_samples)` and 
    *   `[d_histogram, d_histogram + num_levels - 1)` shall not overlap 
    *   in any way.
+   * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
+   *   and SampleT must be valid arithmetic types. The common type must be
+   *   convertible to `int` and trivially copyable.
    * - @devicestorage
    *
    * @par Snippet
@@ -247,6 +250,9 @@ struct DeviceHistogram
    *   `row_end = row_begin + num_row_samples`. The ranges
    *   `[row_begin, row_end)` and `[d_histogram, d_histogram + num_levels - 1)` 
    *   shall not overlap in any way.
+   * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
+   *   and SampleT must be valid arithmetic types. The common type must be
+   *   convertible to `int` and trivially copyable.
    * - @devicestorage
    *
    * @par Snippet
@@ -432,6 +438,9 @@ struct DeviceHistogram
    *   `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` and 
    *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap 
    *   in any way.
+   * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
+   *   and SampleT must be valid arithmetic types. The common type must be
+   *   convertible to `int` and trivially copyable.
    * - @devicestorage
    *
    * @par Snippet
@@ -633,6 +642,9 @@ struct DeviceHistogram
    *   `[sample_begin, sample_end)` and 
    *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap 
    *   in any way.
+   * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
+   *   and SampleT must be valid arithmetic types. The common type must be
+   *   convertible to `int` and trivially copyable.
    * - @devicestorage
    *
    * @par Snippet
