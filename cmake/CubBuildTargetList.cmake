@@ -18,7 +18,7 @@
 #   - <prop_var> is any valid cmake identifier.
 #   - <target_name> is the name of a CUB target.
 #   - <prop> is one of the following:
-#     - DIALECT: The C++ dialect. Valid values: 11, 14, 17.
+#     - DIALECT: The C++ dialect. Valid values: 11, 14, 17, 20.
 #     - PREFIX: A unique prefix that should be used to name all
 #       targets/tests/examples that use this configuration.
 #
@@ -35,7 +35,7 @@
 
 # Dialects:
 set(CUB_CPP_DIALECT_OPTIONS
-  11 14 17
+  11 14 17 20
   CACHE INTERNAL "C++ dialects supported by CUB." FORCE
 )
 
