@@ -1747,12 +1747,15 @@ struct DispatchRadixSort :
         }
 
         // Check if simple copy suffices (is_overwrite_okay == false at this point)
-        cudaError_t error = cudaSuccess;
-        bool has_uva = false;
-        if ((error = HasUVA(has_uva)) != cudaSuccess) return error;
-        if (begin_bit == end_bit & has_uva)
+        if (begin_bit == end_bit)
         {
-            return InvokeCopy();
+            bool has_uva = false;
+            cudaError_t error = detail::HasUVA(has_uva);
+            if (error != cudaSuccess) return error;
+            if (has_uva)
+            {
+                return InvokeCopy();
+            }
         }
 
         // Force kernel code-generation in all compiler passes
