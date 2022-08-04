@@ -6,6 +6,14 @@ foreach(cub_target IN LISTS CUB_TARGETS)
   add_dependencies(${config_prefix}.all ${config_meta_target})
 endforeach()
 
+# Update flags to reflect RDC options. See note in CubCudaConfig.cmake --
+# these flag variables behave unintuitively:
+if (CUB_ENABLE_EXAMPLES_WITH_RDC)
+  set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_RDC}")
+else()
+  set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_NO_RDC}")
+endif()
+
 ## cub_add_example
 #
 # Add an example executable and register it with ctest.

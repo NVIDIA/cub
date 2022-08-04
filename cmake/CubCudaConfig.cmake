@@ -11,8 +11,11 @@ set(arch_message "CUB: Explicitly enabled compute architectures:")
 # reuse them if possible. After we transition to CMake 3.18 CUDA_ARCHITECTURE
 # target properties this will need to be updated.
 if (CUB_IN_THRUST)
-  # Configure to use all flags from thrust:
-  set(CMAKE_CUDA_FLAGS "${THRUST_CUDA_FLAGS_BASE} ${THRUST_CUDA_FLAGS_NO_RDC}")
+  # Configure to use all flags from thrust. See ThrustCudaConfig.cmake for
+  # details.
+  set(CUB_CUDA_FLAGS_BASE "${THRUST_CUDA_FLAGS_BASE}")
+  set(CUB_CUDA_FLAGS_RDC "${THRUST_CUDA_FLAGS_RDC}")
+  set(CUB_CUDA_FLAGS_NO_RDC "${THRUST_CUDA_FLAGS_NO_RDC}")
 
   # Update the enabled architectures list from thrust
   foreach (arch IN LISTS all_archs)
@@ -26,6 +29,34 @@ if (CUB_IN_THRUST)
 
   # Otherwise create cache options and build the flags ourselves:
 else() # NOT CUB_IN_THRUST
+
+  # Split CUDA_FLAGS into 3 parts:
+  #
+  # CUB_CUDA_FLAGS_BASE: Common CUDA flags for all targets.
+  # CUB_CUDA_FLAGS_RDC: Additional CUDA flags for targets compiled with RDC.
+  # CUB_CUDA_FLAGS_NO_RDC: Additional CUDA flags for targets compiled without RDC.
+  #
+  # This is necessary because CUDA SMs 5.3, 6.2, and 7.2 do not support RDC, but
+  # we want to always build some targets (e.g. testing/cuda/*) with RDC.
+  # We work around this by building the "always RDC" targets without support for
+  # those SMs. This requires two sets of CUDA_FLAGS.
+  #
+  # Enabling any of those SMs along with the ENABLE_RDC options will result in a
+  # configuration error.
+  #
+  # Because of how CMake handles the CMAKE_CUDA_FLAGS variables, every target
+  # generated in a given directory will use the same value for CMAKE_CUDA_FLAGS,
+  # which is determined at the end of the directory's scope. This means caution
+  # should be used when trying to build different targets with different flags,
+  # since they might not behave as expected. This will improve with CMake 3.18,
+  # which add the DEVICE_LINK genex, fixing the issue with using per-target
+  # CUDA_FLAGS: https://gitlab.kitware.com/cmake/cmake/-/issues/18265
+  set(CUB_CUDA_FLAGS_BASE "${CMAKE_CUDA_FLAGS}")
+  set(CUB_CUDA_FLAGS_RDC)
+  set(CUB_CUDA_FLAGS_NO_RDC)
+
+  # Archs that don't support RDC:
+  set(no_rdc_archs 53 62 72)
 
   # Find the highest arch:
   list(SORT all_archs)
@@ -67,10 +98,14 @@ else() # NOT CUB_IN_THRUST
         endif()
         set(arch_flag "-gpu=cc${arch}")
       else()
-        string(APPEND arch_flags " -gencode arch=compute_${arch},code=sm_${arch}")
+        set(arch_flag "-gencode arch=compute_${arch},code=sm_${arch}")
       endif()
 
       string(APPEND arch_message " sm_${arch}")
+      string(APPEND CUB_CUDA_FLAGS_NO_RDC " ${arch_flag}")
+      if (NOT arch IN_LIST no_rdc_archs)
+        string(APPEND CUB_CUDA_FLAGS_RDC " ${arch_flag}")
+      endif()
     endif()
   endforeach()
 
@@ -80,7 +115,7 @@ else() # NOT CUB_IN_THRUST
       ${option_init}
     )
     if (CUB_ENABLE_COMPUTE_FUTURE)
-      string(APPEND arch_flags
+      string(APPEND THRUST_CUDA_FLAGS_BASE
         " -gencode arch=compute_${highest_arch},code=compute_${highest_arch}"
       )
       string(APPEND arch_message " compute_${highest_arch}")
@@ -116,7 +151,6 @@ option(CUB_ENABLE_EXAMPLES_WITH_RDC
 )
 
 # Check for RDC/SM compatibility and error/warn if necessary
-set(no_rdc_archs 53 62 72)
 set(rdc_supported True)
 foreach (arch IN LISTS no_rdc_archs)
   if (CUB_ENABLE_COMPUTE_${arch})
@@ -145,3 +179,6 @@ if (rdc_requested AND NOT rdc_supported)
     "these options:\n${opts}"
   )
 endif()
+
+# By default RDC is not used:
+set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_NO_RDC}")
