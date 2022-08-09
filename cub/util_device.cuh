@@ -549,6 +549,23 @@ CUB_RUNTIME_FUNCTION inline cudaError_t DebugSyncStream(cudaStream_t stream)
 #endif
 }
 
+/** \brief Gets whether the current device supports unified addressing */
+CUB_RUNTIME_FUNCTION inline cudaError_t HasUVA(bool& has_uva)
+{
+    has_uva = false;
+    cudaError_t error = cudaSuccess;
+    int device = -1;
+    if (CubDebug(error = cudaGetDevice(&device)) != cudaSuccess) return error;
+    int uva = 0;
+    if (CubDebug(error = cudaDeviceGetAttribute(&uva, cudaDevAttrUnifiedAddressing, device))
+        != cudaSuccess)
+    {
+        return error;
+    }
+    has_uva = uva == 1;
+    return error;
+}
+
 } // namespace detail
 
 /**
