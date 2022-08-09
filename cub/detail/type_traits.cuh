@@ -44,15 +44,15 @@ namespace detail {
 template <typename Invokable, typename... Args>
 using invoke_result_t =
 #if CUB_CPP_DIALECT < 2017
-  typename cuda::std::result_of<Invokable(Args...)>::type;
+  typename ::cuda::std::result_of<Invokable(Args...)>::type;
 #else // 2017+
-  cuda::std::invoke_result_t<Invokable, Args...>;
+  ::cuda::std::invoke_result_t<Invokable, Args...>;
 #endif
 
 /// The type of intermediate accumulator (according to P2322R6)
 template <typename Invokable, typename InitT, typename InputT>
 using accumulator_t = 
-  typename cuda::std::decay<invoke_result_t<Invokable, InitT, InputT>>::type;
+  typename ::cuda::std::decay<invoke_result_t<Invokable, InitT, InputT>>::type;
 
 } // namespace detail
 CUB_NAMESPACE_END

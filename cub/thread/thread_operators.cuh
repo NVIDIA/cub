@@ -58,7 +58,7 @@ struct Equality
   template <typename T, typename U>
   __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u) const
   {
-    return cuda::std::forward<T>(t) == cuda::std::forward<U>(u);
+    return ::cuda::std::forward<T>(t) == ::cuda::std::forward<U>(u);
   }
 };
 
@@ -69,7 +69,7 @@ struct Inequality
   template <typename T, typename U>
   __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u) const
   {
-    return cuda::std::forward<T>(t) != cuda::std::forward<U>(u);
+    return ::cuda::std::forward<T>(t) != ::cuda::std::forward<U>(u);
   }
 };
 
@@ -99,9 +99,9 @@ struct Sum
   /// Binary sum operator, returns `t + u`
   template <typename T, typename U>
   __host__ __device__ __forceinline__ auto operator()(T &&t, U &&u) const
-    -> decltype(cuda::std::forward<T>(t) + cuda::std::forward<U>(u))
+    -> decltype(::cuda::std::forward<T>(t) + ::cuda::std::forward<U>(u))
   {
-    return cuda::std::forward<T>(t) + cuda::std::forward<U>(u);
+    return ::cuda::std::forward<T>(t) + ::cuda::std::forward<U>(u);
   }
 };
 
@@ -111,9 +111,9 @@ struct Difference
   /// Binary difference operator, returns `t - u`
   template <typename T, typename U>
   __host__ __device__ __forceinline__ auto operator()(T &&t, U &&u) const
-    -> decltype(cuda::std::forward<T>(t) - cuda::std::forward<U>(u))
+    -> decltype(::cuda::std::forward<T>(t) - ::cuda::std::forward<U>(u))
   {
-    return cuda::std::forward<T>(t) - cuda::std::forward<U>(u);
+    return ::cuda::std::forward<T>(t) - ::cuda::std::forward<U>(u);
   }
 };
 
@@ -123,9 +123,9 @@ struct Division
   /// Binary division operator, returns `t / u`
   template <typename T, typename U>
   __host__ __device__ __forceinline__ auto operator()(T &&t, U &&u) const
-    -> decltype(cuda::std::forward<T>(t) / cuda::std::forward<U>(u))
+    -> decltype(::cuda::std::forward<T>(t) / ::cuda::std::forward<U>(u))
   {
-    return cuda::std::forward<T>(t) / cuda::std::forward<U>(u);
+    return ::cuda::std::forward<T>(t) / ::cuda::std::forward<U>(u);
   }
 };
 
@@ -135,7 +135,7 @@ struct Max
   /// Boolean max operator, returns `(t > u) ? t : u`
   template <typename T, typename U>
   __host__ __device__ __forceinline__
-    typename cuda::std::common_type<T, U>::type
+    typename ::cuda::std::common_type<T, U>::type
     operator()(T &&t, U &&u) const
   {
     return CUB_MAX(t, u);
@@ -173,7 +173,7 @@ struct Min
   /// Boolean min operator, returns `(t < u) ? t : u`
   template <typename T, typename U>
   __host__ __device__ __forceinline__
-    typename cuda::std::common_type<T, U>::type
+    typename ::cuda::std::common_type<T, U>::type
     operator()(T &&t, U &&u) const
   {
     return CUB_MIN(t, u);

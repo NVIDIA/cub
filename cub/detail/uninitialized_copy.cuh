@@ -39,24 +39,24 @@ namespace detail
 
 template <typename T,
           typename U,
-          typename cuda::std::enable_if<
-            cuda::std::is_trivially_copyable<T>::value, 
+          typename ::cuda::std::enable_if<
+            ::cuda::std::is_trivially_copyable<T>::value, 
             int
           >::type = 0>
 __host__ __device__ void uninitialized_copy(T *ptr, U &&val)
 {
-  *ptr = cuda::std::forward<U>(val);
+  *ptr = ::cuda::std::forward<U>(val);
 }
 
 template <typename T, 
          typename U,
-         typename cuda::std::enable_if<
-           !cuda::std::is_trivially_copyable<T>::value,
+         typename ::cuda::std::enable_if<
+           !::cuda::std::is_trivially_copyable<T>::value,
            int
          >::type = 0>
 __host__ __device__ void uninitialized_copy(T *ptr, U &&val)
 {
-  new (ptr) T(cuda::std::forward<U>(val));
+  new (ptr) T(::cuda::std::forward<U>(val));
 }
 
 } // namespace detail
