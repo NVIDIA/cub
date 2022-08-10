@@ -36,14 +36,18 @@
 
 #include <cub/agent/agent_histogram.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/cpp_compatibility.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_search.cuh>
 #include <cub/util_debug.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
+#include <cub/util_type.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <cuda/std/type_traits>
 
 #include <nv/target>
 
@@ -176,25 +180,6 @@ template <
     typename    OffsetT>                    ///< Signed integer type for global offsets
 struct DispatchHistogram
 {
-private:
-    template <class T>
-    CUB_RUNTIME_FUNCTION 
-    static T ComputeScale(T lower_level, T upper_level, int bins)
-    {
-      return static_cast<T>(upper_level - lower_level) / bins;
-    }
-
-#if defined(__CUDA_FP16_TYPES_EXIST__)
-    // There are no host versions of arithmetic operations on `__half`, so 
-    // all arithmetic operations on host shall be done on `float`
-    CUB_RUNTIME_FUNCTION 
-    static __half ComputeScale(__half lower_level, __half upper_level, int bins)
-    {
-      return __float2half(
-          (__half2float(upper_level) - __half2float(lower_level)) / bins);
-    }
-#endif
-
 public:
     //---------------------------------------------------------------------
     // Types and constants
@@ -254,116 +239,186 @@ public:
         }
     };
 
-
     // Scales samples to evenly-spaced bins
     struct ScaleTransform
     {
-        int    num_bins;    // Number of levels in array
-        LevelT max;         // Max sample level (exclusive)
-        LevelT min;         // Min sample level (inclusive)
-        LevelT scale;       // Bin scaling factor
+    private:
+      using CommonT = typename cuda::std::common_type<LevelT, SampleT>::type;
+      static_assert(cuda::std::is_convertible<CommonT, int>::value,
+                    "The common type of `LevelT` and `SampleT` must be "
+                    "convertible to `int`.");
+      static_assert(cuda::std::is_trivially_copyable<CommonT>::value,
+                    "The common type of `LevelT` and `SampleT` must be "
+                    "trivially copyable.");
 
-        // Initializer
-        template <typename _LevelT>
-        __host__ __device__ __forceinline__ void Init(
-            int     num_output_levels,  // Number of levels in array
-            _LevelT max_,                // Max sample level (exclusive)
-            _LevelT min_,                // Min sample level (inclusive)
-            _LevelT scale_)              // Bin scaling factor
+      union ScaleT
+      {
+        // Used when CommonT is not floating-point to avoid intermediate
+        // rounding errors (see NVIDIA/cub#489).
+        struct FractionT
         {
-            this->num_bins = num_output_levels - 1;
-            this->max = max_;
-            this->min = min_;
-            this->scale = scale_;
-        }
+          CommonT bins;
+          CommonT range;
+        } fraction;
 
-        // Initializer (float specialization)
-        __host__ __device__ __forceinline__ void Init(
-            int    num_output_levels,   // Number of levels in array
-            float   max_,                // Max sample level (exclusive)
-            float   min_,                // Min sample level (inclusive)
-            float   scale_)              // Bin scaling factor
-        {
-            this->num_bins = num_output_levels - 1;
-            this->max = max_;
-            this->min = min_;
-            this->scale = float(1.0) / scale_;
-        }
+        // Used when CommonT is floating-point as an optimization.
+        CommonT reciprocal;
+      };
 
-        // Initializer (double specialization)
-        __host__ __device__ __forceinline__ void Init(
-            int    num_output_levels,   // Number of levels in array
-            double max_,                 // Max sample level (exclusive)
-            double min_,                 // Min sample level (inclusive)
-            double scale_)               // Bin scaling factor
-        {
-            this->num_bins = num_output_levels - 1;
-            this->max = max_;
-            this->min = min_;
-            this->scale = double(1.0) / scale_;
-        }
+      CommonT m_max;   // Max sample level (exclusive)
+      CommonT m_min;   // Min sample level (inclusive)
+      ScaleT  m_scale; // Bin scaling
 
-        template <typename T>
-        static __device__ __forceinline__ void
-        BinSelectImpl(T sample, T min, T max, T scale, int &bin, bool valid)
-        {
-          if (valid && (sample >= min) && (sample < max))
-          {
-            bin = static_cast<int>((sample - min) / scale);
-          }
-        }
+      template <typename T>
+      __host__ __device__ __forceinline__
+      ScaleT ComputeScale(int num_levels,
+                          T   max_level,
+                          T   min_level,
+                          cuda::std::true_type /* is_fp */)
+      {
+        ScaleT result;
+        result.reciprocal =
+          static_cast<T>(static_cast<T>(num_levels - 1) /
+                         static_cast<T>(max_level - min_level));
+        return result;
+      }
 
-        // Method for converting samples to bin-ids
-        template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
-        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample,
-                                                           int &bin,
-                                                           bool valid)
-        {
-          BinSelectImpl(static_cast<LevelT>(sample),
-                        min,
-                        max,
-                        scale,
-                        bin,
-                        valid);
-        }
+      template <typename T>
+      __host__ __device__ __forceinline__
+      ScaleT ComputeScale(int num_levels,
+                          T   max_level,
+                          T   min_level,
+                          cuda::std::false_type /* is_fp */)
+      {
+        ScaleT result;
+        result.fraction.bins  = static_cast<T>(num_levels - 1);
+        result.fraction.range = static_cast<T>(max_level - min_level);
+        return result;
+      }
 
-#if defined(__CUDA_FP16_TYPES_EXIST__)
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __device__ __forceinline__ void BinSelect(__half sample, int &bin, bool valid)
-        {
-          NV_IF_TARGET(NV_PROVIDES_SM_53,
-                       (BinSelectImpl<__half>(sample, 
-                                              min, max, scale, 
-                                              bin, valid);),
-                       (BinSelectImpl<float>(__half2float(sample), 
-                                             __half2float(min),
-                                             __half2float(max),
-                                             __half2float(scale),
-                                             bin, valid);));
-        }
+      template <typename T>
+      __host__ __device__ __forceinline__
+      ScaleT ComputeScale(int num_levels,
+                          T   max_level,
+                          T   min_level)
+      {
+        return this->ComputeScale(num_levels,
+                                  max_level,
+                                  min_level,
+                                  cuda::std::is_floating_point<T>{});
+      }
+
+#ifdef __CUDA_FP16_TYPES_EXIST__
+      __host__ __device__ __forceinline__
+      ScaleT ComputeScale(int    num_levels,
+                          __half max_level,
+                          __half min_level)
+      {
+        NV_IF_TARGET(NV_PROVIDES_SM_53,
+                     (return this->ComputeScale(num_levels,
+                                                max_level,
+                                                min_level,
+                                                cuda::std::true_type{});),
+                     (return this->ComputeScale(num_levels,
+                                                __half2float(max_level),
+                                                __half2float(min_level),
+                                                cuda::std::true_type{});));
+      }
 #endif
 
-        // Method for converting samples to bin-ids (float specialization)
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(float sample, int &bin, bool valid)
+      // All types but __half:
+      template <typename T>
+      __host__ __device__ __forceinline__
+      int SampleIsValid(T sample, T max_level, T min_level)
+      {
+        return sample >= min_level && sample < max_level;
+      }
+
+#ifdef __CUDA_FP16_TYPES_EXIST__
+      __host__ __device__ __forceinline__
+      int SampleIsValid(__half sample, __half max_level, __half min_level)
+      {
+        NV_IF_TARGET(NV_PROVIDES_SM_53,
+                     (return sample >= min_level && sample < max_level;),
+                     (return this->SampleIsValid(__half2float(sample),
+                                                 __half2float(max_level),
+                                                 __half2float(min_level));));
+      }
+#endif
+
+      template <typename T>
+      __host__ __device__ __forceinline__
+      int ComputeBin(T      sample,
+                     T      min_level,
+                     ScaleT scale,
+                     cuda::std::true_type /* is_fp */)
+      {
+        return static_cast<int>((sample - min_level) * scale.reciprocal);
+      }
+
+      template <typename T>
+      __host__ __device__ __forceinline__
+      int ComputeBin(T      sample,
+                     T      min_level,
+                     ScaleT scale,
+                     cuda::std::false_type /* is_fp */)
+      {
+        return static_cast<int>(((sample - min_level) * scale.fraction.bins) /
+                                scale.fraction.range);
+      }
+
+      template <typename T>
+      __host__ __device__ __forceinline__
+      int ComputeBin(T sample, T min_level, ScaleT scale)
+      {
+        return this->ComputeBin(sample,
+                                min_level,
+                                scale,
+                                cuda::std::is_floating_point<T>{});
+      }
+
+#ifdef __CUDA_FP16_TYPES_EXIST__
+      __host__ __device__ __forceinline__
+      int ComputeBin(__half sample, __half min_level, ScaleT scale)
+      {
+        NV_IF_TARGET(NV_PROVIDES_SM_53,
+                     (return this->ComputeBin(sample,
+                                              min_level,
+                                              scale,
+                                              cuda::std::true_type{});),
+                     (return static_cast<int>((__half2float(sample) -
+                                               __half2float(min_level)) *
+                                              __half2float(scale.reciprocal));));
+      }
+#endif
+
+    public:
+
+      // Initializer
+      __host__ __device__ __forceinline__ void Init(int    num_levels,
+                                                    LevelT max_level,
+                                                    LevelT min_level)
+      {
+        m_max = static_cast<CommonT>(max_level);
+        m_min = static_cast<CommonT>(min_level);
+        m_scale = this->ComputeScale(num_levels, m_max, m_min);
+      }
+
+      // Method for converting samples to bin-ids
+      template <CacheLoadModifier LOAD_MODIFIER>
+      __host__ __device__ __forceinline__ void BinSelect(SampleT sample,
+                                                         int    &bin,
+                                                         bool    valid)
+      {
+        const CommonT common_sample = static_cast<CommonT>(sample);
+
+        if (valid && this->SampleIsValid(common_sample, m_max, m_min))
         {
-            LevelT level_sample = (LevelT) sample;
-
-            if (valid && (level_sample >= min) && (level_sample < max))
-                bin = (int) ((level_sample - min) * scale);
+          bin = this->ComputeBin(common_sample, m_min, m_scale);
         }
+      }
 
-        // Method for converting samples to bin-ids (double specialization)
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(double sample, int &bin, bool valid)
-        {
-            LevelT level_sample = (LevelT) sample;
-
-            if (valid && (level_sample >= min) && (level_sample < max))
-                bin = (int) ((level_sample - min) * scale);
-        }
     };
-
 
     // Pass-through bin transform operator
     struct PassThruTransform
@@ -376,8 +431,6 @@ public:
                 bin = (int) sample;
         }
     };
-
-
 
     //---------------------------------------------------------------------
     // Tuning policies
@@ -1016,10 +1069,9 @@ public:
 
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
-                int     bins    = num_output_levels[channel] - 1;
-                LevelT  scale   = ComputeScale(lower_level[channel], upper_level[channel], bins);
-
-                privatized_decode_op[channel].Init(num_output_levels[channel], upper_level[channel], lower_level[channel], scale);
+                privatized_decode_op[channel].Init(num_output_levels[channel],
+                                                   upper_level[channel],
+                                                   lower_level[channel]);
 
                 if (num_output_levels[channel] > max_levels)
                     max_levels = num_output_levels[channel];
@@ -1157,9 +1209,9 @@ public:
             {
                 num_privatized_levels[channel] = 257;
 
-                int     bins    = num_output_levels[channel] - 1;
-                LevelT  scale   = (upper_level[channel] - lower_level[channel]) / bins;
-                output_decode_op[channel].Init(num_output_levels[channel], upper_level[channel], lower_level[channel], scale);
+                output_decode_op[channel].Init(num_output_levels[channel],
+                                               upper_level[channel],
+                                               lower_level[channel]);
 
                 if (num_output_levels[channel] > max_levels)
                     max_levels = num_output_levels[channel];

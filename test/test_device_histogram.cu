@@ -639,7 +639,10 @@ void TestEven(
     OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
     printf("\n----------------------------\n");
-    printf("%s cub::DeviceHistogramEven (%s) %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
+    printf("%s cub::DeviceHistogram::Even (%s) "
+           "%d pixels (%d height, %d width, %d-byte row stride), "
+           "%d %d-byte %s samples (entropy reduction %d), "
+           "%s levels, %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (std::is_pointer<SampleIteratorT>::value) ? "pointer" : "iterator",
         (int) (num_row_pixels * num_rows),
@@ -650,6 +653,7 @@ void TestEven(
         (int) sizeof(SampleT),
         typeid(SampleT).name(),
         entropy_reduction,
+        typeid(LevelT).name(),
         typeid(CounterT).name(),
         NUM_ACTIVE_CHANNELS,
         NUM_CHANNELS);
@@ -726,8 +730,20 @@ void TestEven(
         num_row_pixels, num_rows, row_stride_bytes);
 
     // Check canary zones
+    if (g_verbose)
+    {
+        printf("Checking leading temp_storage canary zone (token = %d)\n"
+               "------------------------------------------------------\n",
+               static_cast<int>(canary_token));
+    }
     int error = CompareDeviceResults(canary_zone, (char *) d_temp_storage, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
+    if (g_verbose)
+    {
+        printf("Checking trailing temp_storage canary zone (token = %d)\n"
+               "-------------------------------------------------------\n",
+               static_cast<int>(canary_token));
+    }
     error = CompareDeviceResults(canary_zone, ((char *) d_temp_storage) + canary_bytes + temp_storage_bytes, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
 
@@ -740,6 +756,12 @@ void TestEven(
     // Check for correctness (and display results, if specified)
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
+        if (g_verbose)
+        {
+            printf("Checking histogram result (channel = %d)\n"
+                   "----------------------------------------\n",
+                   channel);
+        }
         int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, true, g_verbose);
         printf("\tChannel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
         error |= channel_error;
@@ -913,19 +935,23 @@ void TestRange(
     OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
     printf("\n----------------------------\n");
-    printf("%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
-        (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (int) (num_row_pixels * num_rows),
-        (int) num_rows,
-        (int) num_row_pixels,
-        (int) row_stride_bytes,
-        (int) total_samples,
-        (int) sizeof(SampleT),
-        typeid(SampleT).name(),
-        entropy_reduction,
-        typeid(CounterT).name(),
-        NUM_ACTIVE_CHANNELS,
-        NUM_CHANNELS);
+    printf("%s cub::DeviceHistogram::Range %d pixels "
+           "(%d height, %d width, %d-byte row stride), "
+           "%d %d-byte %s samples (entropy reduction %d), "
+           "%s levels, %s counters, %d/%d channels, max sample ",
+           (BACKEND == CDP) ? "CDP CUB" : "CUB",
+           (int)(num_row_pixels * num_rows),
+           (int)num_rows,
+           (int)num_row_pixels,
+           (int)row_stride_bytes,
+           (int)total_samples,
+           (int)sizeof(SampleT),
+           typeid(SampleT).name(),
+           entropy_reduction,
+           typeid(LevelT).name(),
+           typeid(CounterT).name(),
+           NUM_ACTIVE_CHANNELS,
+           NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
@@ -1263,8 +1289,12 @@ void Test(
     LevelT          max_level,
     int             max_num_levels)
 {
+    // entropy_reduction = -1 -> all samples == 0
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes, -1,  max_level, max_num_levels);
+
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        num_row_pixels, num_rows, row_stride_bytes, 0,  max_level, max_num_levels);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes, 5,   max_level, max_num_levels);
@@ -1318,6 +1348,10 @@ void Test(
         OffsetT(1920), OffsetT(0), max_level, max_num_levels);
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         OffsetT(0), OffsetT(0), max_level, max_num_levels);
+
+    // Small inputs
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+      OffsetT(15), OffsetT(1), max_level, max_num_levels);
 
     // 1080 image
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
@@ -1442,6 +1476,72 @@ void TestLevelsAliasing()
   CubDebugExit(g_allocator.DeviceFree(d_levels));
 }
 
+// Regression test for NVIDIA/cub#489: integer rounding errors lead to incorrect
+// bin detection:
+void TestIntegerBinCalcs()
+{
+  constexpr int num_levels = 8;
+  constexpr int num_bins = num_levels - 1;
+
+  int h_histogram[num_bins]{};
+  const int h_histogram_ref[num_bins]{1, 5, 0, 2, 1, 0, 0};
+  const int h_samples[]{2, 6, 7, 2, 3, 0, 2, 2, 6, 999};
+  const int lower_level = 0;
+  const int upper_level = 12;
+
+  constexpr int num_samples = sizeof(h_samples) / sizeof(h_samples[0]);
+
+  int *d_histogram{};
+  int *d_samples{};
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_histogram, sizeof(h_histogram)));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_samples, sizeof(h_samples)));
+
+  CubDebugExit(
+    cudaMemcpy(d_samples, h_samples, sizeof(h_samples), cudaMemcpyHostToDevice));
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  CubDebugExit(cub::DeviceHistogram::HistogramEven(d_temp_storage,
+                                                   temp_storage_bytes,
+                                                   d_samples,
+                                                   d_histogram,
+                                                   num_levels,
+                                                   lower_level,
+                                                   upper_level,
+                                                   num_samples));
+
+  CubDebugExit(
+    g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
+
+  CubDebugExit(cub::DeviceHistogram::HistogramEven(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_samples,
+                                                    d_histogram,
+                                                    num_levels,
+                                                    lower_level,
+                                                    upper_level,
+                                                    num_samples));
+
+  CubDebugExit(cudaMemcpy(h_histogram,
+                          d_histogram,
+                          sizeof(h_histogram),
+                          cudaMemcpyDeviceToHost));
+
+  for (int bin = 0; bin < num_bins; ++bin)
+  {
+    AssertEquals(h_histogram_ref[bin], h_histogram[bin]);
+  }
+
+  CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
+  CubDebugExit(g_allocator.DeviceFree(d_histogram));
+  CubDebugExit(g_allocator.DeviceFree(d_samples));
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -1477,8 +1577,9 @@ int main(int argc, char** argv)
     using false_t = Int2Type<false>;
 
     TestLevelsAliasing();
+    TestIntegerBinCalcs(); // regression test for NVIDIA/cub#489
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if TEST_HALF_T
     TestChannels<half_t, int, half_t, int>(256, 256 + 1, true_t{}, true_t{});
 #endif
 
@@ -1489,9 +1590,11 @@ int main(int argc, char** argv)
     TestChannels <float,            int, float, int>(1.0,   256 + 1,  true_t{}, false_t{});
 #endif
 
+    // float samples, int levels, regression test for NVIDIA/cub#479.
+    TestChannels <float,            int, int,   int>(12,    7,        true_t{}, true_t{});
+
     // Test down-conversion of size_t offsets to int
     TestChannels <unsigned char,    int, int,   long long>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>{}, false_t{});
 
     return 0;
 }
-
