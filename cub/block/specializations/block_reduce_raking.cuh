@@ -51,9 +51,9 @@ CUB_NAMESPACE_BEGIN
  * honor the relative ordering of items and partial reductions when applying the
  * reduction operator.
  *
- * Compared to the implementation of BlockReduceRaking (which does not support
- * non-commutative operators), this implementation requires a few extra
- * rounds of inter-thread communication.
+ * Compared to the implementation of BlockReduceRakingCommutativeOnly (which
+ * does not support non-commutative operators), this implementation requires a
+ * few extra rounds of inter-thread communication.
  */
 template <
     typename    T,              ///< Data type being reduced
