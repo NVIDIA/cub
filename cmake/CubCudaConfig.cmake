@@ -4,7 +4,7 @@ enable_language(CUDA)
 # Architecture options:
 #
 
-set(all_archs 35 37 50 52 53 60 61 62 70 72 75 80 86)
+set(all_archs 35 37 50 52 53 60 61 62 70 72 75 80 86 90)
 set(arch_message "CUB: Explicitly enabled compute architectures:")
 
 # Thrust sets up the architecture flags in CMAKE_CUDA_FLAGS already. Just
