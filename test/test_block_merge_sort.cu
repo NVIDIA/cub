@@ -405,7 +405,6 @@ void TestStability()
   constexpr unsigned int items_per_thread = 10;
   constexpr unsigned int threads_per_block = 128;
   constexpr unsigned int elements = items_per_thread * threads_per_block;
-  constexpr bool stable = true;
 
   thrust::device_vector<CustomType> d_keys(elements);
   thrust::device_vector<std::uint64_t> d_counts(elements);
@@ -413,7 +412,7 @@ void TestStability()
   thrust::transform(d_counts.begin(), d_counts.end(), d_keys.begin(), CountToType{});
 
   // Sort keys
-  BlockMergeSortTest<CustomType, items_per_thread, threads_per_block, stable>(
+  BlockMergeSortTest<CustomType, items_per_thread, threads_per_block, true>(
     thrust::raw_pointer_cast(d_keys.data()),
     elements);
 
