@@ -44,6 +44,9 @@ CUB_NAMESPACE_BEGIN
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+// \deprecated [Since 2.1.0] 
+#define CUB_USE_COOPERATIVE_GROUPS
+
 /// In device code, CUB_PTX_ARCH expands to the PTX version for which we are
 /// compiling. In host code, CUB_PTX_ARCH's value is implementation defined.
 #ifndef CUB_PTX_ARCH
