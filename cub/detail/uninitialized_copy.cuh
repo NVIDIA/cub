@@ -37,6 +37,14 @@ CUB_NAMESPACE_BEGIN
 namespace detail
 {
 
+#if defined(_NVHPC_CUDA)
+template <typename T, typename U>
+__host__ __device__ void uninitialized_copy(T *ptr, U &&val)
+{
+  // NVBug 3384810
+  new (ptr) T(::cuda::std::forward<U>(val));
+}
+#else
 template <typename T,
           typename U,
           typename ::cuda::std::enable_if<
@@ -58,6 +66,7 @@ __host__ __device__ void uninitialized_copy(T *ptr, U &&val)
 {
   new (ptr) T(::cuda::std::forward<U>(val));
 }
+#endif
 
 } // namespace detail
 
