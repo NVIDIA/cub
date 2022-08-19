@@ -253,9 +253,7 @@ __device__  __forceinline__ int CTA_SYNC_OR(int p)
  */
 __device__  __forceinline__ void WARP_SYNC(unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     __syncwarp(member_mask);
-#endif
 }
 
 
@@ -264,11 +262,7 @@ __device__  __forceinline__ void WARP_SYNC(unsigned int member_mask)
  */
 __device__  __forceinline__ int WARP_ANY(int predicate, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     return __any_sync(member_mask, predicate);
-#else
-    return ::__any(predicate);
-#endif
 }
 
 
@@ -277,11 +271,7 @@ __device__  __forceinline__ int WARP_ANY(int predicate, unsigned int member_mask
  */
 __device__  __forceinline__ int WARP_ALL(int predicate, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     return __all_sync(member_mask, predicate);
-#else
-    return ::__all(predicate);
-#endif
 }
 
 
@@ -290,11 +280,7 @@ __device__  __forceinline__ int WARP_ALL(int predicate, unsigned int member_mask
  */
 __device__  __forceinline__ int WARP_BALLOT(int predicate, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     return __ballot_sync(member_mask, predicate);
-#else
-    return __ballot(predicate);
-#endif
 }
 
 
@@ -304,13 +290,8 @@ __device__  __forceinline__ int WARP_BALLOT(int predicate, unsigned int member_m
 __device__ __forceinline__ 
 unsigned int SHFL_UP_SYNC(unsigned int word, int src_offset, int flags, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.up.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags), "r"(member_mask));
-#else
-    asm volatile("shfl.up.b32 %0, %1, %2, %3;"
-        : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
-#endif
     return word;
 }
 
@@ -320,13 +301,8 @@ unsigned int SHFL_UP_SYNC(unsigned int word, int src_offset, int flags, unsigned
 __device__ __forceinline__ 
 unsigned int SHFL_DOWN_SYNC(unsigned int word, int src_offset, int flags, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.down.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags), "r"(member_mask));
-#else
-    asm volatile("shfl.down.b32 %0, %1, %2, %3;"
-        : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
-#endif
     return word;
 }
 
@@ -336,13 +312,8 @@ unsigned int SHFL_DOWN_SYNC(unsigned int word, int src_offset, int flags, unsign
 __device__ __forceinline__ 
 unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, int flags, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.idx.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags), "r"(member_mask));
-#else
-    asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
-        : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags));
-#endif
     return word;
 }
 
@@ -352,11 +323,7 @@ unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, int flags, unsigned 
 __device__ __forceinline__ 
 unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, unsigned int member_mask)
 {
-#ifdef CUB_USE_COOPERATIVE_GROUPS
-  return __shfl_sync(member_mask, word, src_lane);
-#else
-  return __shfl(word, src_lane);
-#endif
+    return __shfl_sync(member_mask, word, src_lane);
 }
 
 /**
@@ -739,11 +706,7 @@ inline __device__ unsigned int MatchAny(unsigned int label)
             "    .reg .pred p;\n"
             "    and.b32 %0, %1, %2;"
             "    setp.eq.u32 p, %0, %2;\n"
-#ifdef CUB_USE_COOPERATIVE_GROUPS
             "    vote.ballot.sync.b32 %0, p, 0xffffffff;\n"
-#else
-            "    vote.ballot.b32 %0, p;\n"
-#endif
             "    @!p not.b32 %0, %0;\n"
             "}\n" : "=r"(mask) : "r"(label), "r"(current_bit));
 
