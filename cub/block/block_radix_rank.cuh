@@ -92,6 +92,35 @@ struct BlockRadixRankEmptyCallback
 };
 
 
+namespace detail
+{
+
+template <int Bits, int PartialWarpThreads, int PartialWarpId>
+struct warp_in_block_matcher_t
+{
+  static __device__ unsigned int match_any(unsigned int label, unsigned int warp_id)
+  {
+    if (warp_id == static_cast<unsigned int>(PartialWarpId)) 
+    {
+      return MatchAny<Bits, PartialWarpThreads>(label);
+    }
+
+    return MatchAny<Bits>(label);
+  }
+};
+
+template <int Bits, int PartialWarpId>
+struct warp_in_block_matcher_t<Bits, 0, PartialWarpId>
+{
+  static __device__ unsigned int match_any(unsigned int label, unsigned int warp_id)
+  {
+    return MatchAny<Bits>(label);
+  }
+};
+
+} // namespace detail
+
+
 /**
  * \brief BlockRadixRank provides operations for ranking unsigned integer types within a CUDA thread block.
  * \ingroup BlockModule
@@ -528,7 +557,9 @@ private:
 
         LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(0),
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
+        PARTIAL_WARP_THREADS        = BLOCK_THREADS % WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
+        PARTIAL_WARP_ID             = WARPS - 1,
 
         PADDED_WARPS            = ((WARPS & 0x1) == 0) ?
                                     WARPS + 1 :
@@ -698,7 +729,11 @@ public:
                 digit = RADIX_DIGITS - digit - 1;
 
             // Mask of peers who have same digit as me
-            uint32_t peer_mask = MatchAny<RADIX_BITS>(digit);
+            uint32_t peer_mask =
+              detail::warp_in_block_matcher_t<
+                RADIX_BITS, 
+                PARTIAL_WARP_THREADS, 
+                PARTIAL_WARP_ID>::match_any(digit, warp_id);
 
             // Pointer to smem digit counter for this key
             digit_counters[ITEM] = &temp_storage.aliasable.warp_digit_counters[digit][warp_id];
@@ -844,7 +879,9 @@ struct BlockRadixRankMatchEarlyCounts
         BINS_TRACKED_PER_THREAD = BINS_PER_THREAD,
         FULL_BINS = BINS_PER_THREAD * BLOCK_THREADS == RADIX_DIGITS,
         WARP_THREADS = CUB_PTX_WARP_THREADS,
+        PARTIAL_WARP_THREADS = BLOCK_THREADS % WARP_THREADS,
         BLOCK_WARPS = BLOCK_THREADS / WARP_THREADS,
+        PARTIAL_WARP_ID = BLOCK_WARPS - 1,
         WARP_MASK = ~0,
         NUM_MATCH_MASKS = MATCH_ALGORITHM == WARP_MATCH_ATOMIC_OR ? BLOCK_WARPS : 0,
         // Guard against declaring zero-sized array:
@@ -1040,7 +1077,10 @@ struct BlockRadixRankMatchEarlyCounts
             for (int u = 0; u < KEYS_PER_THREAD; ++u)
             {
                 int bin = Digit(keys[u]);
-                int bin_mask = MatchAny<RADIX_BITS>(bin);
+                int bin_mask = detail::warp_in_block_matcher_t<RADIX_BITS,
+                                                               PARTIAL_WARP_THREADS,
+                                                               PARTIAL_WARP_ID>::match_any(bin,
+                                                                                           warp);
                 int leader = (WARP_THREADS - 1) - __clz(bin_mask);
                 int warp_offset = 0;
                 int popc = __popc(bin_mask & LaneMaskLe());
