@@ -73,20 +73,22 @@ void Iota(
 
 template <
         typename DataType,
-        unsigned int ThreadsInBlock,
+        unsigned int BlockDimX,
+        unsigned int BlockDimY,
+        unsigned int BlockDimZ,
         unsigned int ItemsPerThread,
         typename ActionType>
 __global__ void BlockShuffleTestKernel(
         DataType *data,
         ActionType action)
 {
-    typedef cub::BlockShuffle<DataType, ThreadsInBlock> BlockShuffle;
+    typedef cub::BlockShuffle<DataType, BlockDimX, BlockDimY, BlockDimZ> BlockShuffle;
 
     __shared__ typename BlockShuffle::TempStorage temp_storage_shuffle;
 
     DataType thread_data[ItemsPerThread];
 
-    data += threadIdx.x * ItemsPerThread;
+    data += cub::RowMajorTid(BlockDimX, BlockDimY, BlockDimZ) * ItemsPerThread;
     for (unsigned int item = 0; item < ItemsPerThread; item++)
     {
         thread_data[item] = data[item];
@@ -105,11 +107,14 @@ __global__ void BlockShuffleTestKernel(
 template<
         typename DataType,
         unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock,
+        unsigned int BlockDimX,
+        unsigned int BlockDimY,
+        unsigned int BlockDimZ,
         typename ActionType>
 void BlockShuffleTest(DataType *data, ActionType action)
 {
-    BlockShuffleTestKernel<DataType, ThreadsInBlock, ItemsPerThread><<<1, ThreadsInBlock>>> (data, action);
+    dim3 block(BlockDimX, BlockDimY, BlockDimZ);
+    BlockShuffleTestKernel<DataType, BlockDimX, BlockDimY, BlockDimZ, ItemsPerThread><<<1, block>>> (data, action);
 
     CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
@@ -118,11 +123,13 @@ void BlockShuffleTest(DataType *data, ActionType action)
 template <
         typename DataType,
         unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock>
+        unsigned int BlockDimX,
+        unsigned int BlockDimY,
+        unsigned int BlockDimZ>
 struct UpTest
 {
     __device__ void operator()(
-            BlockShuffle<DataType, ThreadsInBlock> &block_shuffle,
+            BlockShuffle<DataType, BlockDimX, BlockDimY, BlockDimZ> &block_shuffle,
             DataType (&thread_data)[ItemsPerThread]) const
     {
         block_shuffle.Up(thread_data, thread_data);
@@ -142,11 +149,13 @@ struct UpTest
 template <
         typename DataType,
         unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock>
+        unsigned int BlockDimX,
+        unsigned int BlockDimY,
+        unsigned int BlockDimZ>
 struct DownTest
 {
     __device__ void operator()(
-            BlockShuffle<DataType, ThreadsInBlock> &block_shuffle,
+            BlockShuffle<DataType, BlockDimX, BlockDimY, BlockDimZ> &block_shuffle,
             DataType (&thread_data)[ItemsPerThread]) const
     {
         block_shuffle.Down(thread_data, thread_data);
@@ -154,7 +163,7 @@ struct DownTest
 
     static __host__ bool check(const DataType *data, int i)
     {
-        if (i == ItemsPerThread * ThreadsInBlock - 1)
+        if (i == ItemsPerThread * BlockDimX * BlockDimY * BlockDimZ - 1)
         {
             return data[i] == i;
         }
@@ -164,14 +173,16 @@ struct DownTest
 };
 
 template<typename DataType,
-         unsigned int ThreadsInBlock,
+         unsigned int BlockDimX,
+         unsigned int BlockDimY,
+         unsigned int BlockDimZ,
          int offset>
 struct OffsetTestBase
 {
     static constexpr unsigned int ItemsPerThread = 1;
 
     __device__ void operator()(
-            BlockShuffle<DataType, ThreadsInBlock> &block_shuffle,
+            BlockShuffle<DataType, BlockDimX, BlockDimY, BlockDimZ> &block_shuffle,
             DataType (&thread_data)[ItemsPerThread]) const
     {
         block_shuffle.Offset(thread_data[0], thread_data[0], offset);
@@ -179,34 +190,40 @@ struct OffsetTestBase
 };
 
 template <typename DataType,
-          unsigned int ThreadsInBlock>
-struct OffsetUpTest : public OffsetTestBase<DataType, ThreadsInBlock, -1 /* offset */>
+          unsigned int BlockDimX,
+          unsigned int BlockDimY,
+          unsigned int BlockDimZ>
+struct OffsetUpTest : public OffsetTestBase<DataType, BlockDimX, BlockDimY, BlockDimZ, -1 /* offset */>
 {
     static __host__ bool check(const DataType *data, int i)
     {
-        return UpTest<DataType, 1 /* ItemsPerThread */, ThreadsInBlock>::check (data, i);
+        return UpTest<DataType, 1 /* ItemsPerThread */, BlockDimX, BlockDimY, BlockDimZ>::check (data, i);
     }
 };
 
 template<typename DataType,
-         unsigned int ThreadsInBlock>
-struct OffsetDownTest : public OffsetTestBase<DataType, ThreadsInBlock, 1 /* offset */>
+         unsigned int BlockDimX,
+         unsigned int BlockDimY,
+         unsigned int BlockDimZ>
+struct OffsetDownTest : public OffsetTestBase<DataType, BlockDimX, BlockDimY, BlockDimZ, 1 /* offset */>
 {
     static __host__ bool check(const DataType *data, int i)
     {
-        return DownTest<DataType, 1 /* ItemsPerThread */, ThreadsInBlock>::check (data, i);
+        return DownTest<DataType, 1 /* ItemsPerThread */, BlockDimX, BlockDimY, BlockDimZ>::check (data, i);
     }
 };
 
 template<typename DataType,
-         unsigned int ThreadsInBlock,
+         unsigned int BlockDimX,
+         unsigned int BlockDimY,
+         unsigned int BlockDimZ,
          unsigned int offset>
 struct RotateTestBase
 {
     static constexpr unsigned int ItemsPerThread = 1;
 
     __device__ void operator()(
-            BlockShuffle<DataType, ThreadsInBlock> &block_shuffle,
+            BlockShuffle<DataType, BlockDimX, BlockDimY, BlockDimZ> &block_shuffle,
             DataType (&thread_data)[ItemsPerThread]) const
     {
         block_shuffle.Rotate(thread_data[0], thread_data[0], offset);
@@ -214,18 +231,22 @@ struct RotateTestBase
 
     static __host__ bool check(const DataType *data, int i)
     {
-        return data[i] == static_cast<DataType>((i + offset) % ThreadsInBlock);
+        return data[i] == static_cast<DataType>((i + offset) % (BlockDimX * BlockDimY * BlockDimZ));
     }
 };
 
 template<typename DataType,
-         unsigned int ThreadsInBlock>
-struct RotateUpTest : public RotateTestBase<DataType, ThreadsInBlock, 1 /* offset */>
+         unsigned int BlockDimX,
+         unsigned int BlockDimY,
+         unsigned int BlockDimZ>
+struct RotateUpTest : public RotateTestBase<DataType, BlockDimX, BlockDimY, BlockDimZ, 1 /* offset */>
 { };
 
 template<typename DataType,
-         unsigned int ThreadsInBlock>
-struct RotateTest : public RotateTestBase<DataType, ThreadsInBlock, 24 /* offset */>
+         unsigned int BlockDimX,
+         unsigned int BlockDimY,
+         unsigned int BlockDimZ>
+struct RotateTest : public RotateTestBase<DataType, BlockDimX, BlockDimY, BlockDimZ, 24 /* offset */>
 { };
 
 
@@ -252,16 +273,18 @@ int CheckResult(
 template <
         typename DataType,
         unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock,
-        template<typename, unsigned int, unsigned int> class TestType>
+        unsigned int BlockDimX, 
+        unsigned int BlockDimY, 
+        unsigned int BlockDimZ, 
+        template<typename, unsigned int, unsigned int, unsigned int, unsigned int> class TestType>
 void Test(unsigned int num_items,
           DataType *d_data,
           DataType *h_data)
 {
-    TestType<DataType, ItemsPerThread, ThreadsInBlock> test;
+    TestType<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ> test;
 
     Iota(num_items, d_data);
-    BlockShuffleTest<DataType, ItemsPerThread, ThreadsInBlock>(d_data, test);
+    BlockShuffleTest<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ>(d_data, test);
     AssertEquals(0, CheckResult(num_items, d_data, h_data, test));
 }
 
@@ -272,8 +295,10 @@ void Test(unsigned int num_items,
 template <
         typename DataType,
         unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock,
-        template<typename, unsigned int> class TestType>
+        unsigned int BlockDimX, 
+        unsigned int BlockDimY, 
+        unsigned int BlockDimZ,
+        template<typename, unsigned int, unsigned int, unsigned int> class TestType>
 struct SingleItemTestHelper
 {
     static void run(unsigned int /* num_items */,
@@ -285,71 +310,71 @@ struct SingleItemTestHelper
 
 template <
         typename DataType,
-        unsigned int ThreadsInBlock,
-        template<typename, unsigned int> class TestType>
-struct SingleItemTestHelper<DataType, 1, ThreadsInBlock, TestType>
+        unsigned int BlockDimX, 
+        unsigned int BlockDimY, 
+        unsigned int BlockDimZ,
+        template<typename, unsigned int, unsigned int, unsigned int> class TestType>
+struct SingleItemTestHelper<DataType, 1, BlockDimX, BlockDimY, BlockDimZ, TestType>
 {
     static void run(unsigned int num_items,
                    DataType *d_data,
                    DataType *h_data)
     {
-        TestType<DataType, ThreadsInBlock> test;
+        TestType<DataType, BlockDimX, BlockDimY, BlockDimZ> test;
 
         Iota(num_items, d_data);
-        BlockShuffleTest<DataType, 1 /* ItemsPerThread */, ThreadsInBlock>(d_data, test);
+        BlockShuffleTest<DataType, 1 /* ItemsPerThread */, BlockDimX, BlockDimY, BlockDimZ>(d_data, test);
         AssertEquals(0, CheckResult(num_items, d_data, h_data, test));
     }
 };
 
-
-template <
-        typename DataType,
-        unsigned int ItemsPerThread,
-        unsigned int ThreadsInBlock>
-void Test(
-    CachingDeviceAllocator &g_allocator
-)
-{
-    const unsigned int num_items = ItemsPerThread * ThreadsInBlock;
-
-    DataType *d_data = nullptr;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(DataType) * num_items));
-
-    std::unique_ptr<DataType[]> h_data(new DataType[num_items]);
-
-    Test<DataType, ItemsPerThread, ThreadsInBlock, UpTest>(num_items, d_data, h_data.get());
-    Test<DataType, ItemsPerThread, ThreadsInBlock, DownTest>(num_items, d_data, h_data.get());
-
-    SingleItemTestHelper<DataType, ItemsPerThread, ThreadsInBlock, OffsetUpTest>().run(num_items,
-                                                                                       d_data,
-                                                                                       h_data.get());
-
-    SingleItemTestHelper<DataType, ItemsPerThread, ThreadsInBlock, OffsetDownTest>().run(num_items,
-                                                                                         d_data,
-                                                                                         h_data.get());
-
-    SingleItemTestHelper<DataType, ItemsPerThread, ThreadsInBlock, RotateUpTest>().run(num_items,
-                                                                                       d_data,
-                                                                                       h_data.get());
-
-    SingleItemTestHelper<DataType, ItemsPerThread, ThreadsInBlock, RotateTest>().run(num_items,
-                                                                                     d_data,
-                                                                                     h_data.get());
-
-    if (d_data)
-    {
-        CubDebugExit(g_allocator.DeviceFree(d_data));
-    }
-}
-
-template <unsigned int ItemsPerThread>
+template <typename DataType,
+          unsigned int ItemsPerThread,
+          unsigned int BlockDimX,
+          unsigned int BlockDimY,
+          unsigned int BlockDimZ>
 void Test(CachingDeviceAllocator &g_allocator)
 {
-    Test<int16_t, ItemsPerThread, 32>(g_allocator);
-    Test<int32_t, ItemsPerThread, 32>(g_allocator);
-    Test<int32_t, ItemsPerThread, 512>(g_allocator);
-    Test<int64_t, ItemsPerThread, 512>(g_allocator);
-    Test<int64_t, ItemsPerThread, 1024>(g_allocator);
+  const unsigned int num_items = BlockDimX * BlockDimY * BlockDimZ * ItemsPerThread;
+
+  DataType *d_data = nullptr;
+  CubDebugExit(g_allocator.DeviceAllocate((void **)&d_data, sizeof(DataType) * num_items));
+
+  std::unique_ptr<DataType[]> h_data(new DataType[num_items]);
+
+  Test<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, UpTest>(num_items,
+                                                                          d_data,
+                                                                          h_data.get());
+  Test<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, DownTest>(num_items,
+                                                                            d_data,
+                                                                            h_data.get());
+
+  SingleItemTestHelper<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, OffsetUpTest>()
+    .run(num_items, d_data, h_data.get());
+
+  SingleItemTestHelper<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, OffsetDownTest>()
+    .run(num_items, d_data, h_data.get());
+
+  SingleItemTestHelper<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, RotateUpTest>()
+    .run(num_items, d_data, h_data.get());
+
+  SingleItemTestHelper<DataType, ItemsPerThread, BlockDimX, BlockDimY, BlockDimZ, RotateTest>()
+    .run(num_items, d_data, h_data.get());
+
+  if (d_data)
+  {
+    CubDebugExit(g_allocator.DeviceFree(d_data));
+  }
+}
+
+template <unsigned int ItemsPerThread, unsigned int BlockDimY = 1, unsigned int BlockDimZ = 1>
+void Test(CachingDeviceAllocator &g_allocator)
+{
+    Test<int16_t, ItemsPerThread, 32, BlockDimY, BlockDimZ>(g_allocator);
+    Test<int32_t, ItemsPerThread, 32, BlockDimY, BlockDimZ>(g_allocator);
+    Test<int32_t, ItemsPerThread, 512, BlockDimY, BlockDimZ>(g_allocator);
+    Test<int64_t, ItemsPerThread, 512, BlockDimY, BlockDimZ>(g_allocator);
+    Test<int64_t, ItemsPerThread, 1024, BlockDimY, BlockDimZ>(g_allocator);
 }
 
 int main(int argc, char** argv)
@@ -364,6 +389,8 @@ int main(int argc, char** argv)
     Test<1> (g_allocator);
     Test<2> (g_allocator);
     Test<15> (g_allocator);
+
+    Test<int32_t, 1, 64, 2, 2>(g_allocator);
 
     return 0;
 }
