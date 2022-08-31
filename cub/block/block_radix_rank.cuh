@@ -143,17 +143,34 @@ struct warp_in_block_matcher_t<Bits, 0, PartialWarpId>
  * \par Performance Considerations
  * - \granularity
  *
- * \par Examples
  * \par
- * - <b>Example 1:</b> Simple radix rank of 32-bit integer keys
- *      \code
- *      #include <cub/cub.cuh>
+ * \code
+ * #include <cub/cub.cuh>
  *
- *      template <int BLOCK_THREADS>
- *      __global__ void ExampleKernel(...)
- *      {
+ * __global__ void ExampleKernel(...)
+ * {
+ *   constexpr int block_threads = 2;
+ *   constexpr int radix_bits = 5;
  *
- *      \endcode
+ *   // Specialize BlockRadixRank for a 1D block of 2 threads 
+ *   using block_radix_rank = cub::BlockRadixRank<block_threads, radix_bits>;
+ *   using storage_t = typename block_radix_rank::TempStorage;
+ *
+ *   // Allocate shared memory for BlockRadixSort
+ *   __shared__ storage_t temp_storage;
+ *
+ *   // Obtain a segment of consecutive items that are blocked across threads
+ *   int keys[2];
+ *   int ranks[2];
+ *   ...
+ *
+ *   cub::BFEDigitExtractor<int> extractor(0, radix_bits);
+ *   block_radix_rank(temp_storage).RankKeys(keys, ranks, extractor);
+ *
+ *   ...
+ * \endcode
+ * Suppose the set of input `keys` across the block of threads is `{ [16,10], [9,11] }`.  
+ * The corresponding output `ranks` in those threads will be `{ [3,1], [0,2] }`.
  *
  * \par Re-using dynamically allocating shared memory
  * The following example under the examples/block folder illustrates usage of
