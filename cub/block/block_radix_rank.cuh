@@ -559,7 +559,6 @@ private:
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         PARTIAL_WARP_THREADS        = BLOCK_THREADS % WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
-        PARTIAL_WARP_ID             = WARPS - 1,
 
         PADDED_WARPS            = ((WARPS & 0x1) == 0) ?
                                     WARPS + 1 :
@@ -733,7 +732,7 @@ public:
               detail::warp_in_block_matcher_t<
                 RADIX_BITS, 
                 PARTIAL_WARP_THREADS, 
-                PARTIAL_WARP_ID>::match_any(digit, warp_id);
+                WARPS - 1>::match_any(digit, warp_id);
 
             // Pointer to smem digit counter for this key
             digit_counters[ITEM] = &temp_storage.aliasable.warp_digit_counters[digit][warp_id];
@@ -1079,7 +1078,7 @@ struct BlockRadixRankMatchEarlyCounts
                 int bin = Digit(keys[u]);
                 int bin_mask = detail::warp_in_block_matcher_t<RADIX_BITS,
                                                                PARTIAL_WARP_THREADS,
-                                                               PARTIAL_WARP_ID>::match_any(bin,
+                                                               BLOCK_WARPS - 1>::match_any(bin,
                                                                                            warp);
                 int leader = (WARP_THREADS - 1) - __clz(bin_mask);
                 int warp_offset = 0;
