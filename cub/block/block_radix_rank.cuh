@@ -1165,6 +1165,47 @@ struct BlockRadixRankMatchEarlyCounts
 };
 
 
+namespace detail 
+{
+
+// `BlockRadixRank` doesn't conform to the typical pattern, not exposing the algorithm 
+// template parameter. Other algorithms don't provide the same template parameters, not allowing 
+// multi-dimensional thread block specializations. 
+// 
+// TODO(senior-zero) for 3.0:
+// - Put existing implementations into the detail namespace
+// - Support multi-dimensional thread blocks in the rest of implementations
+// - Repurpose BlockRadixRank as an entry name with the algorithm template parameter
+template <RadixRankAlgorithm RankAlgorithm,
+          int BlockDimX,
+          int RadixBits,
+          bool IsDescending,
+          BlockScanAlgorithm ScanAlgorithm>
+using block_radix_rank_t = cub::detail::conditional_t<
+  RankAlgorithm == RADIX_RANK_BASIC,
+  BlockRadixRank<BlockDimX, RadixBits, IsDescending, false, ScanAlgorithm>,
+  cub::detail::conditional_t<
+    RankAlgorithm == RADIX_RANK_MEMOIZE,
+    BlockRadixRank<BlockDimX, RadixBits, IsDescending, true, ScanAlgorithm>,
+    cub::detail::conditional_t<
+      RankAlgorithm == RADIX_RANK_MATCH,
+      BlockRadixRankMatch<BlockDimX, RadixBits, IsDescending, ScanAlgorithm>,
+      cub::detail::conditional_t<
+        RankAlgorithm == RADIX_RANK_MATCH_EARLY_COUNTS_ANY,
+        BlockRadixRankMatchEarlyCounts<BlockDimX,
+                                       RadixBits,
+                                       IsDescending,
+                                       ScanAlgorithm,
+                                       WARP_MATCH_ANY>,
+        BlockRadixRankMatchEarlyCounts<BlockDimX,
+                                       RadixBits,
+                                       IsDescending,
+                                       ScanAlgorithm,
+                                       WARP_MATCH_ATOMIC_OR>>>>>;
+
+} // namespace detail
+
+
 CUB_NAMESPACE_END
 
 
