@@ -121,12 +121,12 @@ void Test(std::int64_t num_items,
   thrust::device_vector<char> tmp(temp_size);
 
   CubDebugExit(cub::DeviceMergeSort::SortPairs(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_keys.data()),
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_keys.data()),
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess()));
 
   thrust::device_vector<KeyType> d_keys_after_sort_copy(d_keys);
   thrust::device_vector<DataType> d_values_after_sort_copy(d_values);
@@ -134,14 +134,14 @@ void Test(std::int64_t num_items,
   AssertTrue(CheckResult(d_values));
 
   CubDebugExit(cub::DeviceMergeSort::SortPairsCopy(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_keys_before_sort.data()),
-      thrust::raw_pointer_cast(d_values_before_sort.data()),
-      thrust::raw_pointer_cast(d_keys.data()),
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_keys_before_sort.data()),
+    thrust::raw_pointer_cast(d_values_before_sort.data()),
+    thrust::raw_pointer_cast(d_keys.data()),
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess()));
 
   AssertEquals(d_keys, d_keys_after_sort_copy);
   AssertEquals(d_values, d_values_after_sort_copy);
@@ -151,24 +151,24 @@ void Test(std::int64_t num_items,
   // At the moment stable sort is an alias to sort, so it's safe to use
   // temp_size storage allocated before
   CubDebugExit(cub::DeviceMergeSort::StableSortPairs(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_keys.data()),
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_keys.data()),
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess()));
 
   AssertTrue(CheckResult(d_values));
 
   CubDebugExit(cub::DeviceMergeSort::SortPairsCopy(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::constant_iterator<KeyType>(KeyType(42)),
-      thrust::counting_iterator<DataType>(DataType(0)),
-      thrust::raw_pointer_cast(d_keys.data()),
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::constant_iterator<KeyType>(KeyType(42)),
+    thrust::counting_iterator<DataType>(DataType(0)),
+    thrust::raw_pointer_cast(d_keys.data()),
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess()));
 
   thrust::sequence(d_values_before_sort.begin(), d_values_before_sort.end());
 
@@ -194,32 +194,32 @@ void TestKeys(std::int64_t num_items,
 
   size_t temp_size = 0;
   cub::DeviceMergeSort::SortKeys(
-      nullptr,
-      temp_size,
-      thrust::raw_pointer_cast(d_keys.data()),
-      num_items,
-      CustomLess());
+    nullptr,
+    temp_size,
+    thrust::raw_pointer_cast(d_keys.data()),
+    num_items,
+    CustomLess());
 
   thrust::device_vector<char> tmp(temp_size);
 
   CubDebugExit(cub::DeviceMergeSort::SortKeys(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_keys.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_keys.data()),
+    num_items,
+    CustomLess()));
 
   thrust::device_vector<KeyType> d_after_sort(d_keys);
 
   AssertTrue(CheckResult(d_keys));
 
   CubDebugExit(cub::DeviceMergeSort::SortKeysCopy(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_before_sort.data()),
-      thrust::raw_pointer_cast(d_keys.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_before_sort.data()),
+    thrust::raw_pointer_cast(d_keys.data()),
+    num_items,
+    CustomLess()));
 
   AssertTrue(d_keys == d_after_sort);
   AssertTrue(d_before_sort == d_before_sort_copy);
@@ -227,11 +227,11 @@ void TestKeys(std::int64_t num_items,
   // At the moment stable sort is an alias to sort, so it's safe to use
   // temp_size storage allocated before
   CubDebugExit(cub::DeviceMergeSort::StableSortKeys(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      thrust::raw_pointer_cast(d_keys.data()),
-      num_items,
-      CustomLess()));
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    thrust::raw_pointer_cast(d_keys.data()),
+    num_items,
+    CustomLess()));
 
   AssertTrue(CheckResult(d_keys));
 
@@ -267,14 +267,13 @@ struct TestHelper<false>
 {
   template <typename, typename>
   static void AllocateAndTest(thrust::default_random_engine &, unsigned int)
-  {
-  }
+  {}
 };
 
 template <typename DataType>
 void Test(thrust::default_random_engine &rng, unsigned int num_items)
 {
-  TestHelper<sizeof(DataType) <= sizeof(std::uint8_t)>::template AllocateAndTest<std::uint8_t, DataType>(rng, num_items);
+  TestHelper<sizeof(DataType) <= sizeof(std::uint8_t) >::template AllocateAndTest<std::uint8_t,  DataType>(rng, num_items);
   TestHelper<sizeof(DataType) <= sizeof(std::uint32_t)>::template AllocateAndTest<std::uint32_t, DataType>(rng, num_items);
   TestHelper<sizeof(DataType) <= sizeof(std::uint64_t)>::template AllocateAndTest<std::uint64_t, DataType>(rng, num_items);
 }
@@ -295,22 +294,22 @@ void AllocateAndTestIterators(unsigned int num_items)
 
   size_t temp_size = 0;
   cub::DeviceMergeSort::SortPairs(
-      nullptr,
-      temp_size,
-      reverse_iter,
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess());
+    nullptr,
+    temp_size,
+    reverse_iter,
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess());
 
   thrust::device_vector<char> tmp(temp_size);
 
   cub::DeviceMergeSort::SortPairs(
-      thrust::raw_pointer_cast(tmp.data()),
-      temp_size,
-      reverse_iter,
-      thrust::raw_pointer_cast(d_values.data()),
-      num_items,
-      CustomLess());
+    thrust::raw_pointer_cast(tmp.data()),
+    temp_size,
+    reverse_iter,
+    thrust::raw_pointer_cast(d_values.data()),
+    num_items,
+    CustomLess());
 
   AssertTrue(CheckResult(d_values));
 }
@@ -346,7 +345,7 @@ void Test(thrust::default_random_engine &rng)
   }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   CommandLineArgs args(argc, argv);
 
