@@ -686,43 +686,78 @@ __device__ __forceinline__ T ShuffleIndex(
 }
 
 
+namespace detail 
+{
+
+/** 
+ * Implementation detail for `MatchAny`. It provides specializations for full and partial warps. 
+ * For partial warps, inactive threads must be masked out. This is done in the partial warp 
+ * specialization below. 
+ * Usage:
+ * ```
+ * // returns a mask of threads with the same 4 least-significant bits of `label` 
+ * // in a warp with 16 active threads
+ * warp_matcher_t<4, 16>::match_any(label); 
+ *
+ * // returns a mask of threads with the same 4 least-significant bits of `label` 
+ * // in a warp with 32 active threads (no extra work is done)
+ * warp_matcher_t<4, 32>::match_any(label); 
+ * ```
+ */
+template <int LABEL_BITS, int WARP_ACTIVE_THREADS>
+struct warp_matcher_t 
+{
+
+  static __device__ unsigned int match_any(unsigned int label)
+  {
+    return warp_matcher_t<LABEL_BITS, 32>::match_any(label) & ~(~0 << WARP_ACTIVE_THREADS);
+  }
+
+};
+
+template <int LABEL_BITS>
+struct warp_matcher_t<LABEL_BITS, CUB_PTX_WARP_THREADS> 
+{
+
+  // match.any.sync.b32 is slower when matching a few bits
+  // using a ballot loop instead
+  static __device__ unsigned int match_any(unsigned int label)
+  {
+      unsigned int retval;
+
+      // Extract masks of common threads for each bit
+      #pragma unroll
+      for (int BIT = 0; BIT < LABEL_BITS; ++BIT)
+      {
+          unsigned int mask;
+          unsigned int current_bit = 1 << BIT;
+          asm ("{\n"
+              "    .reg .pred p;\n"
+              "    and.b32 %0, %1, %2;"
+              "    setp.eq.u32 p, %0, %2;\n"
+              "    vote.ballot.sync.b32 %0, p, 0xffffffff;\n"
+              "    @!p not.b32 %0, %0;\n"
+              "}\n" : "=r"(mask) : "r"(label), "r"(current_bit));
+
+          // Remove peers who differ
+          retval = (BIT == 0) ? mask : retval & mask;
+      }
+
+      return retval;
+  }
+
+};
+
+} // namespace detail
 
 /**
  * Compute a 32b mask of threads having the same least-significant
  * LABEL_BITS of \p label as the calling thread.
  */
-template <int LABEL_BITS>
+template <int LABEL_BITS, int WARP_ACTIVE_THREADS = CUB_PTX_WARP_THREADS>
 inline __device__ unsigned int MatchAny(unsigned int label)
 {
-    unsigned int retval;
-
-    // Extract masks of common threads for each bit
-    #pragma unroll
-    for (int BIT = 0; BIT < LABEL_BITS; ++BIT)
-    {
-        unsigned int mask;
-        unsigned int current_bit = 1 << BIT;
-        asm ("{\n"
-            "    .reg .pred p;\n"
-            "    and.b32 %0, %1, %2;"
-            "    setp.eq.u32 p, %0, %2;\n"
-            "    vote.ballot.sync.b32 %0, p, 0xffffffff;\n"
-            "    @!p not.b32 %0, %0;\n"
-            "}\n" : "=r"(mask) : "r"(label), "r"(current_bit));
-
-        // Remove peers who differ
-        retval = (BIT == 0) ? mask : retval & mask;
-    }
-
-    return retval;
-
-//  // VOLTA match
-//    unsigned int retval;
-//    asm ("{\n"
-//         "    match.any.sync.b32 %0, %1, 0xffffffff;\n"
-//         "}\n" : "=r"(retval) : "r"(label));
-//    return retval;
-
+  return detail::warp_matcher_t<LABEL_BITS, WARP_ACTIVE_THREADS>::match_any(label);
 }
 
 CUB_NAMESPACE_END
