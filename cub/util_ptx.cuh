@@ -689,6 +689,21 @@ __device__ __forceinline__ T ShuffleIndex(
 namespace detail 
 {
 
+/** 
+ * Implementation detail for `MatchAny`. It provides specializations for full and partial warps. 
+ * For partial warps, inactive threads must be masked out. This is done in the partial warp 
+ * specialization below. 
+ * Usage:
+ * ```
+ * // returns a mask of threads with the same 4 least-significant bits of `label` 
+ * // in a warp with 16 active threads
+ * warp_matcher_t<4, 16>::match_any(label); 
+ *
+ * // returns a mask of threads with the same 4 least-significant bits of `label` 
+ * // in a warp with 32 active threads (no extra work is done)
+ * warp_matcher_t<4, 32>::match_any(label); 
+ * ```
+ */
 template <int LABEL_BITS, int WARP_ACTIVE_THREADS>
 struct warp_matcher_t 
 {
