@@ -59,7 +59,7 @@ template <typename AgentThreeWayPartitionPolicyT,
           typename SelectFirstPartOp,
           typename SelectSecondPartOp,
           typename OffsetT>
-__launch_bounds__(int(AgentThreeWayPartitionPolicyT::BLOCK_THREADS)) __global__
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentThreeWayPartitionPolicyT::BLOCK_THREADS)) __global__
 void DeviceThreeWayPartitionKernel(InputIteratorT d_in,
                                    FirstOutputIteratorT d_first_part_out,
                                    SecondOutputIteratorT d_second_part_out,

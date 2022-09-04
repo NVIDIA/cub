@@ -94,6 +94,15 @@ namespace detail
 
 #endif // CUB_RUNTIME_FUNCTION predefined
 
+#ifndef CUB_DETAIL_LAUNCH_BOUNDS
+#ifdef CUB_RDC_ENABLED
+#define CUB_DETAIL_LAUNCH_BOUNDS(...) 
+#else // not defined CUB_RDC_ENABLED
+#define CUB_DETAIL_LAUNCH_BOUNDS(...) \
+  __launch_bounds__(__VA_ARGS__)
+#endif // CUB_RDC_ENABLED
+#endif // CUB_DETAIL_LAUNCH_BOUNDS
+
 #endif // Do not document
 
 } // namespace detail

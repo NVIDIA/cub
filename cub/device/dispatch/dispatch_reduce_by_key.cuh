@@ -130,7 +130,7 @@ template <typename AgentReduceByKeyPolicyT,
           typename ReductionOpT,
           typename OffsetT,
           typename AccumT>
-__launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
   void DeviceReduceByKeyKernel(KeysInputIteratorT d_keys_in,
                                UniqueOutputIteratorT d_unique_out,
                                ValuesInputIteratorT d_values_in,

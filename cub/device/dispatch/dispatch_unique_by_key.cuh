@@ -58,7 +58,7 @@ template <
     typename ScanTileStateT,                        ///< Tile status interface type
     typename EqualityOpT,                           ///< Equality operator type
     typename OffsetT>                               ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentUniqueByKeyPolicyT::UniqueByKeyPolicyT::BLOCK_THREADS))
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentUniqueByKeyPolicyT::UniqueByKeyPolicyT::BLOCK_THREADS))
 __global__ void DeviceUniqueByKeySweepKernel(
     KeyInputIteratorT       d_keys_in,              ///< [in] Pointer to the input sequence of keys
     ValueInputIteratorT     d_values_in,            ///< [in] Pointer to the input sequence of values

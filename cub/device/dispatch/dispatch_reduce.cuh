@@ -99,7 +99,7 @@ template <typename ChainedPolicyT,
           typename OffsetT,
           typename ReductionOpT,
           typename AccumT>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS)) 
+CUB_DETAIL_LAUNCH_BOUNDS(int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS)) 
 __global__ void DeviceReduceKernel(InputIteratorT d_in,
                                    AccumT* d_out,
                                    OffsetT num_items,
@@ -178,7 +178,7 @@ template <typename ChainedPolicyT,
           typename ReductionOpT,
           typename InitT,
           typename AccumT>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1) 
+CUB_DETAIL_LAUNCH_BOUNDS(int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1) 
 __global__ void DeviceReduceSingleTileKernel(InputIteratorT d_in,
                                              OutputIteratorT d_out,
                                              OffsetT num_items,
@@ -304,7 +304,7 @@ template <typename ChainedPolicyT,
           typename ReductionOpT,
           typename InitT,
           typename AccumT>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS)) 
+CUB_DETAIL_LAUNCH_BOUNDS(int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS)) 
 __global__ void DeviceSegmentedReduceKernel(
     InputIteratorT d_in,
     OutputIteratorT d_out,

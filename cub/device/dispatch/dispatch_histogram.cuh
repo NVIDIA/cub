@@ -102,7 +102,7 @@ template <
     typename                                            PrivatizedDecodeOpT,            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
     typename                                            OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
     typename                                            OffsetT>                        ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentHistogramPolicyT::BLOCK_THREADS))
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentHistogramPolicyT::BLOCK_THREADS))
 __global__ void DeviceHistogramSweepKernel(
     SampleIteratorT                                         d_samples,                          ///< Input data to reduce
     ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_output_bins_wrapper,            ///< The number bins per final output histogram

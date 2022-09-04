@@ -103,7 +103,7 @@ template <bool IS_DESCENDING,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+CUB_DETAIL_LAUNCH_BOUNDS(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortFallbackKernel(
     const KeyT *d_keys_in_orig,
     KeyT *d_keys_out_orig,
@@ -298,7 +298,7 @@ template <bool IS_DESCENDING,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::SmallAndMediumSegmentedSortPolicyT::BLOCK_THREADS)
+CUB_DETAIL_LAUNCH_BOUNDS(ChainedPolicyT::ActivePolicy::SmallAndMediumSegmentedSortPolicyT::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortKernelSmall(
     unsigned int small_segments,
     unsigned int medium_segments,
@@ -427,7 +427,7 @@ template <bool IS_DESCENDING,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+CUB_DETAIL_LAUNCH_BOUNDS(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortKernelLarge(
     const unsigned int *d_segments_indices,
     const KeyT *d_keys_in_orig,
@@ -685,7 +685,7 @@ template <typename ChainedPolicyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT>
-__launch_bounds__(1) __global__ void
+CUB_DETAIL_LAUNCH_BOUNDS(1) __global__ void
 DeviceSegmentedSortContinuationKernel(
   LargeKernelT large_kernel,
   SmallKernelT small_kernel,

@@ -163,7 +163,7 @@ template <typename ChainedPolicyT,
           typename InitValueT,
           typename OffsetT,
           typename AccumT>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
+CUB_DETAIL_LAUNCH_BOUNDS(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
   __global__ void DeviceScanKernel(InputIteratorT d_in,
                                    OutputIteratorT d_out,
                                    ScanTileStateT tile_state,
