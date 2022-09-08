@@ -1036,7 +1036,7 @@ int main(int argc, char** argv)
 
     // Test same input+output data types
     TestSize<unsigned char>(num_items, (unsigned char)0, (unsigned char)99);
-    TestSize<char>(num_items, (char)0, (char)99);
+    TestSize<signed char>(num_items, (char)0, (char)99);
 
 #elif TEST_VALUE_TYPES == 1
 

@@ -721,7 +721,7 @@ template <
 void Test(GenMode gen_mode)
 {
     // primitive
-    Test<WARPS, LOGICAL_WARP_THREADS, char>(                gen_mode, Sum());
+    Test<WARPS, LOGICAL_WARP_THREADS, signed char>(         gen_mode, Sum());
     Test<WARPS, LOGICAL_WARP_THREADS, short>(               gen_mode, Sum());
     Test<WARPS, LOGICAL_WARP_THREADS, int>(                 gen_mode, Sum());
     Test<WARPS, LOGICAL_WARP_THREADS, long long>(           gen_mode, Sum());

@@ -1946,7 +1946,7 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
 #if TEST_KEY_BYTES == 1
 
-    TestGen<char, true>               (num_items, num_segments);
+    TestGen<signed char, true>        (num_items, num_segments);
 
 #ifdef TEST_EXTENDED_KEY_TYPES
     TestGen<bool, false>              (num_items, num_segments);

@@ -566,7 +566,7 @@ void test_types()
 {
   test_type<float>();
   test_type<double>();
-  test_type<char>();
+  test_type<signed char>();
   test_type<int>();
   test_type<unsigned long long>();
 }
