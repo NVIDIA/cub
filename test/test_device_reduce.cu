@@ -1473,9 +1473,9 @@ int main(int argc, char** argv)
     // %PARAM% TEST_TYPES types 0:1:2:3
 
 #if TEST_TYPES == 0
-    TestType<char, char>(max_items, max_segments);
+    TestType<signed char, signed char>(max_items, max_segments);
     TestType<unsigned char, unsigned char>(max_items, max_segments);
-    TestType<char, int>(max_items, max_segments);
+    TestType<signed char, int>(max_items, max_segments);
 #elif TEST_TYPES == 1
     TestType<short, short>(max_items, max_segments);
     TestType<int, int>(max_items, max_segments);

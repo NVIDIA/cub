@@ -517,7 +517,7 @@ int main(int argc, char** argv)
 
     // Compile/run thorough tests
 #if TEST_VALUE_TYPES == 0
-    TestThreads<char>(2, 0.8f);
+    TestThreads<signed char>(2, 0.8f);
     TestThreads<int>(2, 0.8f);
     TestThreads<long>(2, 0.8f);
 #elif TEST_VALUE_TYPES == 1
