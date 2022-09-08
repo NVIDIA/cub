@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Evaluate different data types
-    Test<char>();
+    Test<signed char>();
     Test<short>();
     Test<int>();
     Test<long>();

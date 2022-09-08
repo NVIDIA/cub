@@ -749,7 +749,7 @@ int main(int argc, char** argv)
     // %PARAM% TEST_CDP cdp 0:1
 
     // Test different input types
-    TestSize<char, int, int>(num_items);
+    TestSize<signed char, int, int>(num_items);
     TestSize<short, int, int>(num_items);
     TestSize<int, int, int>(num_items);
     TestSize<long, int, int>(num_items);

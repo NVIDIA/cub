@@ -1221,7 +1221,7 @@ int main(int argc, char** argv)
 
     // Test same input+output data types
     TestSize<unsigned char>(num_items, (unsigned char)0, (unsigned char)99);
-    TestSize<char>(num_items, (char)0, (char)99);
+    TestSize<signed char>(num_items, (char)0, (char)99);
     TestSize<unsigned short>(num_items, (unsigned short)0, (unsigned short)99);
     TestSize<unsigned int>(num_items, (unsigned int)0, (unsigned int)99);
     TestSize<unsigned long long>(num_items,

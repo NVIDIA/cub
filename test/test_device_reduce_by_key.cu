@@ -719,7 +719,7 @@ int main(int argc, char** argv)
     // %PARAM% TEST_CDP cdp 0:1
 
     // Test different input types
-    TestOp<int, char>(num_items);
+    TestOp<int, signed char>(num_items);
     TestOp<int, short>(num_items);
     TestOp<int, int>(num_items);
     TestOp<int, long>(num_items);
@@ -735,7 +735,7 @@ int main(int argc, char** argv)
     TestOp<int, TestFoo>(num_items);
     TestOp<int, TestBar>(num_items);
 
-    TestOp<char, int>(num_items);
+    TestOp<signed char, int>(num_items);
     TestOp<long long, int>(num_items);
     TestOp<TestFoo, int>(num_items);
     TestOp<TestBar, int>(num_items);
