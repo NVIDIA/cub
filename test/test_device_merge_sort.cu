@@ -235,6 +235,7 @@ void TestKeys(std::int64_t num_items,
 
   AssertTrue(CheckResult(d_keys));
 
+  thrust::fill(d_keys.begin(), d_keys.end(), KeyType{});
   CubDebugExit(cub::DeviceMergeSort::StableSortKeysCopy(
       thrust::raw_pointer_cast(tmp.data()),
       temp_size,
