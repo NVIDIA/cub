@@ -994,6 +994,125 @@ struct DeviceMergeSort
                                                              compare_op,
                                                              stream);
   }
+
+  /**
+   * @brief Sorts items using a merge sorting method.
+   *
+   * @par
+   * - StableSortKeysCopy is stable: it preserves the relative ordering of equivalent
+   *   elements. That is, if `x` and `y` are elements such that `x` precedes `y`,
+   *   and if the two elements are equivalent (neither `x < y` nor `y < x`) then
+   *   a postcondition of stable_sort is that `x` still precedes `y`.
+   * - Input array d_input_keys is not modified
+   * - Note that the behavior is undefined if the input and output ranges overlap
+   *   in any way.
+   *
+   * @par Snippet
+   * The code snippet below illustrates the sorting of a device vector of `int`
+   * keys.
+   * \par
+   * \code
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_merge_sort.cuh>
+   *
+   * // Declare, allocate, and initialize device-accessible pointers for
+   * // sorting data
+   * int  num_items;       // e.g., 7
+   * int  *d_input_keys;   // e.g., [8, 6, 7, 5, 3, 0, 9]
+   * int  *d_output_keys;  // must hold at least num_items elements
+   * ...
+   *
+   * // Initialize comparator
+   * CustomOpT custom_op;
+   *
+   * // Determine temporary device storage requirements
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
+   * cub::DeviceMergeSort::StableSortKeysCopy(
+   *   d_temp_storage, temp_storage_bytes,
+   *   d_input_keys, d_output_keys, num_items, custom_op);
+   *
+   * // Allocate temporary storage
+   * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+   *
+   * // Run sorting operation
+   * cub::DeviceMergeSort::StableSortKeysCopy(
+   *   d_temp_storage, temp_storage_bytes,
+   *   d_input_keys, d_output_keys, num_items, custom_op);
+   *
+   * // d_output_keys   <-- [0, 3, 5, 6, 7, 8, 9]
+   * @endcode
+   *
+   * @tparam KeyInputIteratorT
+   *   is a model of [Random Access Iterator]. Its `value_type` is a model of
+   *   [LessThan Comparable]. This `value_type`'s ordering relation is a
+   *   *strict weak ordering* as defined in the [LessThan Comparable]
+   *   requirements.
+   *
+   * @tparam KeyIteratorT
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
+   *
+   * @tparam OffsetT
+   *   is an integer type for global offsets.
+   *
+   * @tparam CompareOpT
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to `temp_storage_bytes` and no work
+   *   is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of `d_temp_storage` allocation
+   *
+   * @param[in] d_input_keys
+   *   Pointer to the input sequence of unsorted input keys
+   *
+   * @param[out] d_output_keys
+   *   Pointer to the output sequence of sorted input keys
+   *
+   * @param[in] num_items
+   *   Number of elements in d_input_keys to sort
+   *
+   * @param[in] compare_op
+   *   Comparison function object which returns true if the first argument is
+   *   ordered before the second
+   *
+   * @param[in] stream
+   *   **[optional]** CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
+   * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   */
+  template <typename KeyInputIteratorT,
+            typename KeyIteratorT,
+            typename OffsetT,
+            typename CompareOpT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  StableSortKeysCopy(void *d_temp_storage,
+                     std::size_t &temp_storage_bytes,
+                     KeyInputIteratorT d_input_keys,
+                     KeyIteratorT d_output_keys,
+                     OffsetT num_items,
+                     CompareOpT compare_op,
+                     cudaStream_t stream = 0)
+  {
+    return SortKeysCopy<KeyInputIteratorT, KeyIteratorT, OffsetT, CompareOpT>(d_temp_storage,
+                                                                              temp_storage_bytes,
+                                                                              d_input_keys,
+                                                                              d_output_keys,
+                                                                              num_items,
+                                                                              compare_op,
+                                                                              stream);
+  }
 };
 
 CUB_NAMESPACE_END

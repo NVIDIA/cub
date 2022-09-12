@@ -234,6 +234,19 @@ void TestKeys(std::int64_t num_items,
     CustomLess()));
 
   AssertTrue(CheckResult(d_keys));
+
+  thrust::fill(d_keys.begin(), d_keys.end(), KeyType{});
+  CubDebugExit(cub::DeviceMergeSort::StableSortKeysCopy(
+      thrust::raw_pointer_cast(tmp.data()),
+      temp_size,
+      thrust::raw_pointer_cast(d_before_sort.data()),
+      thrust::raw_pointer_cast(d_keys.data()),
+      num_items,
+      CustomLess()));
+
+  // AssertTrue(CheckResult(d_keys));
+  AssertTrue(d_keys == d_after_sort);
+  AssertTrue(d_before_sort == d_before_sort_copy);
 }
 
 template <bool data_dont_exceed_key_size>
