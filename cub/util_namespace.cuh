@@ -35,10 +35,12 @@
 
 #pragma once
 
+#include <cub/detail/preprocessor.cuh>
+
 // This is not used by this file; this is a hack so that we can detect the
 // CUB version from Thrust on older versions of CUB that did not have
 // version.cuh.
-#include "version.cuh"
+#include <cub/version.cuh>
 
 // Prior to 1.13.1, only the PREFIX/POSTFIX macros were used. Notify users
 // that they must now define the qualifier macro, too.
@@ -109,14 +111,7 @@
 #endif
 
 #if !defined(CUB_DETAIL_MAGIC_NS_NAME)
-#define CUB_DETAIL_COUNT_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, \
-                           _14, _15, _16, _17, _18, _19, _20, N, ...)              \
-                           N
-#define CUB_DETAIL_COUNT(...)                                                      \
-  CUB_DETAIL_IDENTITY(CUB_DETAIL_COUNT_N(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, \
-                                         11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
-#define CUB_DETAIL_IDENTITY(N) N
-#define CUB_DETAIL_APPLY(MACRO, ...) CUB_DETAIL_IDENTITY(MACRO(__VA_ARGS__))
+// clang-format off
 #define CUB_DETAIL_MAGIC_NS_NAME1(P1) \
     CUB_##P1##_NS
 #define CUB_DETAIL_MAGIC_NS_NAME2(P1, P2) \
@@ -157,8 +152,10 @@
     CUB_##P1##_##P2##_##P3##_##P4##_##P5##_##P6##_##P7##_##P8##_##P9##_##P10##_##P11##_##P12##_##P13##_##P14##_##P15##_##P16##_##P17##_##P18##_##P19##_NS
 #define CUB_DETAIL_MAGIC_NS_NAME20(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20) \
     CUB_##P1##_##P2##_##P3##_##P4##_##P5##_##P6##_##P7##_##P8##_##P9##_##P10##_##P11##_##P12##_##P13##_##P14##_##P15##_##P16##_##P17##_##P18##_##P19##_##P20##_NS
-#define CUB_DETAIL_DISPATCH(N) CUB_DETAIL_MAGIC_NS_NAME ## N
-#define CUB_DETAIL_MAGIC_NS_NAME(...) CUB_DETAIL_IDENTITY(CUB_DETAIL_APPLY(CUB_DETAIL_DISPATCH, CUB_DETAIL_COUNT(__VA_ARGS__))(__VA_ARGS__))
+#define CUB_DETAIL_MAGIC_NS_DISPATCH(N) CUB_DETAIL_MAGIC_NS_NAME ## N
+#define CUB_DETAIL_MAGIC_NS_NAME(...) CUB_DETAIL_IDENTITY(CUB_DETAIL_APPLY(CUB_DETAIL_MAGIC_NS_DISPATCH, CUB_DETAIL_COUNT(__VA_ARGS__))(__VA_ARGS__))
+// clang-format on
+
 #endif // !defined(CUB_DETAIL_MAGIC_NS_NAME)
 
 #if defined(CUB_DISABLE_NAMESPACE_MAGIC)
