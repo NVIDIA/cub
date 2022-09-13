@@ -152,6 +152,16 @@ clarifying which operations can and cannot be performed in-place.
 - NVIDIA/cub#519: Clarify segmented sort documentation regarding the handling of
   elements that are not included in any segment.
 
+# CUB 1.17.2
+
+## Summary
+
+CUB 1.17.2 is a minor bugfix release.
+
+- NVIDIA/cub#547: Introduce an annotated inline namespace to prevent issues with
+  collisions and mismatched kernel configurations across libraries. The new
+  namespace encodes the CUB version and target SM architectures.
+
 # CUB 1.17.1
 
 ## Summary
