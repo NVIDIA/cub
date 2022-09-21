@@ -317,6 +317,24 @@ public:
 };
 
 /**
+ * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
+ */
+CUB_RUNTIME_FUNCTION inline cudaError_t SmVersionUncached(int& sm_version, int device = CurrentDevice())
+{
+    cudaError_t error = cudaSuccess;
+    do
+    {
+        int major = 0, minor = 0;
+        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device))) break;
+        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device))) break;
+        sm_version = major * 100 + minor * 10;
+    }
+    while (0);
+
+    return error;
+}
+
+/**
  * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
  */
 CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
@@ -348,6 +366,19 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
 
         result = cudaFuncGetAttributes(&empty_kernel_attrs,
                                        reinterpret_cast<void*>(empty_kernel));
+        // Any failure means either no GPU is available or the provided device
+        // binary does not match the generated function code
+        if (result != cudaSuccess) {
+            int sm_version;
+            int device;
+            if (!CubDebug(cudaGetDevice(&device))) {
+                if (!CubDebug(SmVersionUncached(sm_version, device))) {
+                    printf("Incompatible GPU: you are trying to run this program on sm_%d%d, "
+                            "different from the one that it was compiled for\n",
+                            sm_version/100, (sm_version%100)/10);
+                }
+            }
+        }
         CubDebug(result);
 
         ptx_version = empty_kernel_attrs.ptxVersion * 10;
@@ -424,6 +455,9 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersion(int &ptx_version)
     NV_IS_HOST,
     (
       auto const device  = CurrentDevice();
+      if (device < 0) {
+        printf("No GPU is available\n");
+      }
       auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
         // If this call fails, then we get the error code back in the payload,
         // which we check with `CubDebug` below.
@@ -442,24 +476,6 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersion(int &ptx_version)
     ));
 
   return result;
-}
-
-/**
- * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
- */
-CUB_RUNTIME_FUNCTION inline cudaError_t SmVersionUncached(int& sm_version, int device = CurrentDevice())
-{
-    cudaError_t error = cudaSuccess;
-    do
-    {
-        int major = 0, minor = 0;
-        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device))) break;
-        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device))) break;
-        sm_version = major * 100 + minor * 10;
-    }
-    while (0);
-
-    return error;
 }
 
 /**
