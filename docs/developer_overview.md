@@ -404,43 +404,56 @@ cudaError_t cub::Device::Algorithm(args) {
 
 // Dispatch entry point
 static cudaError_t DispatchAlgorithm::Dispatch(args) { // (1)
+  // Create dispatch functor:
   DispatchAlgorithm invokable(args);
-  // MaxPolicy - tail of linked list contaning architecture-specific tunings
-  return MaxPolicy::Invoke(get_runtime_ptx_version(), invokable); // (2)
-}
 
-// Chained policy - linked list of tunings 
-cudaError_t ChainedPolicy::Invoke(ptx_version, invokable) { // (2)
-  if (ptx_version < ChainedPolicy::PTX_VERSION) {
-    ChainedPolicy::PrevPolicy::Invoke(ptx_version, invokable); // (2)
-  } 
-  invokable.Invoke<ChainedPolicy::PTX_VERSION>(); // (3)
+  // A cub::detail::type_list of tuning policies:
+  using policies_t = typename DispatchAlgorithm::Policies;
+
+  // The execution spaces supported by the invokable
+  // (ie. host/device/host_device). `runtime_exec_space` is `host_device` when
+  // CDP (CUDA Dynamic Parallelism, ie. device-side kernel launch) is enabled,
+  // or just `host` when CDP is unavailable.
+  constexpr auto exec_space = cub::detail::runtime_exec_space;
+
+  // The PTX dispatcher, configured for the current tuning policies and
+  // execution space:
+  using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
+
+  // A wrapper that adapts DispatchAlgorithms from the legacy
+  // `__CUDA_ARCH__`-based `ChainedPolicy` dispatch mechanism to the new
+  // `if-target`-based `ptx_dispatch` system.
+  cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+
+  // Execute the algorithm using a kernel specialized for the current CUDA
+  // architecture. This function will:
+  // 1. Determine the currently targeted PTX architecture.
+  // 2. Determine the best-matching tuning policy for the current PTX target,
+  //    ActivePolicy (2).
+  // 3. Call `invoker(type_wrapper<ActivePolicy>{}, invokable)`, which will...
+  // 4. Call `invokable.Invoke<ActivePolicy>()` (3).
+  dispatcher_t::exec(invoker, dispatch);
+
+  // Log any errors (if requested) and return status.
+  return CubDebug(invoker.status);
 }
 
 // Dispatch object - parameters closure
-template <class Policy>
+template <class ActivePolicy>
 cudaError_t DispatchAlgorithm::Invoke() { // (3)
-    kernel<MaxPolicy><<<grid_size, Policy::BLOCK_THREADS>>>(args); // (4)
+  kernel<ActivePolicy><<<grid_size, ActivePolicy::BLOCK_THREADS>>>(args); // (4)
 }
 
-template <class ChainedPolicy>
-void __global__ __launch_bounds__(ChainedPolicy::ActivePolicy::BLOCK_THREADS)
-kernel(args) { // (4)
-    using policy = ChainedPolicy::ActivePolicy; // (5)
-    using agent = AgentAlgorithm<policy>; // (6)
+template <class ActivePolicy>
+__global__ __launch_bounds__(ActivePolicy::BLOCK_THREADS)
+void kernel(args) { // (4)
+    using agent = AgentAlgorithm<ActivePolicy>; // (5)
     agent a(args);
     a.Process();
 }
 
-template <int PTX_VERSION, typename PolicyT, typename PrevPolicyT>
-struct ChainedPolicy {
-  using ActivePolicy = conditional_t<(CUB_PTX_ARCH < PTX_VERSION), // (5)
-                                     PrevPolicyT::ActivePolicy,
-                                     PolicyT>;
-};
-
-template <class Policy>
-struct AlgorithmAgent { // (6)
+template <class ActivePolicy>
+struct AlgorithmAgent { // (5)
   void Process();
 };
 ```
@@ -448,7 +461,7 @@ struct AlgorithmAgent { // (6)
 The code above represents control flow. 
 Let's look at each of the building blocks closer. 
 
-The dispatch entry point is typically represented by a static member function that constructs an object of `DispatchReduce` and passes it to `ChainedPolicy` `Invoke` method:
+The dispatch entry point is typically represented by a static member function that constructs an object of `DispatchReduce` and passes it to the `ptx_dispatch::exec` method:
 
 ```cpp
 template <typename InputIteratorT, 
@@ -457,34 +470,32 @@ template <typename InputIteratorT,
 struct DispatchReduce : SelectedPolicy 
 {
 
-  // 
   CUB_RUNTIME_FUNCTION __forceinline__ static 
   cudaError_t Dispatch(
       void *d_temp_storage, size_t &temp_storage_bytes, 
       InputIteratorT d_in,
       /* ... */) 
   {
-    typedef typename DispatchSegmentedReduce::MaxPolicy MaxPolicyT;
+    // Create dispatch functor
+    DispatchReduce functor(d_temp_storage,
+                           temp_storage_bytes,
+                           d_in,
+                           d_out,
+                           num_items,
+                           reduction_op,
+                           init,
+                           stream);
 
-    if (num_segments <= 0) return cudaSuccess;
+    // Dispatch on default policies:
+    using policies_t = typename DispatchReduce::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError error = cudaSuccess;
-    do {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version))) break;
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, functor);
 
-      // Create dispatch functor
-      DispatchSegmentedReduce dispatch(
-          d_temp_storage, temp_storage_bytes, d_in, /* ... */);
-
-      // Dispatch to chained policy
-      MaxPolicyT::Invoke(ptx_version, dispatch);
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
-
 };
 ```
 
@@ -495,32 +506,121 @@ Users rely on the dispatch layer directly to workaround this.
 Exposing the dispatch layer also allows users to tune algorithms for their use cases. 
 In the newly added functionality, the dispatch layer should not be exposed.
 
-The `ChainedPolicy` converts the runtime PTX version to the closest compile-time one:
+The `ptx_dispatch` mechanism determines the PTX architectures targeted by the
+current compilation settings and locates the best matching tuning policies.
+At compile time, it will specialize and instantiate the algorithm with the
+selected policies, and at runtime it will invoke the appropriate specialization
+using the current CUDA device's architecture.
 
 ```cpp
-template <int PTX_VERSION, 
-          typename PolicyT, 
-          typename PrevPolicyT>
-struct ChainedPolicy
+template <typename PtxTypeList, exec_space ExecSpace>
+struct ptx_dispatch
 {
-  using ActivePolicy =
-    cub::detail::conditional_t<(CUB_PTX_ARCH < PTX_VERSION),
-                               typename PrevPolicyT::ActivePolicy,
-                               PolicyT>;
-
-  template <typename FunctorT>
-  CUB_RUNTIME_FUNCTION __forceinline__
-  static cudaError_t Invoke(int ptx_version, FunctorT& op)
+  template <typename Functor, typename... Args>
+  __host__ __device__ __forceinline__
+  static void exec(Functor &&functor, Args &&...args)
   {
-      if (ptx_version < PTX_VERSION) {
-          return PrevPolicyT::Invoke(ptx_version, op);
-      }
-      return op.template Invoke<PolicyT>();
+    // Static dispatch to implementation for runtime execution space,
+    // exec_host (1) or exec_device (2):
+    exec_dispatch_exec_space(exec_space_tag<ExecSpace>{},
+                             std::forward<Functor>(functor),
+                             std::forward<Args>(args)...);
+  }
+
+private:
+  // Runtime lookup against the active device's ptx version from host code:
+  template <typename Functor, typename... Args>
+  __host__ __forceinline__
+  static void exec_host(Functor &&functor, Args &&...args) // (1)
+  {
+    int ptx_version = 0;
+    if (CubDebug(cub::PtxVersion(ptx_version)))
+    {
+      return;
+    }
+
+    using dispatcher_t = ptx_dispatch_host_impl<active_ptx_types>; // (3)
+    dispatcher_t::exec(ptx_version,
+                       std::forward<Functor>(functor),
+                       std::forward<Args>(args)...);
+  }
+
+  // Static lookup against the active device's ptx version from device code:
+  template <typename Functor, typename... Args>
+  __device__ __forceinline__
+  static void exec_device(Functor &&functor, Args &&...args) // (2)
+  {
+    NV_DISPATCH_TARGET(NV_PROVIDES_SM_86,
+                       (ptx_dispatch_device_impl<860, active_ptx_types>::exec( // (4)
+                          std::forward<Functor>(functor),
+                          std::forward<Args>(args)...);),
+                       NV_PROVIDES_SM_80,
+                       (ptx_dispatch_device_impl<800, active_ptx_types>::exec(
+                          std::forward<Functor>(functor),
+                          std::forward<Args>(args)...);),
+                       ... // repeated for each supported arch
+                       );
+};
+
+// Runtime dispatch to current PTX target on host:
+template <typename PtxHeadType, typename... PtxTailTypes>
+struct ptx_dispatch_host_impl<type_list<PtxHeadType, PtxTailTypes...>> // (3)
+{
+  template <typename Functor, typename... Args>
+  __host__  __forceinline__
+  static void exec(int target_ptx_arch, Functor &&functor, Args &&...args)
+  {
+    if (target_ptx_arch < PtxHeadType::ptx_arch)
+    {
+      using next = ptx_dispatch_host_impl<type_list<PtxTailTypes...>>;
+      next::exec(target_ptx_arch,
+                 std::forward<Functor>(functor),
+                 std::forward<Args>(args)...);
+    }
+    else
+    {
+      functor(type_wrapper<PtxHeadType>{}, std::forward<Args>(args)...); // (5)
+    }
+  }
+};
+
+template <int TargetPtxArch, typename PtxTypes>
+struct ptx_dispatch_device_impl
+{
+  template <typename Functor, typename... Args>
+  __device__ __forceinline__
+  static void exec(Functor &&functor, Args &&...args) // (4)
+  {
+    // Static lookup of the best matching policy in PtxTypes using TargetPtxArch
+    using ptx_type = typename ptx_arch_lookup<TargetPtxArch, PtxTypes>::type;
+
+    // Check that a valid PtxType matching the target arch is found:
+    CUB_IF_CONSTEXPR(!std::is_same<ptx_type, no_ptx_type>::value)
+    {
+      functor(type_wrapper<ptx_type>{}, std::forward<Args>(args)...); // (5)
+    }
+  }
+};
+
+template <cub::detail::exec_space ExecSpace>
+struct device_algorithm_dispatch_invoker
+{
+  cudaError_t status{cudaErrorInvalidPtx};
+
+  template <typename Policy, typename DeviceAlgorithmDispatch, typename... Args>
+  __host__ __device__ __forceinline__
+  void operator()(cub::detail::type_wrapper<Policy> policy_wrapper, // (5)
+                  DeviceAlgorithmDispatch &&dispatch,
+                  Args &&...args)
+  {
+    // Simplified -- actual implementation does a static dispatch based on
+    // ExecSpace to avoid warnings on nvcc:
+    status = dispatch.template Invoke<Policy>(std::forward<Args>(args)...);
   }
 };
 ```
 
-The dispatch object's `Invoke` method is then called with proper policy:
+Now, the dispatch object's `Invoke` method is then called with proper policy:
 
 ```cpp
 template <typename InputIteratorT, 
@@ -529,31 +629,31 @@ template <typename InputIteratorT,
 struct DispatchReduce : SelectedPolicy 
 {
     
-template <typename ActivePolicyT>
-CUB_RUNTIME_FUNCTION __forceinline__
-cudaError_t Invoke()
-{
-  using MaxPolicyT = typename DispatchSegmentedReduce::MaxPolicy;
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __forceinline__
+  cudaError_t Invoke()
+  {
+    // InvokePasses takes a pointer to the specialized kernel, determines
+    // the launch configuration based on runtime inputs, and launches the
+    // kernel:
+    return InvokePasses<ActivePolicyT>(
+      DeviceReduceKernel<ActivePolicyT, /* Other kernel template params... */>
+    );
+  }
 
-  return InvokePasses<ActivePolicyT /* (1) */>(
-    DeviceReduceKernel<MaxPolicyT /* (2) */, InputIteratorT /* ... */>);
-}
-    
 };
 ```
 
-This is where the actual work happens. 
-Note how the kernel is used against `MaxPolicyT` (2) while the kernel invocation part uses `ActivePolicyT` (1). 
-This is an important part:
+The kernel is where the actual work happens.
 
 ```cpp
-template <typename ChainedPolicyT /* ... */ >
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS)) 
-__global__ void DeviceReduceKernel(InputIteratorT d_in /* ... */) 
+template <typename ActivePolicyT, /* ... */ >
+__global__ __launch_bounds__(int(ActivePolicyT::ReducePolicy::BLOCK_THREADS))
+void DeviceReduceKernel(InputIteratorT d_in /* ... */)
 {
   // Thread block type for reducing input tiles
   using AgentReduceT =
-      AgentReduce<typename ChainedPolicyT::ActivePolicy::ReducePolicy,
+      AgentReduce<typename ActivePolicyT::ReducePolicy,
                   InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT>;
 
   // Shared memory storage
@@ -570,36 +670,32 @@ __global__ void DeviceReduceKernel(InputIteratorT d_in /* ... */)
 }
 ```
 
-The kernel gets compiled for each PTX version that was provided to the compiler. 
-During the device pass, 
-`ChainedPolicy` compares `CUDA_ARCH` against the template parameter to select `ActivePolicy` type alias. 
-During the host pass, 
-`Invoke` is compiled for each architecture in the tuning list. 
-If we use `ActivePolicy` instead of `MaxPolicy` as a kernel template parameter, 
-we will compile `O(N^2)` kernels instead of `O(N)`. 
+The kernel is compiled for each PTX version that was provided to the compiler.
 
-Finally, the tuning looks like:
+Finally, the tuning policy definitions are shown below. Each policy definition
+derives from `cub::detail::ptx<PTX_ARCH>`, which defines a static member
+variable named `ptx_arch`. This is used by `ptx_dispatch` to identify the
+policy's associated architecture.
 
 ```cpp
 template <typename InputT /* ... */>
 struct DeviceReducePolicy 
 {
   /// SM35
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy300> {
-    typedef AgentReducePolicy<256, 20, InputT, 4, BLOCK_REDUCE_WARP_REDUCTIONS,
-                              LOAD_LDG>
-        ReducePolicy;
+  struct Policy350 : cub::detail::ptx<350> {
+    using ReducePolicy =
+      AgentReducePolicy<256, 20, InputT, 4, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_LDG>;
   };
 
   /// SM60
-  struct Policy600 : ChainedPolicy<600, Policy600, Policy350> {
-    typedef AgentReducePolicy<256, 16, InputT, 4, BLOCK_REDUCE_WARP_REDUCTIONS,
-                              LOAD_LDG>
-        ReducePolicy;
+  struct Policy600 : cub::detail::ptx<600> {
+    using ReducePolicy =
+      AgentReducePolicy<256, 16, InputT, 4, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_LDG>;
   };
 
-  /// MaxPolicy
-  typedef Policy600 MaxPolicy;
+  // Typelist of all known tuning policies for this DeviceReduce. Elements of
+  // this typelist must be unique and sorted by descending arch:
+  using Policies = cub::detail::type_list<Policy600, Policy350>;
 };
 ```
 
