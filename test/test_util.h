@@ -51,6 +51,7 @@
 #include "half.h"
 #include "bfloat16.h"
 
+#include <cub/detail/exec_check_disable.cuh>
 #include <cub/util_debug.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_type.cuh>
@@ -585,7 +586,7 @@ enum GenMode
 /**
  * Initialize value
  */
-#pragma nv_exec_check_disable
+CUB_EXEC_CHECK_DISABLE
 template <typename T>
 __host__ __device__ __forceinline__
 void InitValue(GenMode gen_mode, T &value, std::size_t index = 0)
@@ -659,7 +660,7 @@ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0)
 /**
  * Initialize value (bool)
  */
-#pragma nv_exec_check_disable
+CUB_EXEC_CHECK_DISABLE
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, std::size_t index = 0)
 {
   // RandomBits is host-only.
@@ -717,7 +718,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
 /**
  * cub::KeyValuePair<OffsetT, ValueT>test initialization
  */
-#pragma nv_exec_check_disable
+CUB_EXEC_CHECK_DISABLE
 template <typename KeyT, typename ValueT>
 __host__ __device__ __forceinline__ void InitValue(
     GenMode                             gen_mode,
