@@ -60,6 +60,8 @@
 #include <cub/util_ptx.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 
+#include <cuda/std/type_traits>
+
 #include <nv/target>
 
 /******************************************************************************
@@ -82,6 +84,19 @@ T SafeBitCast(const U& in)
 /******************************************************************************
  * Assertion macros
  ******************************************************************************/
+
+#define CUB_STRIP_PARENS(A) CUB_STRIP_PARENS_IMPL A
+#define CUB_STRIP_PARENS_IMPL(...) __VA_ARGS__
+
+#define StaticAssertSame(A, B)                                                                     \
+  static_assert(cuda::std::is_same<CUB_STRIP_PARENS(A), CUB_STRIP_PARENS(B)>::value,               \
+                "Expressions evaluate to different types:\n  " #A "\n  " #B)
+#define StaticAssertDiff(A, B)                                                                     \
+  static_assert(!cuda::std::is_same<CUB_STRIP_PARENS(A), CUB_STRIP_PARENS(B)>::value,              \
+                "Expressions evaluate to the same type:\n  " #A "\n  " #B)
+#define StaticAssertEquals(A, B)                                                                   \
+  static_assert(CUB_STRIP_PARENS(A) == CUB_STRIP_PARENS(B),                                        \
+                "Expression `" #A "` is not equal to `" #B "`")
 
 /**
  * Assert equals
