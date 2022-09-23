@@ -30,6 +30,7 @@
 #include <cub/agent/agent_adjacent_difference.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/detail/type_traits.cuh>
 #include <cub/util_debug.cuh>
@@ -44,6 +45,7 @@
 
 CUB_NAMESPACE_BEGIN
 
+CUB_KERNEL_BEGIN
 
 template <typename AgentDifferenceInitT,
           typename InputIteratorT,
@@ -106,6 +108,8 @@ DeviceAdjacentDifferenceDifferenceKernel(InputIteratorT input,
 
   agent.Process(tile_idx, tile_base);
 }
+
+CUB_KERNEL_END
 
 template <typename InputIteratorT, bool MayAlias = true>
 struct DeviceAdjacentDifferencePolicy

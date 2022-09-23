@@ -29,6 +29,8 @@
 
 #include <cub/agent/agent_three_way_partition.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/thread/thread_operators.cuh>
@@ -49,6 +51,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 template <typename AgentThreeWayPartitionPolicyT,
           typename InputIteratorT,
@@ -142,6 +146,8 @@ DeviceThreeWayPartitionInitKernel(ScanTileStateT tile_state_1,
     }
   }
 }
+
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

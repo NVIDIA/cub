@@ -29,6 +29,7 @@
 
 #include <cub/agent/agent_merge_sort.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
@@ -40,6 +41,7 @@
 
 CUB_NAMESPACE_BEGIN
 
+CUB_KERNEL_BEGIN
 
 template <bool UseVShmem,
           typename ActivePolicyT,
@@ -183,6 +185,8 @@ DeviceMergeSortMergeKernel(bool ping,
 
   agent.Process();
 }
+
+CUB_KERNEL_END
 
 /*******************************************************************************
  * Policy

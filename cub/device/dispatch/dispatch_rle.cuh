@@ -36,6 +36,7 @@
 #include <cub/agent/agent_rle.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/grid/grid_queue.cuh>
@@ -57,6 +58,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * Select kernel entry point (multi-block)
@@ -104,8 +107,7 @@ __global__ void DeviceRleSweepKernel(
         d_num_runs_out);
 }
 
-
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

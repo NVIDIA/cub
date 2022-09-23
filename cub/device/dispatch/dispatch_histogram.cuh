@@ -36,6 +36,7 @@
 
 #include <cub/agent/agent_histogram.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/cpp_compatibility.cuh>
@@ -59,11 +60,11 @@
 
 CUB_NAMESPACE_BEGIN
 
-
-
 /******************************************************************************
  * Histogram kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * Histogram initialization kernel entry point
@@ -161,10 +162,7 @@ __global__ void DeviceHistogramSweepKernel(
 
 }
 
-
-
-
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

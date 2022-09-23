@@ -39,6 +39,7 @@
 #include <cub/agent/single_pass_scan_operators.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_search.cuh>
@@ -62,6 +63,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * SpMV kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * Spmv search kernel. Identifies merge path starting coordinates for each tile.
@@ -226,6 +229,7 @@ __global__ void DeviceSegmentFixupKernel(
         tile_state);
 }
 
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

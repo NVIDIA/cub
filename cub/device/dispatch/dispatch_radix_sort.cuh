@@ -41,6 +41,7 @@
 #include <cub/block/block_radix_sort.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_even_share.cuh>
 #include <cub/util_debug.cuh>
@@ -63,6 +64,7 @@
 
 CUB_NAMESPACE_BEGIN
 
+CUB_KERNEL_BEGIN
 
 /******************************************************************************
  * Kernel entry points
@@ -618,6 +620,7 @@ __global__ void DeviceRadixSortExclusiveSumKernel(OffsetT* d_bins)
     }
 }
 
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

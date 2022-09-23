@@ -35,6 +35,7 @@
 #include <cub/block/block_scan.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
 #include <cub/detail/device_double_buffer.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/detail/temporary_storage.cuh>
 #include <cub/device/device_partition.cuh>
@@ -54,6 +55,8 @@
 #include <type_traits>
 
 CUB_NAMESPACE_BEGIN
+
+CUB_KERNEL_BEGIN
 
 
 /**
@@ -530,6 +533,8 @@ __global__ void DeviceSegmentedSortKernelLarge(
   }
 }
 
+CUB_KERNEL_END
+
 /*
  * Continuation is called after the partitioning stage. It launches kernels
  * to sort large and small segments using the partitioning results. Separation
@@ -671,6 +676,9 @@ DeviceSegmentedSortContinuation(
 }
 
 #ifdef CUB_RDC_ENABLED
+
+CUB_KERNEL_BEGIN
+
 /*
  * Continuation kernel is used only in the CDP mode. It's used to
  * launch DeviceSegmentedSortContinuation as a separate kernel.
@@ -729,6 +737,9 @@ DeviceSegmentedSortContinuationKernel(
 
   CubDebug(error);
 }
+
+CUB_KERNEL_END
+
 #endif // CUB_RDC_ENABLED
 
 template <typename KeyT,

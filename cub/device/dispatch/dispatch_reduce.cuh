@@ -37,6 +37,7 @@
 #include <cub/agent/agent_reduce.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_even_share.cuh>
 #include <cub/iterator/arg_index_input_iterator.cuh>
@@ -52,6 +53,8 @@
 #include <iterator>
 
 CUB_NAMESPACE_BEGIN
+
+CUB_KERNEL_BEGIN
 
 /******************************************************************************
  * Kernel entry points
@@ -221,6 +224,8 @@ __global__ void DeviceReduceSingleTileKernel(InputIteratorT d_in,
   }
 }
 
+CUB_KERNEL_END
+
 /// Normalize input iterator to segment offset
 template <typename T, typename OffsetT, typename IteratorT>
 __device__ __forceinline__ void NormalizeReductionOutput(T & /*val*/,
@@ -240,6 +245,8 @@ __device__ __forceinline__ void NormalizeReductionOutput(
 {
   val.key -= base_offset;
 }
+
+CUB_KERNEL_BEGIN
 
 /**
  * Segmented reduction (one block per segment)
@@ -353,6 +360,8 @@ __global__ void DeviceSegmentedReduceKernel(
     d_out[blockIdx.x] = reduction_op(init, block_aggregate);
   }
 }
+
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

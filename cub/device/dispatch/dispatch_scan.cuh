@@ -38,6 +38,7 @@
 #include <cub/agent/agent_scan.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
@@ -55,6 +56,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * @brief Initialization kernel for tile status initialization (multi-block)
@@ -195,6 +198,8 @@ __global__ void DeviceScanKernel(InputIteratorT d_in,
   AgentScanT(temp_storage, d_in, d_out, scan_op, real_init_value)
     .ConsumeRange(num_items, tile_state, start_tile);
 }
+
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

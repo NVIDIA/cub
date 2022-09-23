@@ -36,6 +36,7 @@
 #include <cub/agent/agent_scan_by_key.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/thread/thread_operators.cuh>
@@ -53,6 +54,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * @brief Scan kernel entry point (multi-block)
@@ -182,6 +185,8 @@ __global__ void DeviceScanByKeyInitKernel(
     d_keys_prev_in[tid] = d_keys_in[tile_base - 1];
   }
 }
+
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

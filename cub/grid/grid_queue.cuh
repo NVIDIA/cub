@@ -34,6 +34,7 @@
 #pragma once
 
 #include <cub/config.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/util_debug.cuh>
 
 #include <nv/target>
@@ -213,6 +214,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+CUB_KERNEL_BEGIN
 
 /**
  * Reset grid queue (call with 1 block of 1 thread)
@@ -225,7 +227,7 @@ __global__ void FillAndResetDrainKernel(
     grid_queue.FillAndResetDrain(num_items);
 }
 
-
+CUB_KERNEL_END
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

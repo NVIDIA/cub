@@ -33,6 +33,7 @@
 
 #include <cub/agent/agent_unique_by_key.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/util_deprecated.cuh>
@@ -46,6 +47,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * Unique by key kernel entry point (multi-block)
@@ -92,6 +95,7 @@ __global__ void DeviceUniqueByKeySweepKernel(
         d_num_selected_out);
 }
 
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

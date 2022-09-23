@@ -36,6 +36,8 @@
 #include <cub/agent/agent_reduce_by_key.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
@@ -55,6 +57,8 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * @brief Multi-block reduce-by-key sweep kernel entry point
@@ -169,6 +173,8 @@ __launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
                     reduction_op)
     .ConsumeRange(num_items, tile_state, start_tile);
 }
+
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

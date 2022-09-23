@@ -36,6 +36,7 @@
 #include <cub/agent/agent_select_if.cuh>
 #include <cub/config.cuh>
 #include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/grid/grid_queue.cuh>
@@ -46,16 +47,18 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-#include <nv/target>
-
 #include <cstdio>
 #include <iterator>
+
+#include <nv/target>
 
 CUB_NAMESPACE_BEGIN
 
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
+
+CUB_KERNEL_BEGIN
 
 /**
  * Select kernel entry point (multi-block)
@@ -108,8 +111,7 @@ __global__ void DeviceSelectSweepKernel(
         d_num_selected_out);
 }
 
-
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch
