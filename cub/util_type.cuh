@@ -48,6 +48,7 @@
 #endif
 
 #include <cub/detail/uninitialized_copy.cuh>
+#include <cub/detail/type_traits.cuh>
 #include <cub/util_arch.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_macro.cuh>
@@ -66,33 +67,6 @@ CUB_NAMESPACE_BEGIN
 /******************************************************************************
  * Conditional types
  ******************************************************************************/
-
-
-namespace detail
-{
-
-
-template <bool Test, class T1, class T2>
-using conditional_t = typename std::conditional<Test, T1, T2>::type;
-
-
-template <typename Iterator>
-using value_t = typename std::iterator_traits<Iterator>::value_type;
-
-
-/**
- * The output value type
- * type = (if IteratorT's value type is void) ?
- * ... then the FallbackT,
- * ... else the IteratorT's value type
- */
-template <typename IteratorT, typename FallbackT>
-using non_void_value_t =
-  cub::detail::conditional_t<std::is_same<value_t<IteratorT>, void>::value,
-                             FallbackT,
-                             value_t<IteratorT>>;
-
-} // namespace detail
 
 
 /**
