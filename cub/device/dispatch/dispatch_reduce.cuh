@@ -1368,15 +1368,15 @@ struct DispatchSegmentedReduce : SelectedPolicy
 #ifndef CUB_RDC_ENABLED
       constexpr static int num_selected_groups = 2;
 
-      bool stream_is_being_captured = false;
-      NV_IF_TARGET(NV_IS_HOST, 
-                   (cudaStreamCaptureStatus status = cudaStreamCaptureStatusNone;
-                    cudaStreamIsCapturing(stream, &status);
-                    stream_is_being_captured = status != cudaStreamCaptureStatusNone;));
+      bool partition_segments = num_segments > ActivePolicyT::partitioning_threshold;
 
-
-      const bool partition_segments =  (num_segments > ActivePolicyT::partitioning_threshold)
-                                    && !stream_is_being_captured;
+      if (partition_segments) 
+      {
+        NV_IF_TARGET(NV_IS_HOST, 
+                     (cudaStreamCaptureStatus status = cudaStreamCaptureStatusNone;
+                      cudaStreamIsCapturing(stream, &status);
+                      partition_segments = status == cudaStreamCaptureStatusNone;));
+      }
 
       auto partition_storage_slot = temporary_storage_layout.get_slot(0);
       auto large_and_medium_partitioning_slot = temporary_storage_layout.get_slot(1);
