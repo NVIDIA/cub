@@ -425,9 +425,9 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
 
   // Shared memory storage
   __shared__ union {
-    typename AgentReduceT::TempStorage large; 
-    typename AgentMediumReduceT::TempStorage medium[segments_per_medium_block];
-    typename AgentSmallReduceT::TempStorage small[segments_per_small_block];
+    typename AgentReduceT::TempStorage large_storage; 
+    typename AgentMediumReduceT::TempStorage medium_storage[segments_per_medium_block];
+    typename AgentSmallReduceT::TempStorage small_storage[segments_per_small_block];
   } temp_storage;
 
   const unsigned int bid = blockIdx.x;
@@ -441,7 +441,7 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
     OffsetT segment_end   = d_end_offsets[global_segment_id];
 
     // Consume input tiles
-    AccumT block_aggregate = AgentReduceT(temp_storage.large, d_in, reduction_op)
+    AccumT block_aggregate = AgentReduceT(temp_storage.large_storage, d_in, reduction_op)
                                .ConsumeRange(segment_begin, segment_end);
 
     // Normalize as needed
@@ -468,7 +468,7 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
 
       // Consume input tiles
       AccumT warp_aggregate =
-        AgentMediumReduceT(temp_storage.medium[sid_within_block], d_in, reduction_op, lane_id)
+        AgentMediumReduceT(temp_storage.medium_storage[sid_within_block], d_in, reduction_op, lane_id)
           .ConsumeRange(segment_begin, segment_end);
 
       // Normalize as needed
@@ -506,7 +506,7 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
 
       // Consume input tiles
       AccumT warp_aggregate =
-        AgentSmallReduceT(temp_storage.small[sid_within_block], d_in, reduction_op, lane_id)
+        AgentSmallReduceT(temp_storage.small_storage[sid_within_block], d_in, reduction_op, lane_id)
           .ConsumeRange(segment_begin, segment_end);
 
       // Normalize as needed
