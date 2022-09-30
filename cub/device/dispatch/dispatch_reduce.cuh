@@ -48,7 +48,6 @@
 
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/reverse_iterator.h>
-#include <thrust/iterator/discard_iterator.h>
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include <iterator>
@@ -377,8 +376,10 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
     unsigned int large_blocks_end,
     unsigned int medium_blocks_end,
     unsigned int medium_segments,
+    unsigned int small_segments,
     const unsigned int *d_large_segments_indices,
     const unsigned int *d_medium_segments_indices,
+    const unsigned int *d_small_segments_indices,
     ReductionOpT reduction_op,
     InitT init)
 {
@@ -401,18 +402,32 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
                     ReductionOpT,
                     AccumT>;
 
+  using AgentSmallReduceT =
+    AgentWarpReduce<typename ActivePolicyT::SmallReducePolicy,
+                    InputIteratorT,
+                    OutputIteratorT,
+                    OffsetT,
+                    ReductionOpT,
+                    AccumT>;
+
   constexpr auto segments_per_medium_block =
     static_cast<unsigned int>(ActivePolicyT::MediumReducePolicy::SEGMENTS_PER_BLOCK);
-
   constexpr auto medium_threads_per_warp =
     static_cast<unsigned int>(ActivePolicyT::MediumReducePolicy::WARP_THREADS);
 
+  constexpr auto segments_per_small_block =
+    static_cast<unsigned int>(ActivePolicyT::SmallReducePolicy::SEGMENTS_PER_BLOCK);
+  constexpr auto small_threads_per_warp =
+    static_cast<unsigned int>(ActivePolicyT::SmallReducePolicy::WARP_THREADS);
+
   using MediumWarpReduce = cub::WarpReduce<AccumT, medium_threads_per_warp>;
+  using SmallWarpReduce = cub::WarpReduce<AccumT, small_threads_per_warp>;
 
   // Shared memory storage
   __shared__ union {
     typename AgentReduceT::TempStorage large; 
     typename AgentMediumReduceT::TempStorage medium[segments_per_medium_block];
+    typename AgentSmallReduceT::TempStorage small[segments_per_small_block];
   } temp_storage;
 
   const unsigned int bid = blockIdx.x;
@@ -454,6 +469,44 @@ __global__ void DeviceSegmentedReduceWithPartitioningKernel(
       // Consume input tiles
       AccumT warp_aggregate =
         AgentMediumReduceT(temp_storage.medium[sid_within_block], d_in, reduction_op, lane_id)
+          .ConsumeRange(segment_begin, segment_end);
+
+      // Normalize as needed
+      NormalizeReductionOutput(warp_aggregate, segment_begin, d_in);
+
+      if (lane_id == 0)
+      {
+        d_out[global_segment_id] = reduction_op(init, warp_aggregate);
+      }
+    }
+  }
+  else
+  {
+    const unsigned int sid_within_block = tid / small_threads_per_warp;
+    const unsigned int small_segment_id = (bid - medium_blocks_end) * segments_per_small_block +
+                                           sid_within_block;
+
+    if (small_segment_id < small_segments)
+    {
+      const unsigned int lane_id = tid % small_threads_per_warp;
+      const unsigned int global_segment_id = d_small_segments_indices[small_segment_id];
+
+      OffsetT segment_begin = d_begin_offsets[global_segment_id];
+      OffsetT segment_end   = d_end_offsets[global_segment_id];
+
+      // Check if empty problem
+      if (segment_begin == segment_end)
+      {
+        if (lane_id == 0)
+        {
+          d_out[global_segment_id] = init;
+        }
+        return;
+      }
+
+      // Consume input tiles
+      AccumT warp_aggregate =
+        AgentSmallReduceT(temp_storage.small[sid_within_block], d_in, reduction_op, lane_id)
           .ConsumeRange(segment_begin, segment_end);
 
       // Normalize as needed
@@ -522,6 +575,14 @@ struct DeviceReducePolicy
                                                      AccumT,
                                                      items_per_vec_load,
                                                      LOAD_LDG>;
+
+    // TODO Tune
+    using SmallReducePolicy = AgentWarpReducePolicy<ReducePolicy::BLOCK_THREADS,
+                                                    1  /* threads per warp */,
+                                                    16 /* items_per_thread */,
+                                                    AccumT,
+                                                    items_per_vec_load,
+                                                    LOAD_LDG>;
   };
 
   /// SM60
@@ -553,6 +614,14 @@ struct DeviceReducePolicy
                                                      AccumT,
                                                      items_per_vec_load,
                                                      LOAD_LDG>;
+
+    // TODO Tune
+    using SmallReducePolicy = AgentWarpReducePolicy<ReducePolicy::BLOCK_THREADS,
+                                                    1  /* threads per warp */,
+                                                    16 /* items_per_thread */,
+                                                    AccumT,
+                                                    items_per_vec_load,
+                                                    LOAD_LDG>;
   };
 
   using MaxPolicy = Policy600;
@@ -1140,76 +1209,25 @@ struct DispatchSegmentedReduce : SelectedPolicy
 
   struct SmallSegmentsSelectorT
   {
+    OffsetT value{};
     BeginOffsetIteratorT d_offset_begin{};
     EndOffsetIteratorT d_offset_end{};
 
-    InputIteratorT d_in;
-    OutputIteratorT d_out;
-    ReductionOpT reduction_op;
-    InitT init;
-
     __host__ __device__ __forceinline__
-    SmallSegmentsSelectorT(BeginOffsetIteratorT d_offset_begin,
-                           EndOffsetIteratorT d_offset_end,
-                           InputIteratorT d_in,
-                           OutputIteratorT d_out,
-                           ReductionOpT reduction_op,
-                           InitT init)
-        : d_offset_begin(d_offset_begin)
+    SmallSegmentsSelectorT(OffsetT value,
+                           BeginOffsetIteratorT d_offset_begin,
+                           EndOffsetIteratorT d_offset_end)
+        : value(value)
+        , d_offset_begin(d_offset_begin)
         , d_offset_end(d_offset_end)
-        , d_in(d_in)
-        , d_out(d_out)
-        , reduction_op(reduction_op)
-        , init(init)
     {}
 
     __host__ __device__ __forceinline__ bool
-    operator()(unsigned int segment_id) 
+    operator()(unsigned int segment_id) const
     {
-      const OffsetT segment_begin = d_offset_begin[segment_id];
-      const OffsetT segment_end = d_offset_end[segment_id];
       const OffsetT segment_size = d_offset_end[segment_id] -
                                    d_offset_begin[segment_id];
-
-      using SmallReducePolicy = AgentWarpReducePolicy<256 /* doesn't matter */, 
-                                                      1   /* threads per warp */,
-                                                      8   /* items_per_thread */,
-                                                      AccumT,
-                                                      1 /* items_per_vec_load */,
-                                                      LOAD_LDG>;
-
-      using AgentSmallReduceT =
-        AgentWarpReduce<SmallReducePolicy,
-                        InputIteratorT,
-                        OutputIteratorT,
-                        OffsetT,
-                        ReductionOpT,
-                        AccumT>;
-
-      // There's a single thread, so no need to make it shared
-      typename AgentSmallReduceT::TempStorage temp_storage;
-
-      const bool is_small_segment = segment_size < (SmallReducePolicy::ITEMS_PER_TILE + 1);
-
-      // Check if empty problem
-      if (segment_begin == segment_end)
-      {
-        d_out[segment_id] = init;
-      }
-      else if (is_small_segment)
-      {
-        // Consume input tiles
-        AccumT warp_aggregate =
-          AgentSmallReduceT(temp_storage, d_in, reduction_op, 0)
-            .ConsumeRange(segment_begin, segment_end);
-
-        // Normalize as needed
-        NormalizeReductionOutput(warp_aggregate, segment_begin, d_in);
-
-        d_out[segment_id] = reduction_op(init, warp_aggregate);
-      }
-
-      return is_small_segment;
+      return segment_size < value;
     }
   };
 
@@ -1345,7 +1363,7 @@ struct DispatchSegmentedReduce : SelectedPolicy
 
     do
     {
-      cub::detail::temporary_storage::layout<3> temporary_storage_layout;
+      cub::detail::temporary_storage::layout<4> temporary_storage_layout;
 
 #ifndef CUB_RDC_ENABLED
       constexpr static int num_selected_groups = 2;
@@ -1362,7 +1380,8 @@ struct DispatchSegmentedReduce : SelectedPolicy
 
       auto partition_storage_slot = temporary_storage_layout.get_slot(0);
       auto large_and_medium_partitioning_slot = temporary_storage_layout.get_slot(1);
-      auto group_sizes_slot = temporary_storage_layout.get_slot(2);
+      auto small_partitioning_slot = temporary_storage_layout.get_slot(2);
+      auto group_sizes_slot = temporary_storage_layout.get_slot(3);
 
       LargeSegmentsSelectorT large_segments_selector(
         ActivePolicyT::MediumReducePolicy::ITEMS_PER_TILE,
@@ -1370,37 +1389,35 @@ struct DispatchSegmentedReduce : SelectedPolicy
         d_end_offsets);
 
       SmallSegmentsSelectorT small_segments_selector(
+        ActivePolicyT::SmallReducePolicy::ITEMS_PER_TILE + 1,
         d_begin_offsets,
-        d_end_offsets,
-        d_in,
-        d_out,
-        reduction_op,
-        init);
+        d_end_offsets);
 
       auto device_partition_temp_storage =
         partition_storage_slot->create_alias<std::uint8_t>();
       auto large_and_medium_segments_indices =
         large_and_medium_partitioning_slot->create_alias<unsigned int>();
+      auto small_segments_indices =
+        small_partitioning_slot->create_alias<unsigned int>();
       auto group_sizes = group_sizes_slot->create_alias<unsigned int>();
 
       std::size_t three_way_partition_temp_storage_bytes {};
 
       if (partition_segments) {
         large_and_medium_segments_indices.grow(num_segments);
+        small_segments_indices.grow(num_segments);
         group_sizes.grow(num_selected_groups);
 
         auto medium_indices_iterator =
           THRUST_NS_QUALIFIER::make_reverse_iterator(
             large_and_medium_segments_indices.get());
 
-        auto small_segments_indices = THRUST_NS_QUALIFIER::make_discard_iterator();
-
         cub::DevicePartition::If(
           nullptr,
           three_way_partition_temp_storage_bytes,
           THRUST_NS_QUALIFIER::counting_iterator<OffsetT>(0),
           large_and_medium_segments_indices.get(),
-          small_segments_indices,
+          small_segments_indices.get(),
           medium_indices_iterator,
           group_sizes.get(),
           num_segments,
@@ -1435,14 +1452,12 @@ struct DispatchSegmentedReduce : SelectedPolicy
           THRUST_NS_QUALIFIER::make_reverse_iterator(
             large_and_medium_segments_indices.get() + num_segments);
 
-        auto small_segments_indices = THRUST_NS_QUALIFIER::make_discard_iterator();
-
         error = cub::DevicePartition::If(
           device_partition_temp_storage.get(),
           three_way_partition_temp_storage_bytes,
           THRUST_NS_QUALIFIER::counting_iterator<OffsetT>(0),
           large_and_medium_segments_indices.get(),
-          small_segments_indices,
+          small_segments_indices.get(),
           medium_indices_iterator,
           group_sizes.get(),
           num_segments,
@@ -1479,46 +1494,46 @@ struct DispatchSegmentedReduce : SelectedPolicy
           (large_segments + small_segments);
 
         const unsigned int large_blocks = large_segments;
+        const unsigned int small_blocks = DivideAndRoundUp(small_segments, ActivePolicyT::SmallReducePolicy::SEGMENTS_PER_BLOCK);
         const unsigned int medium_blocks = DivideAndRoundUp(medium_segments, ActivePolicyT::MediumReducePolicy::SEGMENTS_PER_BLOCK);
-        const unsigned int total_blocks = large_blocks + medium_blocks;
+        const unsigned int total_blocks = large_blocks + medium_blocks + small_blocks;
 
-        if (total_blocks)
+        #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+        _CubLog("Invoking DeviceSegmentedReduceWithPartitioningKernel<<<%d, %d, 0, %lld>>>(), "
+                "%d large segments, %d medium segments, %d small segments\n",
+                num_segments,
+                ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
+                (long long)stream,
+                large_segments,
+                medium_segments,
+                small_segments);
+        #endif
+
+        // Invoke DeviceReduceKernel
+        THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
+          total_blocks,
+          ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
+          0,
+          stream)
+          .doit(segmented_reduce_with_partitioning_kernel,
+                d_in,
+                d_out,
+                d_begin_offsets,
+                d_end_offsets,
+                large_blocks,
+                large_blocks + medium_blocks,
+                medium_segments,
+                small_segments,
+                large_and_medium_segments_indices.get(),
+                large_and_medium_segments_indices.get() + num_segments - medium_segments,
+                small_segments_indices.get(),
+                reduction_op,
+                init);
+
+        // Check for failure to launch
+        if (CubDebug(error = cudaPeekAtLastError()))
         {
-          #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
-          _CubLog("Invoking DeviceSegmentedReduceWithPartitioningKernel<<<%d, %d, 0, %lld>>>(), "
-                  "%d large segments, %d medium segments, %d small segments\n",
-                  num_segments,
-                  ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
-                  (long long)stream,
-                  large_segments,
-                  medium_segments,
-                  small_segments);
-          #endif
-
-          // Invoke DeviceReduceKernel
-          THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
-            total_blocks,
-            ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
-            0,
-            stream)
-            .doit(segmented_reduce_with_partitioning_kernel,
-                  d_in,
-                  d_out,
-                  d_begin_offsets,
-                  d_end_offsets,
-                  large_blocks,
-                  large_blocks + medium_blocks,
-                  medium_segments,
-                  large_and_medium_segments_indices.get(),
-                  large_and_medium_segments_indices.get() + num_segments - medium_segments,
-                  reduction_op,
-                  init);
-
-          // Check for failure to launch
-          if (CubDebug(error = cudaPeekAtLastError()))
-          {
-            break;
-          }
+          break;
         }
       }
       else
