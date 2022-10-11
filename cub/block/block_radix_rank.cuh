@@ -1075,7 +1075,7 @@ struct BlockRadixRankMatchEarlyCounts
                     // atomic is a bit faster
                     warp_offset = atomicAdd(&warp_offsets[bin], popc);
                 }
-                warp_offset = SHFL_IDX_SYNC(warp_offset, leader, bin_mask);
+                warp_offset = SHFL_IDX_SYNC(warp_offset, leader, WARP_MASK);
                 if (lane == leader) *p_match_mask = 0;
                 WARP_SYNC(WARP_MASK);
                 ranks[u] = warp_offset + popc - 1;
@@ -1105,7 +1105,7 @@ struct BlockRadixRankMatchEarlyCounts
                     // atomic is a bit faster
                     warp_offset = atomicAdd(&warp_offsets[bin], popc);
                 }
-                warp_offset = SHFL_IDX_SYNC(warp_offset, leader, bin_mask);
+                warp_offset = SHFL_IDX_SYNC(warp_offset, leader, WARP_MASK);
                 ranks[u] = warp_offset + popc - 1;
             }
         }
