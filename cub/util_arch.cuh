@@ -39,6 +39,17 @@
 
 CUB_NAMESPACE_BEGIN
 
+#ifdef DOXYGEN_SHOULD_SKIP_THIS // Only parse this during doxygen passes:
+
+/**
+ * \def CUB_DISABLE_CDP
+ *
+ * If defined, support for device-side usage of CUB is disabled.
+ */
+#define CUB_DISABLE_CDP
+
+#endif
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 #if ((__CUDACC_VER_MAJOR__ >= 9) || defined(_NVHPC_CUDA) ||            \
@@ -92,7 +103,7 @@ CUB_NAMESPACE_BEGIN
 
 /// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
 #ifndef CUB_RUNTIME_FUNCTION
-    #if !defined(__CUDA_ARCH__) || (__CUDA_ARCH__>= 350 && defined(__CUDACC_RDC__))
+    #if !defined(CUB_DISABLE_CDP) && (!defined(__CUDA_ARCH__) || (__CUDA_ARCH__>= 350 && defined(__CUDACC_RDC__))) 
         #define CUB_RUNTIME_ENABLED
         #define CUB_RUNTIME_FUNCTION __host__ __device__
     #else
