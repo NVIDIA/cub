@@ -33,25 +33,25 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <cub/util_allocator.cuh>
-#include <cub/util_math.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/util_math.cuh>
 #include <cub/util_type.cuh>
 
+#include <thrust/device_vector.h>
+#include <thrust/iterator/constant_iterator.h>
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
-
-#include <nv/target>
-
-#include "test_util.h"
 
 #include <cstdio>
 #include <limits>
 #include <typeinfo>
 
+#include "test_util.h"
+#include <nv/target>
 
 using namespace cub;
 
@@ -1333,6 +1333,39 @@ __global__ void InitializeTestAccumulatorTypes(int num_items,
   }
 }
 
+template <typename T>
+void TestBigIndicesHelper(int magnitude)
+{
+  const std::size_t num_items = 1ll << magnitude;
+  thrust::constant_iterator<T> const_iter(T{1});
+  thrust::device_vector<std::size_t> out(1);
+  std::size_t* d_out = thrust::raw_pointer_cast(out.data());
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  CubDebugExit(
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, const_iter, d_out, num_items));
+
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+  d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+  CubDebugExit(
+    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, const_iter, d_out, num_items));
+  std::size_t result = out[0];
+
+  AssertEquals(result, num_items);
+}
+
+template <typename T>
+void TestBigIndices()
+{
+  TestBigIndicesHelper<T>(30);
+  TestBigIndicesHelper<T>(31);
+  TestBigIndicesHelper<T>(32);
+  TestBigIndicesHelper<T>(33);
+}
+
 void TestAccumulatorTypes()
 {
   const int num_items  = 2 * 1024 * 1024;
@@ -1491,6 +1524,7 @@ int main(int argc, char** argv)
     TestType<TestBar, TestBar>(max_items, max_segments);
 
     TestAccumulatorTypes();
+    TestBigIndices<std::size_t>();
 #endif
     printf("\n");
     return 0;
