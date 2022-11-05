@@ -961,8 +961,8 @@ struct DeviceRadixSortPolicy
             SEGMENTED_RADIX_BITS   = (sizeof(KeyT) > 1) ? 6 : 5,
             ONESWEEP               = sizeof(KeyT) >= sizeof(uint32_t),
             ONESWEEP_RADIX_BITS    = 8,
-            OFFSET_64BIT           = sizeof(OffsetT) == 8,
-            SMALL_VALUES           = !KEYS_ONLY && sizeof(ValueT) <= 4
+            OFFSET_64BIT           = sizeof(OffsetT) == 8 ? 1 : 0,
+            FLOAT_KEYS             = std::is_same<KeyT, float>::value ? 1 : 0,
         };
 
         // Histogram policy
@@ -971,9 +971,10 @@ struct DeviceRadixSortPolicy
         // Exclusive sum policy
         typedef AgentRadixSortExclusiveSumPolicy <256, ONESWEEP_RADIX_BITS> ExclusiveSumPolicy;
 
-        typedef AgentRadixSortOnesweepPolicy <512,
-            SMALL_VALUES ? (OFFSET_64BIT ? 13 : 17) : (OFFSET_64BIT ? 22 : 23), DominantT, 1,
-            RADIX_RANK_MATCH_EARLY_COUNTS_ANY, BLOCK_SCAN_RAKING_MEMOIZE,
+        typedef AgentRadixSortOnesweepPolicy <384,
+            KEYS_ONLY ? 20 - OFFSET_64BIT - FLOAT_KEYS :
+            (sizeof(ValueT) < 8 ? (OFFSET_64BIT ? 17 : 23) : (OFFSET_64BIT ? 29 : 30)),
+            DominantT, 1, RADIX_RANK_MATCH_EARLY_COUNTS_ANY, BLOCK_SCAN_RAKING_MEMOIZE,
             RADIX_SORT_STORE_DIRECT, ONESWEEP_RADIX_BITS> OnesweepPolicyKey32;
 
         typedef AgentRadixSortOnesweepPolicy <384, sizeof(ValueT) < 8 ? 30 : 24, DominantT, 1,
