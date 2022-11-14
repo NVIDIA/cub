@@ -43,20 +43,22 @@
 // variables in cub kernels.
 #include "catch2_test_helper.h"
 
-template <int ThreadsInBlock, 
+template <int BlockDimX,
+          int BlockDimY,
+          int BlockDimZ,
           int ItemsPerThread,   
           class T,  
           class ActionT>
 __global__ void block_shuffle_kernel(T *data, ActionT action)
 {
-  using block_shuffle_t = cub::BlockShuffle<T, ThreadsInBlock>;
+  using block_shuffle_t = cub::BlockShuffle<T, BlockDimX, BlockDimY, BlockDimZ>;
   using temp_storage_t  = typename block_shuffle_t::TempStorage;
 
   __shared__ temp_storage_t temp_storage;
 
   T thread_data[ItemsPerThread];
 
-  data += threadIdx.x * ItemsPerThread;
+  data += cub::RowMajorTid(BlockDimX, BlockDimY, BlockDimZ) * ItemsPerThread;
   for (int item = 0; item < ItemsPerThread; item++)
   {
     thread_data[item] = data[item];
@@ -120,11 +122,19 @@ struct rotate_op_t
 template <class T>
 struct up_with_suffix_op_t 
 {
-  int m_target_thread_id;
+  int m_target_thread_id_x;
+  int m_target_thread_id_y;
+  int m_target_thread_id_z;
   T * m_d_suffix_ptr;
 
-  __host__ up_with_suffix_op_t(int target_thread_id, T *d_suffix_ptr)
-      : m_target_thread_id(target_thread_id)
+  __host__ up_with_suffix_op_t(
+      int target_thread_id_x,
+      int target_thread_id_y,
+      int target_thread_id_z,
+      T *d_suffix_ptr)
+      : m_target_thread_id_x(target_thread_id_x)
+      , m_target_thread_id_y(target_thread_id_y)
+      , m_target_thread_id_z(target_thread_id_z)
       , m_d_suffix_ptr(d_suffix_ptr)
   {}
 
@@ -137,7 +147,9 @@ struct up_with_suffix_op_t
 
     block_shuffle.Up(thread_data, thread_data, suffix);
 
-    if (static_cast<int>(threadIdx.x) == m_target_thread_id)
+    if (static_cast<int>(threadIdx.x) == m_target_thread_id_x
+     && static_cast<int>(threadIdx.y) == m_target_thread_id_y
+     && static_cast<int>(threadIdx.z) == m_target_thread_id_z)
     {
       m_d_suffix_ptr[0] = suffix;
     }
@@ -158,11 +170,19 @@ struct down_op_t
 template <class T>
 struct down_with_prefix_op_t 
 {
-  int m_target_thread_id;
+  int m_target_thread_id_x;
+  int m_target_thread_id_y;
+  int m_target_thread_id_z;
   T * m_d_prefix_ptr;
 
-  __host__ down_with_prefix_op_t(int target_thread_id, T *d_prefix_ptr)
-      : m_target_thread_id(target_thread_id)
+  __host__ down_with_prefix_op_t(
+      int target_thread_id_x,
+      int target_thread_id_y,
+      int target_thread_id_z,
+      T *d_prefix_ptr)
+      : m_target_thread_id_x(target_thread_id_x)
+      , m_target_thread_id_y(target_thread_id_y)
+      , m_target_thread_id_z(target_thread_id_z)
       , m_d_prefix_ptr(d_prefix_ptr)
   {}
 
@@ -175,7 +195,9 @@ struct down_with_prefix_op_t
 
     block_shuffle.Down(thread_data, thread_data, prefix);
 
-    if (static_cast<int>(threadIdx.x) == m_target_thread_id)
+    if (static_cast<int>(threadIdx.x) == m_target_thread_id_x
+     && static_cast<int>(threadIdx.y) == m_target_thread_id_y
+     && static_cast<int>(threadIdx.z) == m_target_thread_id_z)
     {
       m_d_prefix_ptr[0] = prefix;
     }
@@ -183,15 +205,18 @@ struct down_with_prefix_op_t
 };
 
 template <int ItemsPerThread,
-          int ThreadsInBlock,
+          int BlockDimX,
+          int BlockDimY,
+          int BlockDimZ,
           class T,
           class ActionT>
 void block_shuffle(
     thrust::device_vector<T> &data, 
     ActionT action)
 {
-  block_shuffle_kernel<ThreadsInBlock, ItemsPerThread>
-    <<<1, ThreadsInBlock>>>(
+  dim3 block(BlockDimX, BlockDimY, BlockDimZ);
+  block_shuffle_kernel<BlockDimX, BlockDimY, BlockDimZ, ItemsPerThread>
+    <<<1, block>>>(
         thrust::raw_pointer_cast(data.data()),
         action);
 
@@ -199,13 +224,15 @@ void block_shuffle(
   REQUIRE( cudaSuccess == cudaDeviceSynchronize() );
 }
 
-// %PARAM% THREADS_IN_BLOCK bs 64:512:1024
+// %PARAM% TEST_DIM_X dimx 7:32:64:128
+// %PARAM% TEST_DIM_YZ dimyz 1:2
+
+using block_dim_xs           = c2h::enum_type_list<int, TEST_DIM_X>;
+using block_dim_yzs          = c2h::enum_type_list<int, TEST_DIM_YZ>;
 
 using types = c2h::type_list<std::int32_t, std::int64_t>;
-using threads_in_block = c2h::enum_type_list<int, THREADS_IN_BLOCK>;
-using items_per_thread = c2h::enum_type_list<int, 1, 2, 7>;
+using items_per_thread = c2h::enum_type_list<int, 1, 2, 15>;
 using single_item_per_thread = c2h::enum_type_list<int, 1>;
-
 
 template <class TestType>
 struct params_t
@@ -213,7 +240,10 @@ struct params_t
   using type = typename c2h::get<0, TestType>;
 
   static constexpr int items_per_thread = c2h::get<1, TestType>::value;
-  static constexpr int threads_in_block = c2h::get<2, TestType>::value;
+  static constexpr int block_dim_x      = c2h::get<2, TestType>::value;
+  static constexpr int block_dim_y      = c2h::get<3, TestType>::value;
+  static constexpr int block_dim_z      = block_dim_y;
+  static constexpr int threads_in_block = block_dim_x * block_dim_y * block_dim_z;
   static constexpr int tile_size = items_per_thread * threads_in_block;
 };
 
@@ -222,7 +252,8 @@ CUB_TEST("Block shuffle offset works",
          "[shuffle][block]",
          types,
          single_item_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -245,9 +276,10 @@ CUB_TEST("Block shuffle offset works",
              : h_data[i];
   }
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(
-    d_data,
-    offset_op_t{distance});
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(d_data, offset_op_t{distance});
 
   REQUIRE(h_ref == d_data);
 }
@@ -256,7 +288,8 @@ CUB_TEST("Block shuffle rotate works",
          "[shuffle][block]",
          types,
          single_item_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -272,9 +305,10 @@ CUB_TEST("Block shuffle rotate works",
   thrust::host_vector<type> h_ref = d_data;
   std::rotate(h_ref.begin(), h_ref.begin() + distance, h_ref.end());
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(
-    d_data,
-    rotate_op_t{distance});
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(d_data, rotate_op_t{distance});
 
   REQUIRE(h_ref == d_data);
 }
@@ -283,7 +317,8 @@ CUB_TEST("Block shuffle up works",
          "[shuffle][block]",
          types,
          items_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -295,8 +330,10 @@ CUB_TEST("Block shuffle up works",
   thrust::copy(d_data.begin(), d_data.end() - 1, d_ref.begin() + 1);
   thrust::copy(d_data.begin(), d_data.begin() + 1, d_ref.begin());
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(d_data,
-                                                                    up_op_t{});
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(d_data, up_op_t{});
 
   REQUIRE(d_ref == d_data);
 }
@@ -305,7 +342,8 @@ CUB_TEST("Block shuffle up works when suffix is required",
          "[shuffle][block]",
          types,
          items_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -315,6 +353,9 @@ CUB_TEST("Block shuffle up works when suffix is required",
 
   const int target_thread_id = 
     GENERATE_COPY(take(2, random(0, params::threads_in_block - 1)));
+  const int target_thread_id_x = target_thread_id % params::block_dim_x;
+  const int target_thread_id_y = (target_thread_id / params::block_dim_x) % params::block_dim_y;
+  const int target_thread_id_z = target_thread_id / (params::block_dim_x * params::block_dim_y);
 
   thrust::device_vector<type> d_ref(params::tile_size);
   thrust::copy(d_data.begin(), d_data.end() - 1, d_ref.begin() + 1);
@@ -324,9 +365,12 @@ CUB_TEST("Block shuffle up works when suffix is required",
   thrust::device_vector<type> d_suffix_ref(1);
   thrust::copy(d_data.end() - 1, d_data.end(), d_suffix_ref.begin());
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(
     d_data,
-    up_with_suffix_op_t<type>{target_thread_id,
+    up_with_suffix_op_t<type>{target_thread_id_x, target_thread_id_y, target_thread_id_z,
                               thrust::raw_pointer_cast(d_suffix.data())});
 
   REQUIRE(d_ref == d_data);
@@ -337,7 +381,8 @@ CUB_TEST("Block shuffle down works",
          "[shuffle][block]",
          types,
          items_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -349,8 +394,10 @@ CUB_TEST("Block shuffle down works",
   thrust::copy(d_data.begin() + 1, d_data.end(), d_ref.begin());
   thrust::copy(d_data.end() - 1, d_data.end(), d_ref.end() - 1);
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(d_data,
-                                                                    down_op_t{});
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(d_data, down_op_t{});
 
   REQUIRE(d_ref == d_data);
 }
@@ -359,7 +406,8 @@ CUB_TEST("Block shuffle down works when prefix is required",
          "[shuffle][block]",
          types,
          items_per_thread,
-         threads_in_block)
+         block_dim_xs,
+         block_dim_yzs)
 {
   using params = params_t<TestType>;
   using type = typename params::type;
@@ -369,6 +417,9 @@ CUB_TEST("Block shuffle down works when prefix is required",
 
   const int target_thread_id = 
     GENERATE_COPY(take(2, random(0, params::threads_in_block - 1)));
+  const int target_thread_id_x = target_thread_id % params::block_dim_x;
+  const int target_thread_id_y = (target_thread_id / params::block_dim_x) % params::block_dim_y;
+  const int target_thread_id_z = target_thread_id / (params::block_dim_x * params::block_dim_y);
 
   thrust::device_vector<type> d_ref(params::tile_size);
   thrust::copy(d_data.begin() + 1, d_data.end(), d_ref.begin());
@@ -378,12 +429,14 @@ CUB_TEST("Block shuffle down works when prefix is required",
   thrust::device_vector<type> d_prefix_ref(1);
   thrust::copy(d_data.begin(), d_data.begin() + 1, d_prefix_ref.begin());
 
-  block_shuffle<params::items_per_thread, params::threads_in_block>(
+  block_shuffle<params::items_per_thread,
+                params::block_dim_x,
+                params::block_dim_y,
+                params::block_dim_z>(
     d_data,
-    down_with_prefix_op_t<type>{target_thread_id,
+    down_with_prefix_op_t<type>{target_thread_id_x, target_thread_id_y, target_thread_id_z,
                                 thrust::raw_pointer_cast(d_prefix.data())});
 
   REQUIRE(d_ref == d_data);
   REQUIRE(d_prefix_ref == d_prefix);
 }
-
