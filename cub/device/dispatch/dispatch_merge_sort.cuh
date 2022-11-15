@@ -49,7 +49,8 @@ template <bool UseVShmem,
           typename CompareOpT,
           typename KeyT,
           typename ValueT>
-void __global__ __launch_bounds__(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+CUB_DETAIL_LAUNCH_BOUNDS(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+void __global__ 
 DeviceMergeSortBlockSortKernel(bool ping,
                                KeyInputIteratorT keys_in,
                                ValueInputIteratorT items_in,
@@ -136,7 +137,8 @@ template <bool UseVShmem,
           typename CompareOpT,
           typename KeyT,
           typename ValueT>
-void __global__ __launch_bounds__(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+CUB_DETAIL_LAUNCH_BOUNDS(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+void __global__ 
 DeviceMergeSortMergeKernel(bool ping,
                            KeyIteratorT keys_ping,
                            ValueIteratorT items_ping,

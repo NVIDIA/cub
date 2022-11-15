@@ -73,7 +73,7 @@ template <
     typename            EqualityOpT,                ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename            OffsetT,                    ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
-__launch_bounds__ (int(AgentSelectIfPolicyT::BLOCK_THREADS))
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentSelectIfPolicyT::BLOCK_THREADS))
 __global__ void DeviceSelectSweepKernel(
     InputIteratorT          d_in,                   ///< [in] Pointer to the input sequence of data items
     FlagsInputIteratorT     d_flags,                ///< [in] Pointer to the input sequence of selection flags (if applicable)

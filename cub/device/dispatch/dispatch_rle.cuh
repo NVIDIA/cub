@@ -71,7 +71,7 @@ template <
     typename            ScanTileStateT,              ///< Tile status interface type
     typename            EqualityOpT,                 ///< T equality operator type
     typename            OffsetT>                    ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentRlePolicyT::BLOCK_THREADS))
+CUB_DETAIL_LAUNCH_BOUNDS(int(AgentRlePolicyT::BLOCK_THREADS))
 __global__ void DeviceRleSweepKernel(
     InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
     OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
