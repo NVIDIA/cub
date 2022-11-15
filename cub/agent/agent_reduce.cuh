@@ -355,7 +355,7 @@ struct AgentReduce
   {
     AccumT thread_aggregate{};
 
-    if (even_share.block_offset + TILE_ITEMS > even_share.block_end)
+    if (even_share.block_end - even_share.block_offset < TILE_ITEMS)
     {
       // First tile isn't full (not all threads have valid items)
       int valid_items = even_share.block_end - even_share.block_offset;
@@ -374,16 +374,34 @@ struct AgentReduce
                       TILE_ITEMS,
                       Int2Type<true>(),
                       can_vectorize);
+
+    // Exit early to handle offset overflow
+    if (even_share.block_end - even_share.block_offset < even_share.block_stride)
+    {
+      // Compute block-wide reduction (all threads have valid items)
+      return BlockReduceT(temp_storage.reduce)
+        .Reduce(thread_aggregate, reduction_op);
+    }
+
     even_share.block_offset += even_share.block_stride;
 
     // Consume subsequent full tiles of input
-    while (even_share.block_offset + TILE_ITEMS <= even_share.block_end)
+    while (even_share.block_offset <= even_share.block_end - TILE_ITEMS)
     {
       ConsumeTile<false>(thread_aggregate,
                          even_share.block_offset,
                          TILE_ITEMS,
                          Int2Type<true>(),
                          can_vectorize);
+
+      // Exit early to handle offset overflow
+      if (even_share.block_end - even_share.block_offset < even_share.block_stride)
+      {
+        // Compute block-wide reduction (all threads have valid items)
+        return BlockReduceT(temp_storage.reduce)
+          .Reduce(thread_aggregate, reduction_op);
+      }
+
       even_share.block_offset += even_share.block_stride;
     }
 
