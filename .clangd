@@ -32,6 +32,7 @@ CompileFlags:
     # report all errors
     - "-ferror-limit=0"
     - "-ftemplate-backtrace-limit=0"
+    - "-stdlib=libc++"
   Remove:
     - -stdpar
     # strip CUDA fatbin args
