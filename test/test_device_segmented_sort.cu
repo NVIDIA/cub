@@ -963,7 +963,7 @@ void TestSameSizeSegments(int segment_size,
 
   const int *d_offsets = thrust::raw_pointer_cast(offsets.data());
 
-  const KeyT target_key {42};
+  const KeyT target_key {1};
   const ValueT target_value {42};
 
   thrust::device_vector<KeyT> keys_input(num_items);
@@ -1207,6 +1207,16 @@ bool compare_two_outputs(const thrust::host_vector<int> &offsets,
   return true;
 }
 
+template <typename ValueT>
+void RandomizeInput(thrust::host_vector<bool> &h_keys,
+                    thrust::host_vector<ValueT> &h_values)
+{
+  for (std::size_t i = 0; i < h_keys.size(); i++)
+  {
+    h_keys[i] = RandomValue((std::numeric_limits<std::uint8_t>::max)()) > 128;
+    h_values[i] = RandomValue((std::numeric_limits<ValueT>::max)());
+  }
+}
 
 template <typename KeyT,
           typename ValueT>
@@ -1924,6 +1934,7 @@ int main(int argc, char** argv)
   Test<bfloat16_t, std::uint32_t>();
 #endif
 
+  Test<bool, std::uint64_t>();
   Test<std::uint8_t, std::uint64_t>();
   Test<std::int64_t, std::uint32_t>();
 
