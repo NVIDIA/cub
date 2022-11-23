@@ -1,4 +1,10 @@
 >  :warning: CUB is in the progress of migrating to [Catch2](https://github.com/catchorg/Catch2) framework.
+
+CUB tests rely on [CPM](https://github.com/cpm-cmake/CPM.cmake) to fetch 
+[Catch2](https://github.com/catchorg/Catch2) that's used as our main testing framework
+along with [metal](https://github.com/brunocodutra/metal) that's used as template metaprogramming
+backend for some of the test macro implementation.
+
 Currently, 
 legacy tests coexist with Catch2 ones. 
 This guide is focused on new tests.
