@@ -155,6 +155,25 @@ class AgentSubWarpSort
     return lhs == rhs;
   }
 
+  __device__ static bool get_oob_default(Int2Type<true> /* is bool */) 
+  {
+    // Traits<KeyT>::MAX_KEY for `bool` is 0xFF which is different from `true` and makes
+    // comparison with oob unreliable.
+    return !IS_DESCENDING;
+  }
+
+  __device__ static KeyT get_oob_default(Int2Type<false> /* is bool */) 
+  {
+    // For FP64 the difference is:
+    // Lowest() -> -1.79769e+308 = 00...00b -> TwiddleIn -> -0 = 10...00b
+    // LOWEST   -> -nan          = 11...11b -> TwiddleIn ->  0 = 00...00b
+
+    using UnsignedBitsT = typename Traits<KeyT>::UnsignedBits;
+    UnsignedBitsT default_key_bits = IS_DESCENDING ? Traits<KeyT>::LOWEST_KEY
+                                                   : Traits<KeyT>::MAX_KEY;
+    return reinterpret_cast<KeyT &>(default_key_bits);
+  }
+
 public:
   static constexpr bool KEYS_ONLY = std::is_same<ValueT, cub::NullType>::value;
 
@@ -229,14 +248,8 @@ public:
       KeyT keys[PolicyT::ITEMS_PER_THREAD];
       ValueT values[PolicyT::ITEMS_PER_THREAD];
 
-      // For FP64 the difference is:
-      // Lowest() -> -1.79769e+308 = 00...00b -> TwiddleIn -> -0 = 10...00b
-      // LOWEST   -> -nan          = 11...11b -> TwiddleIn ->  0 = 00...00b
-
-      using UnsignedBitsT = typename Traits<KeyT>::UnsignedBits;
-      UnsignedBitsT default_key_bits = IS_DESCENDING ? Traits<KeyT>::LOWEST_KEY
-                                                     : Traits<KeyT>::MAX_KEY;
-      KeyT oob_default = reinterpret_cast<KeyT &>(default_key_bits);
+      KeyT oob_default = 
+        AgentSubWarpSort::get_oob_default(Int2Type<std::is_same<bool, KeyT>::value>{});
 
       WarpLoadKeysT(storage.load_keys)
         .Load(keys_input, keys, segment_size, oob_default);
