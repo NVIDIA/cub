@@ -368,53 +368,9 @@ struct AgentReduce
         .Reduce(thread_aggregate, reduction_op, valid_items);
     }
 
-    // At least one full block
-    ConsumeTile<true>(thread_aggregate,
-                      even_share.block_offset,
-                      TILE_ITEMS,
-                      Int2Type<true>(),
-                      can_vectorize);
-
-    // Exit early to handle offset overflow
-    if (even_share.block_end - even_share.block_offset < even_share.block_stride)
-    {
-      // Compute block-wide reduction (all threads have valid items)
-      return BlockReduceT(temp_storage.reduce)
-        .Reduce(thread_aggregate, reduction_op);
-    }
-
-    even_share.block_offset += even_share.block_stride;
-
-    // Consume subsequent full tiles of input
-    while (even_share.block_offset <= even_share.block_end - TILE_ITEMS)
-    {
-      ConsumeTile<false>(thread_aggregate,
-                         even_share.block_offset,
-                         TILE_ITEMS,
-                         Int2Type<true>(),
-                         can_vectorize);
-
-      // Exit early to handle offset overflow
-      if (even_share.block_end - even_share.block_offset < even_share.block_stride)
-      {
-        // Compute block-wide reduction (all threads have valid items)
-        return BlockReduceT(temp_storage.reduce)
-          .Reduce(thread_aggregate, reduction_op);
-      }
-
-      even_share.block_offset += even_share.block_stride;
-    }
-
-    // Consume a partially-full tile
-    if (even_share.block_offset < even_share.block_end)
-    {
-      int valid_items = even_share.block_end - even_share.block_offset;
-      ConsumeTile<false>(thread_aggregate,
-                         even_share.block_offset,
-                         valid_items,
-                         Int2Type<false>(),
-                         can_vectorize);
-    }
+    // Extracting this into a function saves 8% of generated kernel size by allowing to reuse 
+    // the block reduction below. This also workaround hang in nvcc.
+    ConsumeFullTileRange(thread_aggregate, even_share, can_vectorize);
 
     // Compute block-wide reduction (all threads have valid items)
     return BlockReduceT(temp_storage.reduce)
@@ -446,8 +402,7 @@ struct AgentReduce
   __device__ __forceinline__ AccumT
   ConsumeTiles(GridEvenShare<OffsetT> &even_share)
   {
-    // Initialize GRID_MAPPING_STRIP_MINE even-share descriptor for this thread
-    // block
+    // Initialize GRID_MAPPING_STRIP_MINE even-share descriptor for this thread block
     even_share.template BlockInit<TILE_ITEMS, GRID_MAPPING_STRIP_MINE>();
 
     return (IsAligned(d_in, Int2Type<ATTEMPT_VECTORIZATION>()))
@@ -455,6 +410,64 @@ struct AgentReduce
                             Int2Type < true && ATTEMPT_VECTORIZATION > ())
              : ConsumeRange(even_share,
                             Int2Type < false && ATTEMPT_VECTORIZATION > ());
+  }
+
+private:
+  /**
+   * @brief Reduce a contiguous segment of input tiles with more than `TILE_ITEMS` elements
+   * @param even_share GridEvenShare descriptor
+   * @param can_vectorize Whether or not we can vectorize loads
+   */
+  template <int CAN_VECTORIZE>
+  __device__ __forceinline__ void
+  ConsumeFullTileRange(AccumT &thread_aggregate,
+                       GridEvenShare<OffsetT> &even_share,
+                       Int2Type<CAN_VECTORIZE> can_vectorize)
+  {
+    // At least one full block
+    ConsumeTile<true>(thread_aggregate,
+                      even_share.block_offset,
+                      TILE_ITEMS,
+                      Int2Type<true>(),
+                      can_vectorize);
+
+    if (even_share.block_end - even_share.block_offset < even_share.block_stride)
+    {
+      // Exit early to handle offset overflow
+      return;
+    }
+
+    even_share.block_offset += even_share.block_stride;
+
+    // Consume subsequent full tiles of input, at least one full tile was processed, so 
+    // `even_share.block_end >= TILE_ITEMS`
+    while (even_share.block_offset <= even_share.block_end - TILE_ITEMS)
+    {
+      ConsumeTile<false>(thread_aggregate,
+                         even_share.block_offset,
+                         TILE_ITEMS,
+                         Int2Type<true>(),
+                         can_vectorize);
+
+      if (even_share.block_end - even_share.block_offset < even_share.block_stride)
+      {
+        // Exit early to handle offset overflow
+        return;
+      }
+
+      even_share.block_offset += even_share.block_stride;
+    }
+
+    // Consume a partially-full tile
+    if (even_share.block_offset < even_share.block_end)
+    {
+      int valid_items = even_share.block_end - even_share.block_offset;
+      ConsumeTile<false>(thread_aggregate,
+                         even_share.block_offset,
+                         valid_items,
+                         Int2Type<false>(),
+                         can_vectorize);
+    }
   }
 };
 
