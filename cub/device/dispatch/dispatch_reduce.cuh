@@ -783,7 +783,7 @@ struct DispatchReduce : SelectedPolicy
         .doit(single_tile_kernel,
               d_block_reductions,
               d_out,
-              reduce_grid_size,
+              reduce_grid_size, // triple_chevron is not type safe, make sure to use int
               reduction_op,
               init);
 
@@ -841,7 +841,7 @@ struct DispatchReduce : SelectedPolicy
         DeviceReduceSingleTileKernel<MaxPolicyT,
                                      AccumT *,
                                      OutputIteratorT,
-                                     OffsetT,
+                                     int, // Always used with int offsets
                                      ReductionOpT,
                                      InitT,
                                      AccumT>);
