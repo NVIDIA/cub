@@ -1333,10 +1333,10 @@ __global__ void InitializeTestAccumulatorTypes(int num_items,
   }
 }
 
-template <typename T>
-void TestBigIndicesHelper(int magnitude)
+template <typename T, 
+          typename OffsetT>
+void TestBigIndicesHelper(OffsetT num_items)
 {
-  const std::size_t num_items = 1ll << magnitude;
   thrust::constant_iterator<T> const_iter(T{1});
   thrust::device_vector<std::size_t> out(1);
   std::size_t* d_out = thrust::raw_pointer_cast(out.data());
@@ -1360,10 +1360,10 @@ void TestBigIndicesHelper(int magnitude)
 template <typename T>
 void TestBigIndices()
 {
-  TestBigIndicesHelper<T>(30);
-  TestBigIndicesHelper<T>(31);
-  TestBigIndicesHelper<T>(32);
-  TestBigIndicesHelper<T>(33);
+  TestBigIndicesHelper<T, std::uint32_t>(1ull << 30);
+  TestBigIndicesHelper<T, std::uint32_t>(1ull << 31);
+  TestBigIndicesHelper<T, std::uint32_t>((1ull << 32) - 1);
+  TestBigIndicesHelper<T, std::uint64_t>(1ull << 33);
 }
 
 void TestAccumulatorTypes()
