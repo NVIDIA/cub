@@ -38,6 +38,7 @@
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_allocator.cuh>
 
+#include <thrust/device_vector.h>
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include <cstdio>
@@ -733,6 +734,50 @@ void TestSize(int num_items)
   }
 }
 
+/**
+ * @brief Test with NaNs as input to ensure we don't create an additional (invalid) run on the first
+ * item when (item[0] == item[0]) is false.
+ */
+template <typename T>
+void TestNaNs()
+{
+  using OffsetT = int32_t;
+  using LengthT = int32_t;
+
+  const auto quiet_nan = std::numeric_limits<T>::quiet_NaN();
+
+  // Allocate host data
+  std::vector<T> h_in{quiet_nan, quiet_nan, quiet_nan};
+  const OffsetT num_items      = static_cast<OffsetT>(h_in.size());
+  T *h_unique_reference        = new T[num_items];
+  OffsetT *h_offsets_reference = new OffsetT[num_items];
+  LengthT *h_lengths_reference = new LengthT[num_items];
+
+  // Initialize problem and solution
+  Equality equality_op;
+
+  // Get host-side data for verification
+  int num_runs = Solve<RLE>(h_in.data(),
+                            h_unique_reference,
+                            h_offsets_reference,
+                            h_lengths_reference,
+                            equality_op,
+                            num_items);
+
+  // Allocate problem device arrays
+  thrust::device_vector<T> d_in(num_items);
+  d_in = h_in;
+
+  // Run Test
+  Test<RLE, CUB>(thrust::raw_pointer_cast(d_in.data()),
+                 h_unique_reference,
+                 h_offsets_reference,
+                 h_lengths_reference,
+                 equality_op,
+                 num_runs,
+                 num_items);
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -768,6 +813,10 @@ int main(int argc, char **argv)
   printf("\n");
 
   // %PARAM% TEST_CDP cdp 0:1
+
+  // Run tests with leading/trailing NaNs, where (NaN == NaN) is false
+  TestNaNs<float>();
+  TestNaNs<double>();
 
   // Test different input types
   TestSize<signed char, int, int>(num_items);
