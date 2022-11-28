@@ -200,6 +200,48 @@ struct sum_prefix_op_t
   }
 };
 
+template <class T, scan_mode Mode>
+struct min_prefix_op_t
+{
+  T m_prefix;
+  static constexpr T min_identity = std::numeric_limits<T>::max();
+
+  struct block_prefix_op_t
+  {
+    int linear_tid;
+    T prefix;
+
+    __device__ block_prefix_op_t(int linear_tid, T prefix)
+        : linear_tid(linear_tid)
+        , prefix(prefix)
+    {}
+
+    __device__ T operator()(T block_aggregate)
+    {
+      T retval = (linear_tid == 0) ? prefix : min_identity;
+      prefix   = cub::Min{}(prefix, block_aggregate);
+      return retval;
+    }
+  };
+
+
+  template <int ItemsPerThread, class BlockScanT>
+  __device__ void operator()(BlockScanT &scan, T (&thread_data)[ItemsPerThread]) const
+  {
+    const int tid = static_cast<int>(cub::RowMajorTid(blockDim.x, blockDim.y, blockDim.z));
+    block_prefix_op_t prefix_op{tid, m_prefix};
+
+    if (Mode == scan_mode::exclusive)
+    {
+      scan.ExclusiveScan(thread_data, thread_data, cub::Min{}, prefix_op);
+    }
+    else
+    {
+      scan.InclusiveScan(thread_data, thread_data, cub::Min{}, prefix_op);
+    }
+  }
+};
+
 template <class T, class ScanOpT>
 T host_scan(scan_mode mode, thrust::host_vector<T> &result, ScanOpT scan_op, T initial_value = T{})
 {
@@ -238,18 +280,19 @@ T host_scan(scan_mode mode, thrust::host_vector<T> &result, ScanOpT scan_op, T i
   return block_accumulator;
 }
 
-// %PARAM% TEST_THREADS_IN_BLOCK bs 17:32:65:96
+// %PARAM% ALGO_TYPE alg 0:1:2
 // %PARAM% TEST_MODE mode 0:1
 
 using types            = c2h::type_list<std::uint8_t, std::uint16_t, std::int32_t, std::int64_t>;
-using vec_types        = c2h::type_list<char4, short2>;
-using block_dim_x      = c2h::enum_type_list<int, TEST_THREADS_IN_BLOCK>;
+using vec_types        = c2h::type_list<ulonglong4, uchar3, short2>;
+using block_dim_x      = c2h::enum_type_list<int, 17, 32, 65, 96>;
 using block_dim_yz     = c2h::enum_type_list<int, 1, 2>;
 using items_per_thread = c2h::enum_type_list<int, 1, 9>;
 using algorithms       = c2h::enum_type_list<cub::BlockScanAlgorithm,
                                        cub::BlockScanAlgorithm::BLOCK_SCAN_RAKING,
                                        cub::BlockScanAlgorithm::BLOCK_SCAN_WARP_SCANS,
                                        cub::BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE>;
+using algorithm = c2h::enum_type_list<cub::BlockScanAlgorithm, c2h::get<ALGO_TYPE, algorithms>::value>;
 
 #if TEST_MODE == 0
 using modes = c2h::enum_type_list<scan_mode, scan_mode::inclusive>;
@@ -278,7 +321,7 @@ CUB_TEST("Block scan works with sum",
          block_dim_x,
          block_dim_yz,
          items_per_thread,
-         algorithms,
+         algorithm,
          modes)
 {
   using params = params_t<TestType>;
@@ -301,7 +344,7 @@ CUB_TEST("Block scan works with sum",
   REQUIRE_APPROX_EQ(h_out, d_out);
 }
 
-CUB_TEST("Block scan works with vec types", "[scan][block]", vec_types, algorithms, modes)
+CUB_TEST("Block scan works with vec types", "[scan][block]", vec_types, algorithm, modes)
 {
   constexpr int items_per_thread = 3;
   constexpr int block_dim_x      = 256;
@@ -327,7 +370,7 @@ CUB_TEST("Block scan works with vec types", "[scan][block]", vec_types, algorith
   REQUIRE(h_out == d_out);
 }
 
-CUB_TEST("Block scan works with custom types", "[scan][block]", algorithms, modes)
+CUB_TEST("Block scan works with custom types", "[scan][block]", algorithm, modes)
 {
   constexpr int items_per_thread = 3;
   constexpr int block_dim_x      = 256;
@@ -355,7 +398,7 @@ CUB_TEST("Block scan works with custom types", "[scan][block]", algorithms, mode
 
 CUB_TEST("Block scan returns valid block aggregate",
          "[scan][block]",
-         algorithms,
+         algorithm,
          modes,
          block_dim_yz)
 {
@@ -392,7 +435,7 @@ CUB_TEST("Block scan returns valid block aggregate",
 
 CUB_TEST("Block scan supports prefix op",
          "[scan][block]",
-         algorithms,
+         algorithm,
          modes,
          block_dim_yz)
 {
@@ -426,7 +469,7 @@ CUB_TEST("Block scan supports prefix op",
 
 CUB_TEST("Block scan supports custom scan op",
          "[scan][block]",
-         algorithms,
+         algorithm,
          modes,
          block_dim_yz)
 {
@@ -453,6 +496,40 @@ CUB_TEST("Block scan supports custom scan op",
 
   thrust::host_vector<type> h_out = d_in;
   host_scan(mode, h_out, [](type l, type r) { return std::min(l, r); }, INT_MIN );
+
+  REQUIRE(h_out == d_out);
+}
+
+CUB_TEST("Block scan supports prefix op and custom scan op",
+         "[scan][block]",
+         algorithm,
+         modes,
+         block_dim_yz)
+{
+  constexpr int items_per_thread              = 3;
+  constexpr int block_dim_x                   = 64;
+  constexpr int block_dim_y                   = c2h::get<2, TestType>::value;
+  constexpr int block_dim_z                   = block_dim_y;
+  constexpr int threads_in_block              = block_dim_x * block_dim_y * block_dim_z;
+  constexpr int tile_size                     = items_per_thread * threads_in_block;
+  constexpr cub::BlockScanAlgorithm algorithm = c2h::get<0, TestType>::value;
+  constexpr scan_mode mode                    = c2h::get<1, TestType>::value;
+
+  using type = int;
+
+  const type prefix = GENERATE_COPY(take(2, random(0, tile_size)));
+
+  thrust::device_vector<type> d_out(tile_size);
+  thrust::device_vector<type> d_in(tile_size);
+  c2h::gen(CUB_SEED(10), d_in);
+
+  block_scan<algorithm, items_per_thread, block_dim_x, block_dim_y, block_dim_z>(
+    d_in,
+    d_out,
+    min_prefix_op_t<type, mode>{prefix});
+
+  thrust::host_vector<type> h_out = d_in;
+  host_scan(mode, h_out, [] (auto a, auto b) { return std::min(a, b); }, prefix);
 
   REQUIRE(h_out == d_out);
 }

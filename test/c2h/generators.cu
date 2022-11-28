@@ -377,5 +377,8 @@ VEC_SPECIALIZATION(short, 2);
 
 VEC_SPECIALIZATION(double, 2);
 
+VEC_SPECIALIZATION(uchar, 3);
+
+VEC_SPECIALIZATION(ulonglong, 4);
 } // c2h
 

@@ -78,7 +78,7 @@ template <cub::BlockReduceAlgorithm Algorithm,
           int BlockDimZ,
           class T,
           class ActionT>
-void block_merge_sort(thrust::device_vector<T> &in, thrust::device_vector<T> &out, ActionT action)
+void block_reduce(thrust::device_vector<T> &in, thrust::device_vector<T> &out, ActionT action)
 {
   dim3 block_dims(BlockDimX, BlockDimY, BlockDimZ);
 
@@ -135,7 +135,7 @@ struct max_full_tile_op_t
 };
 
 using types = c2h::type_list<std::uint8_t, std::uint16_t, std::int32_t, std::int64_t, float, double>;
-using vec_types = c2h::type_list<int2, long2>;
+using vec_types = c2h::type_list<ulonglong4, uchar3, short2>;
 
 // %PARAM% TEST_DIM_X dimx 7:32:65:128
 // %PARAM% TEST_DIM_YZ dimyz 1:2
@@ -184,7 +184,7 @@ CUB_TEST("Block reduce works with sum",
       return static_cast<type>(lhs + rhs);
     }));
 
-  block_merge_sort<params::algorithm,
+  block_reduce<params::algorithm,
                    params::items_per_thread,
                    params::block_dim_x,
                    params::block_dim_y,
@@ -214,7 +214,7 @@ CUB_TEST("Block reduce works with sum in partial tiles",
       return static_cast<type>(lhs + rhs);
     }));
 
-  block_merge_sort<params::algorithm,
+  block_reduce<params::algorithm,
                    params::items_per_thread,
                    params::block_dim_x,
                    params::block_dim_y,
@@ -246,7 +246,7 @@ CUB_TEST("Block reduce works with custom op",
       return std::max(lhs, rhs);
     }));
 
-  block_merge_sort<params::algorithm,
+  block_reduce<params::algorithm,
                    params::items_per_thread,
                    params::block_dim_x,
                    params::block_dim_y,
@@ -278,7 +278,7 @@ CUB_TEST("Block reduce works with custom op in partial tiles",
       return std::max(lhs, rhs);
     }));
 
-  block_merge_sort<params::algorithm,
+  block_reduce<params::algorithm,
                    params::items_per_thread,
                    params::block_dim_x,
                    params::block_dim_y,
@@ -314,7 +314,7 @@ CUB_TEST("Block reduce works with custom types",
       return static_cast<type>(lhs + rhs);
     }));
 
-  block_merge_sort<algorithm,
+  block_reduce<algorithm,
                    items_per_thread,
                    block_dim_x,
                    block_dim_y,
@@ -350,7 +350,7 @@ CUB_TEST("Block reduce works with vec types",
       return static_cast<type>(lhs + rhs);
     }));
 
-  block_merge_sort<algorithm,
+  block_reduce<algorithm,
                    items_per_thread,
                    block_dim_x,
                    block_dim_y,
