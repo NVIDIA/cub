@@ -556,6 +556,13 @@ struct AgentReduceByKey
       scan_items[ITEM].key   = head_flags[ITEM];
     }
 
+    // Reset head-flag on the very first item to make sure we don't start a new run for data where
+    // (key[0] == key[0]) is false (e.g., when key[0] is NaN)
+    if (threadIdx.x == 0 && tile_idx == 0)
+    {
+      scan_items[0].key = 0;
+    }
+
     // Perform exclusive tile scan
     // Inclusive block-wide scan aggregate
     OffsetValuePairT block_aggregate;
