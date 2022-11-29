@@ -548,19 +548,19 @@ struct AgentReduceByKey
         .FlagHeads(head_flags, keys, prev_keys, flag_op, tile_predecessor);
     }
 
-// Zip values and head flags
+    // Reset head-flag on the very first item to make sure we don't start a new run for data where
+    // (key[0] == key[0]) is false (e.g., when key[0] is NaN)
+    if (threadIdx.x == 0 && tile_idx == 0)
+    {
+      head_flags[0] = 0;
+    }
+
+    // Zip values and head flags
 #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
       scan_items[ITEM].value = values[ITEM];
       scan_items[ITEM].key   = head_flags[ITEM];
-    }
-
-    // Reset head-flag on the very first item to make sure we don't start a new run for data where
-    // (key[0] == key[0]) is false (e.g., when key[0] is NaN)
-    if (threadIdx.x == 0 && tile_idx == 0)
-    {
-      scan_items[0].key = 0;
     }
 
     // Perform exclusive tile scan
