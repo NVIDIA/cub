@@ -163,8 +163,6 @@ template <class T>
 struct down_with_prefix_op_t 
 {
   int m_target_thread_id;
-  int m_target_thread_id_y;
-  int m_target_thread_id_z;
   T * m_d_prefix_ptr;
 
   __host__ down_with_prefix_op_t(
@@ -211,19 +209,17 @@ void block_shuffle(
 }
 
 // %PARAM% MULTI_DIM mdim 0:1
-// %PARAM% CONFIG cfig 0:1:2
+// %PARAM% DIM_IDX dim_idx 0:1:2
 
-using multi_dim_x   = c2h::enum_type_list<int, 7, 32, 64>;
-using multi_dim_yz  = c2h::enum_type_list<int, 2, 2, 2>;
+#if MULTI_DIM
+using block_dim_xs  = c2h::enum_type_list<int, 7, 32, 64>;
+using block_dim_yz  = c2h::enum_type_list<int, 2>;
+#else
+using block_dim_xs  = c2h::enum_type_list<int, 64, 512, 1024>;
+using block_dim_yz  = c2h::enum_type_list<int, 1>;
+#endif
 
-using single_dim_x  = c2h::enum_type_list<int, 64, 512, 1024>;
-using single_dim_yz = c2h::enum_type_list<int, 1, 1, 1>;
-
-using block_dim_xs  = std::conditional_t<MULTI_DIM,  multi_dim_x,  single_dim_x>;
-using block_dim_yzs = std::conditional_t<MULTI_DIM, multi_dim_yz, single_dim_yz>;
-
-using block_dim_x   = c2h::enum_type_list<int, c2h::get<CONFIG, block_dim_xs>::value>;
-using block_dim_yz  = c2h::enum_type_list<int, c2h::get<CONFIG, block_dim_yzs>::value>;
+using block_dim_x   = c2h::enum_type_list<int, c2h::get<DIM_IDX, block_dim_xs>::value>;
 
 using types = c2h::type_list<std::int32_t, std::int64_t>;
 using items_per_thread = c2h::enum_type_list<int, 1, 2, 15>;
