@@ -95,7 +95,7 @@ public:
 };
 
 template <class CustomType>
-class substractable_t
+class subtractable_t
 {
   // The CUDA compiler follows the IA64 ABI for class layout, while the 
   // Microsoft host compiler does not.

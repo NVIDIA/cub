@@ -400,7 +400,7 @@ CUB_TEST("Block adjacent difference supports custom types",
          threads_in_block)
 {
   using key_t = c2h::custom_type_t<c2h::equal_comparable_t,
-                                   c2h::substractable_t>;
+                                   c2h::subtractable_t>;
 
   constexpr int items_per_thread = 2;
   constexpr int threads_in_block = c2h::get<0, TestType>::value;
