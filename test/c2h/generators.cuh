@@ -87,7 +87,7 @@ template <template <typename> typename... Ps>
 void gen(
   seed_t seed,
   thrust::device_vector<c2h::custom_type_t<Ps...>> &data,
-  c2h::custom_type_t<Ps...> min = std::numeric_limits<c2h::custom_type_t<Ps...>>::min(),
+  c2h::custom_type_t<Ps...> min = std::numeric_limits<c2h::custom_type_t<Ps...>>::lowest(),
   c2h::custom_type_t<Ps...> max = std::numeric_limits<c2h::custom_type_t<Ps...>>::max())
 {
   detail::gen(

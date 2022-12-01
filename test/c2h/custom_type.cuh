@@ -151,11 +151,11 @@ namespace std {
        return val;
      }
 
-     static c2h::custom_type_t<Policies...> min() 
+     static c2h::custom_type_t<Policies...> lowest() 
      {
        c2h::custom_type_t<Policies...> val;
-       val.set_key(std::numeric_limits<std::size_t>::min());
-       val.set_val(std::numeric_limits<std::size_t>::min());
+       val.set_key(std::numeric_limits<std::size_t>::lowest());
+       val.set_val(std::numeric_limits<std::size_t>::lowest());
        return val;
      }
   };
