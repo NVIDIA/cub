@@ -77,6 +77,7 @@ function(cub_build_compiler_targets)
   endif()
 
   if ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
+    option(CUB_ENABLE_CT_PROFILING "Enable compilation time profiling" OFF)
     if (CUB_ENABLE_CT_PROFILING)
       append_option_if_available("-ftime-trace" cxx_compile_options)
     endif()

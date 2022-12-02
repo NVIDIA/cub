@@ -1,3 +1,23 @@
+if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+  # NVBugs 200770766
+  set(CUB_SEPARATE_CATCH2 ON)
+else()
+  option(CUB_SEPARATE_CATCH2
+    "Build each catch2 test as a separate executable."
+    OFF
+  )
+endif()
+
+include("${CUB_SOURCE_DIR}/cmake/CPM.cmake")
+CPMAddPackage("gh:catchorg/Catch2@2.13.9")
+
+option(METAL_BUILD_DOC OFF)
+option(METAL_BUILD_EXAMPLES OFF)
+option(METAL_BUILD_TESTS OFF)
+CPMAddPackage("gh:brunocodutra/metal@2.1.4")
+
+find_package(CUDAToolkit REQUIRED)
+
 # Some tests always build with RDC, so make sure that the sm_XX flags are
 # compatible. See note in CubCudaConfig.cmake.
 # TODO once we're using CUDA_ARCHITECTURES, we can setup non-rdc fallback
@@ -84,13 +104,21 @@ file(GLOB test_srcs
   RELATIVE "${CUB_SOURCE_DIR}/test"
   CONFIGURE_DEPENDS
   test_*.cu
-)
-
-file(GLOB catch2_test_srcs
-  RELATIVE "${CUB_SOURCE_DIR}/test"
-  CONFIGURE_DEPENDS
   catch2_test_*.cu
 )
+
+## cub_is_catch2_test
+#
+# If the test_src contains the substring "catch2_test_", `result_var` will
+# be set to TRUE.
+function(cub_is_catch2_test result_var test_src)
+  string(FIND "${test_src}" "catch2_test_" idx)
+  if (idx EQUAL -1)
+    set(${result_var} FALSE PARENT_SCOPE)
+  else()
+    set(${result_var} TRUE PARENT_SCOPE)
+  endif()
+endfunction()
 
 ## cub_add_test
 #
@@ -107,32 +135,103 @@ file(GLOB catch2_test_srcs
 function(cub_add_test target_name_var test_name test_src cub_target)
   cub_get_target_property(config_prefix ${cub_target} PREFIX)
 
+  cub_is_catch2_test(is_catch2_test "${test_src}")
+
   # The actual name of the test's target:
   set(test_target ${config_prefix}.test.${test_name})
   set(${target_name_var} ${test_target} PARENT_SCOPE)
 
-  # Related target names:
   set(config_meta_target ${config_prefix}.tests)
-  set(test_meta_target cub.all.test.${test_name})
 
-  add_executable(${test_target} "${test_src}")
-  target_link_libraries(${test_target} ${cub_target})
-  cub_clone_target_properties(${test_target} ${cub_target})
-  target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
-  target_compile_definitions(${test_target} PRIVATE CUB_DEBUG_HOST_ASSERTIONS)
+  if (is_catch2_test)
+    # Per config helper library:
+    set(config_c2h_target ${config_prefix}.test.catch2_helper)
+    if (NOT TARGET ${config_c2h_target})
+      add_library(${config_c2h_target} SHARED c2h/generators.cu)
+      target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand)
+      set_property(TARGET ${config_c2h_target}
+        PROPERTY POSITION_INDEPENDENT_CODE ON
+      )
 
-  # Add to the active configuration's meta target
-  add_dependencies(${config_meta_target} ${test_target})
+      if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+        target_link_options(${config_c2h_target} PRIVATE "-shared")
+        target_link_options(${config_c2h_target} PRIVATE "-cuda")
+        target_compile_options(${config_c2h_target} PRIVATE "-fPIC")
+      endif()
 
-  # Meta target that builds tests with this name for all configurations:
-  if (NOT TARGET ${test_meta_target})
-    add_custom_target(${test_meta_target})
-  endif()
-  add_dependencies(${test_meta_target} ${test_target})
+      target_include_directories(${config_c2h_target}
+        PUBLIC "${CUB_SOURCE_DIR}/test"
+      )
 
-  add_test(NAME ${test_target}
-    COMMAND "$<TARGET_FILE:${test_target}>"
-  )
+      cub_clone_target_properties(${config_c2h_target} ${cub_target})
+    endif() # config_c2h_target
+
+    if (CUB_SEPARATE_CATCH2)
+      add_executable(${test_target} "${test_src}")
+      target_compile_definitions(${test_target} PRIVATE "CUB_CONFIG_MAIN")
+      add_dependencies(${config_meta_target} ${test_target})
+
+      add_test(NAME ${test_target} COMMAND "$<TARGET_FILE:${test_target}>")
+    else() # Not CUB_SEPARATE_CATCH2
+      # Per config catch2 runner
+      set(config_c2run_target ${config_prefix}.catch2_test)
+      if (NOT TARGET ${config_c2run_target})
+        add_executable(${config_c2run_target} catch2_runner.cu)
+        target_link_libraries(${config_c2run_target} PRIVATE
+          ${cub_target}
+          ${config_c2h_target}
+          Metal
+          Catch2::Catch2
+        )
+        cub_clone_target_properties(${config_c2run_target} ${cub_target})
+        add_dependencies(${config_meta_target} ${config_c2run_target})
+        target_include_directories(${config_c2run_target} PRIVATE
+          "${CUB_SOURCE_DIR}/test"
+        )
+        if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+          target_link_options(${config_c2run_target} PRIVATE "-cuda")
+        endif()
+
+        add_test(NAME ${config_c2run_target}
+          COMMAND "$<TARGET_FILE:${config_c2run_target}>"
+        )
+      endif() # per config catch2 runner
+
+      add_library(${test_target} OBJECT "${test_src}")
+      target_link_libraries(${config_c2run_target} PRIVATE ${test_target})
+    endif() # CUB_SEPARATE_CATCH2
+
+    target_link_libraries(${test_target} PRIVATE
+      ${cub_target}
+      ${config_c2h_target}
+      Metal
+      Catch2::Catch2
+    )
+    cub_clone_target_properties(${test_target} ${cub_target})
+    target_include_directories(${test_target}
+      PUBLIC "${CUB_SOURCE_DIR}/test"
+    )
+  else() # Not catch2:
+    # Related target names:
+    set(test_meta_target cub.all.test.${test_name})
+
+    add_executable(${test_target} "${test_src}")
+    target_link_libraries(${test_target} ${cub_target})
+    cub_clone_target_properties(${test_target} ${cub_target})
+    target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
+    target_compile_definitions(${test_target} PRIVATE CUB_DEBUG_HOST_ASSERTIONS)
+
+    # Add to the active configuration's meta target
+    add_dependencies(${config_meta_target} ${test_target})
+
+    # Meta target that builds tests with this name for all configurations:
+    if (NOT TARGET ${test_meta_target})
+      add_custom_target(${test_meta_target})
+    endif()
+    add_dependencies(${test_meta_target} ${test_target})
+
+    add_test(NAME ${test_target} COMMAND "$<TARGET_FILE:${test_target}>")
+  endif() # Not catch2 test
 endfunction()
 
 # Sets out_var to 1 if the label contains cdp variants, regardless of whether
@@ -159,6 +258,7 @@ endfunction()
 
 foreach (test_src IN LISTS test_srcs)
   get_filename_component(test_name "${test_src}" NAME_WE)
+  string(REGEX REPLACE "^catch2_test_" "" test_name "${test_name}")
   string(REGEX REPLACE "^test_" "" test_name "${test_name}")
 
   cub_get_test_params("${test_src}" variant_labels variant_defs)
@@ -208,6 +308,8 @@ foreach (test_src IN LISTS test_srcs)
         list(GET variant_labels ${var_idx} label)
         list(GET variant_defs ${var_idx} defs)
         string(REPLACE ":" ";" defs "${defs}")
+        # A unique index per variant:
+        list(APPEND defs VAR_IDX=${var_idx})
 
         # Check if the test has explicit CDP variants:
         _cub_has_cdp_variant(explicit_cdp "${label}")
@@ -236,181 +338,5 @@ foreach (test_src IN LISTS test_srcs)
     endif() # Has variants
   endforeach() # CUB targets
 endforeach() # Source file
-
-
-# Catch2 tests
-find_package(CUDAToolkit REQUIRED)
-foreach(cub_target IN LISTS CUB_TARGETS)
-  cub_get_target_property(config_prefix ${cub_target} PREFIX)
-
-  # The actual name of the test's target:
-  set(target ${config_prefix}.test.catch2_helper)
-
-  add_library(${target} SHARED
-    c2h/custom_type.cuh 
-    c2h/generators.cuh 
-    c2h/generators.cu)
-
-  target_link_libraries(${target} PRIVATE CUDA::curand)
-
-  set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
-    target_link_options(${target} PRIVATE "-shared")
-    target_link_options(${target} PRIVATE "-cuda")
-    target_compile_options(${target} PRIVATE "-fPIC")
-  endif()
-
-  target_include_directories(${target} 
-    PUBLIC "${CUB_SOURCE_DIR}/test")
-
-  cub_clone_target_properties(${target} ${cub_target})
-endforeach()
-
-## cub_add_catch2_test 
-#
-# Add a catch2 test executable and register it with ctest.
-#
-# src: The source file that implements the test.
-# name: The name of the test minus "<config_prefix>.catch2_test_." For example,
-#   test/catch2_test_block_load.cu will be "block_load".
-# defs: Defines to be added to the test.
-#
-function(cub_add_catch2_test src name defs target config_prefix)
-  set(name ${config_prefix}.test.${name})
-
-  if (CUB_SEPARATE_CATCH2)
-    add_executable(${name} "${src}")
-    add_test(NAME ${name} COMMAND "$<TARGET_FILE:${name}>")
-    set(${name} cub.all.test.${name})
-    list(APPEND defs "CUB_CONFIG_MAIN")
-  else ()
-    add_library(${name} OBJECT "${src}")
-  endif()
-
-  target_link_libraries(${name} PRIVATE ${target} Metal Catch2::Catch2 ${config_prefix}.test.catch2_helper)
-  set_property(TARGET ${name} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
-    target_link_options(${name} PRIVATE "-cuda")
-    target_compile_options(${name} PRIVATE "-fPIC")
-  endif ()
-
-  cub_clone_target_properties(${name} ${target})
-  target_include_directories(${name} PRIVATE "${CUB_SOURCE_DIR}/test")
-  target_compile_definitions(${name} PRIVATE ${defs})
-endfunction()
-
-foreach(cub_target IN LISTS CUB_TARGETS)
-  cub_get_target_property(config_prefix ${cub_target} PREFIX)
-
-  # The actual name of the test's target:
-  set(test_meta_target cub.all.test.${test_name})
-  set(test_prefix_target ${config_prefix}.tests)
-
-  if (NOT CUB_SEPARATE_CATCH2)
-    set(test_target ${config_prefix}.catch2_test)
-    add_executable(${test_target} catch2_runner.cu)
-    set(${test_target} cub.all.test.${test_target})
-  endif()
-
-  foreach (test_src IN LISTS catch2_test_srcs)
-    get_filename_component(test_name "${test_src}" NAME_WE)
-    string(REGEX REPLACE "^catch2_test_" "" test_name "${test_name}")
-
-    cub_get_test_params("${test_src}" variant_labels variant_defs)
-    list(LENGTH variant_labels num_variants)
-
-    # Subtract 1 to support the inclusive endpoint of foreach(...RANGE...):
-    math(EXPR range_end "${num_variants} - 1")
-
-    # Verbose output:
-    if (NOT num_variants EQUAL 0)
-      message(VERBOSE "Detected ${num_variants} variants of test '${test_src}':")
-      foreach(var_idx RANGE ${range_end})
-        math(EXPR i "${var_idx} + 1")
-        list(GET variant_labels ${var_idx} label)
-        list(GET variant_defs ${var_idx} defs)
-        message(VERBOSE "  ${i}: ${test_name} ${label} ${defs}")
-      endforeach()
-    endif()
-
-    cub_get_target_property(config_prefix ${cub_target} PREFIX)
-
-    if (num_variants EQUAL 0)
-      # Only one version of this test.
-      cub_add_catch2_test(
-        "${test_src}"
-        ${test_name} 
-        "VAR_IDX=0" 
-        ${cub_target} 
-        ${config_prefix})
-
-      if (NOT CUB_SEPARATE_CATCH2)
-        target_link_libraries(${test_target} PRIVATE ${config_prefix}.test.${test_name})
-      endif()
-    else()
-      # Meta target to build all parametrizations of the current test for the
-      # current CUB_TARGET config
-      set(variant_meta_target ${config_prefix}.test.${test_name}.all)
-      add_custom_target(${variant_meta_target})
-
-      # Meta target to build all parametrizations of the current test for all
-      # CUB_TARGET configs
-      set(cub_variant_meta_target cub.all.test.${test_name}.all)
-      if (NOT TARGET ${cub_variant_meta_target})
-        add_custom_target(${cub_variant_meta_target})
-      endif()
-
-      # Generate multiple tests, one per variant.
-      # See `cub_get_test_params` for details.
-      foreach(var_idx RANGE ${range_end})
-        list(GET variant_labels ${var_idx} label)
-        list(GET variant_defs ${var_idx} defs)
-        string(REPLACE ":" ";" defs "${defs}")
-        set(defs "${defs}; VAR_IDX=${var_idx}")
-
-        cub_add_catch2_test(
-          "${test_src}"
-          ${test_name}.${label} 
-          "${defs}" 
-          ${cub_target}
-          ${config_prefix})
-
-        if (NOT CUB_SEPARATE_CATCH2)
-          target_link_libraries(${test_target} PRIVATE ${config_prefix}.test.${test_name}.${label})
-        else()
-          add_dependencies(${cub_variant_meta_target} ${test_target})
-        endif()
-      endforeach()
-    endif()
-  endforeach()
-
-  if (NOT CUB_SEPARATE_CATCH2)
-    target_link_libraries(${test_target} PRIVATE
-            ${cub_target}
-            Metal
-            Catch2::Catch2)
-
-    if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
-      target_link_options(${test_target} PRIVATE "-cuda")
-    endif ()
-
-    cub_clone_target_properties(${test_target} ${cub_target})
-    target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
-
-    # Add to the active configuration's meta target
-    add_dependencies(${config_meta_target} ${test_target})
-
-    # Meta target that builds tests with this name for all configurations:
-    if (NOT TARGET ${test_meta_target})
-      add_custom_target(${test_meta_target})
-    endif()
-    add_dependencies(${test_meta_target} ${test_target})
-    add_dependencies(${test_prefix_target} ${test_target})
-
-    add_test(NAME ${test_target} COMMAND "$<TARGET_FILE:${test_target}>")
-  endif()
-endforeach()
 
 add_subdirectory(cmake)
