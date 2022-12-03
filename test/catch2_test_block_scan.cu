@@ -529,7 +529,7 @@ CUB_TEST("Block scan supports prefix op and custom scan op",
     min_prefix_op_t<type, mode>{prefix});
 
   thrust::host_vector<type> h_out = d_in;
-  host_scan(mode, h_out, [] (auto a, auto b) { return std::min(a, b); }, prefix);
+  host_scan(mode, h_out, [] (type a, type b) { return std::min(a, b); }, prefix);
 
   REQUIRE(h_out == d_out);
 }
