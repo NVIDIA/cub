@@ -236,12 +236,12 @@ generator_t& generator_t::instance()
 namespace detail
 {
 
-C2H_API void gen(seed_t seed,
-                 char* d_out,
-                 custom_type_state_t min,
-                 custom_type_state_t max,
-                 std::size_t elements,
-                 std::size_t element_size)
+void gen(seed_t seed,
+         char* d_out,
+         custom_type_state_t min,
+         custom_type_state_t max,
+         std::size_t elements,
+         std::size_t element_size)
 {
   thrust::counting_iterator<std::size_t> cnt_begin(0);
   thrust::counting_iterator<std::size_t> cnt_end(elements);
@@ -287,7 +287,7 @@ void gen(modulo_t mod,
 
 #define INSTANTIATE_RND(TYPE) \
 template \
-C2H_API void gen<TYPE>( \
+void gen<TYPE>( \
     seed_t, \
     thrust::device_vector<TYPE> &data, \
     TYPE min, \
@@ -295,7 +295,7 @@ C2H_API void gen<TYPE>( \
 
 #define INSTANTIATE_MOD(TYPE) \
 template \
-C2H_API void gen<TYPE>( \
+void gen<TYPE>( \
     modulo_t, \
     thrust::device_vector<TYPE> &data)
 
@@ -355,10 +355,10 @@ struct vec_gen_helper_t
 
 
 #define VEC_SPECIALIZATION(TYPE, SIZE) \
-template<> C2H_API void gen<TYPE##SIZE>(seed_t seed, \
-                                  thrust::device_vector<TYPE##SIZE> &data, \
-                                  TYPE##SIZE min, \
-                                  TYPE##SIZE max) \
+template<> void gen<TYPE##SIZE>(seed_t seed, \
+                                thrust::device_vector<TYPE##SIZE> &data, \
+                                TYPE##SIZE min, \
+                                TYPE##SIZE max) \
 { \
   generator_t& generator = generator_t::instance(); \
   generator.prepare_random_generator(seed, data.size()); \

@@ -147,14 +147,13 @@ function(cub_add_test target_name_var test_name test_src cub_target)
     # Per config helper library:
     set(config_c2h_target ${config_prefix}.test.catch2_helper)
     if (NOT TARGET ${config_c2h_target})
-      add_library(${config_c2h_target} SHARED c2h/generators.cu)
+      add_library(${config_c2h_target} STATIC c2h/generators.cu)
       target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand)
       set_property(TARGET ${config_c2h_target}
         PROPERTY POSITION_INDEPENDENT_CODE ON
       )
 
       if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
-        target_link_options(${config_c2h_target} PRIVATE "-shared")
         target_link_options(${config_c2h_target} PRIVATE "-cuda")
         target_compile_options(${config_c2h_target} PRIVATE "-fPIC")
       endif()

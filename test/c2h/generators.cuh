@@ -33,16 +33,6 @@
 
 #include <c2h/custom_type.cuh>
 
-#ifdef _WIN32
-#ifdef C2H_EXPORTS
-#define C2H_API __declspec(dllexport)
-#else // !LIBRARY_EXPORTS
-#define C2H_API __declspec(dllimport)
-#endif // LIBRARY_EXPORTS
-#else // !_WIN32
-#define C2H_API 
-#endif // _WIN32
-
 namespace c2h
 {
 
@@ -74,12 +64,12 @@ class modulo_t : public detail::value_wrapper_t<std::size_t>
 namespace detail
 {
   
-C2H_API void gen(seed_t seed,
-                 char* data,
-                 c2h::custom_type_state_t min,
-                 c2h::custom_type_state_t max,
-                 std::size_t elements,
-                 std::size_t element_size);
+void gen(seed_t seed,
+         char* data,
+         c2h::custom_type_state_t min,
+         c2h::custom_type_state_t max,
+         std::size_t elements,
+         std::size_t element_size);
 
 }
 
@@ -100,13 +90,13 @@ void gen(
 }
 
 template <typename T>
-C2H_API void gen(seed_t seed,
-                 thrust::device_vector<T> &data,
-                 T min = std::numeric_limits<T>::min(),
-                 T max = std::numeric_limits<T>::max());
+void gen(seed_t seed,
+         thrust::device_vector<T> &data,
+         T min = std::numeric_limits<T>::min(),
+         T max = std::numeric_limits<T>::max());
 
 template <typename T>
-C2H_API void gen(modulo_t mod, thrust::device_vector<T> &data);
+void gen(modulo_t mod, thrust::device_vector<T> &data);
 
 } // c2h
 
