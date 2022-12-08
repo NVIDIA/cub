@@ -76,6 +76,13 @@ function(cub_build_compiler_targets)
     append_option_if_available("-diag-disable=11076" cxx_compile_options)
   endif()
 
+  if ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
+    option(CUB_ENABLE_CT_PROFILING "Enable compilation time profiling" OFF)
+    if (CUB_ENABLE_CT_PROFILING)
+      append_option_if_available("-ftime-trace" cxx_compile_options)
+    endif()
+  endif()
+
   if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
     list(APPEND cxx_compile_options -Mnodaz)
     # TODO: Managed memory is currently not supported on windows with WSL
