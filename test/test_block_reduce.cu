@@ -734,7 +734,7 @@ int main(int argc, char** argv)
 
     // primitives
 #if TEST_VALUE_TYPES == 0
-    Test<char>();
+    Test<signed char>();
     Test<short>();
     Test<int>();
     Test<long long>();

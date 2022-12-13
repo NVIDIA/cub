@@ -1134,7 +1134,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * Define for types
  */
-CUB_VEC_OVERLOAD(char, char)
+CUB_VEC_OVERLOAD(char, signed char)
 CUB_VEC_OVERLOAD(short, short)
 CUB_VEC_OVERLOAD(int, int)
 CUB_VEC_OVERLOAD(long, long)
