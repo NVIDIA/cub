@@ -230,7 +230,7 @@ struct ScanTileState<T, true>
         int     num_tiles,                          ///< [in] Number of tiles
         size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
     {
-        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TxnWord);       // bytes needed for tile status descriptors
         return cudaSuccess;
     }
 
@@ -595,7 +595,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
         int     num_tiles,                          ///< [in] Number of tiles
         size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
     {
-        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TxnWord);       // bytes needed for tile status descriptors
         return cudaSuccess;
     }
 
