@@ -47,7 +47,7 @@ IncludeCategories:
     Priority:        2
   - Regex:           '^<cuda'
     Priority:        3
-  - Regex:           '^<[a-z]*>$'
+  - Regex:           '^<[a-z_]*>$'
     Priority:        4
 IndentCaseLabels: true
 IndentPPDirectives: None

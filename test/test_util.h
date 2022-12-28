@@ -60,6 +60,8 @@
 #include <cub/util_ptx.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 
+#include "test_util_vec.h"
+
 #include <nv/target>
 
 /******************************************************************************
@@ -534,24 +536,6 @@ T RandomValue(T max)
 
 
 /******************************************************************************
- * Console printing utilities
- ******************************************************************************/
-
-/**
- * Helper for casting character types to integers for cout printing
- */
-template <typename T>
-T CoutCast(T val) { return val; }
-
-int CoutCast(char val) { return val; }
-
-int CoutCast(unsigned char val) { return val; }
-
-int CoutCast(signed char val) { return val; }
-
-
-
-/******************************************************************************
  * Test value initialization utilities
  ******************************************************************************/
 
@@ -752,55 +736,11 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * Vector1 overloads
  */
-#define CUB_VEC_OVERLOAD_1(T, BaseT)                        \
-    /* Ostream output */                                    \
-    std::ostream& operator<<(                               \
-        std::ostream& os,                                   \
-        const T& val)                                       \
-    {                                                       \
-        os << '(' << CoutCast(val.x) << ')';                \
-        return os;                                          \
-    }                                                       \
-    /* Inequality */                                        \
-    __host__ __device__ __forceinline__ bool operator!=(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x != b.x);                                \
-    }                                                       \
-    /* Equality */                                          \
-    __host__ __device__ __forceinline__ bool operator==(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x == b.x);                                \
-    }                                                       \
+#define CUB_VEC_OVERLOAD_1_OLD(T, BaseT)                    \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
-    }                                                       \
-    /* Max */                                               \
-    __host__ __device__ __forceinline__ bool operator>(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x > b.x);                                 \
-    }                                                       \
-    /* Min */                                               \
-    __host__ __device__ __forceinline__ bool operator<(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x < b.x);                                 \
-    }                                                       \
-    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                       \
-    __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                                \
-        T b)                                                \
-    {                                                       \
-        T retval = make_##T(a.x + b.x);                     \
-        return retval;                                      \
     }                                                       \
     CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
@@ -831,64 +771,12 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * Vector2 overloads
  */
-#define CUB_VEC_OVERLOAD_2(T, BaseT)                        \
-    /* Ostream output */                                    \
-    std::ostream& operator<<(                               \
-        std::ostream& os,                                   \
-        const T& val)                                       \
-    {                                                       \
-        os << '('                                           \
-            << CoutCast(val.x) << ','                       \
-            << CoutCast(val.y) << ')';                      \
-        return os;                                          \
-    }                                                       \
-    /* Inequality */                                        \
-    __host__ __device__ __forceinline__ bool operator!=(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x != b.x) ||                              \
-            (a.y != b.y);                                   \
-    }                                                       \
-    /* Equality */                                          \
-    __host__ __device__ __forceinline__ bool operator==(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x == b.x) &&                              \
-            (a.y == b.y);                                   \
-    }                                                       \
+#define CUB_VEC_OVERLOAD_2_OLD(T, BaseT)                    \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
-    }                                                       \
-    /* Max */                                               \
-    __host__ __device__ __forceinline__ bool operator>(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
-        return a.y > b.y;                                               \
-    }                                                       \
-    /* Min */                                               \
-    __host__ __device__ __forceinline__ bool operator<(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
-        return a.y < b.y;                                               \
-    }                                                       \
-    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
-    __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                         \
-        T b)                                         \
-    {                                                       \
-        T retval = make_##T(                                        \
-            a.x + b.x,                                      \
-            a.y + b.y);                                     \
-        return retval;                                      \
     }                                                       \
     CUB_NAMESPACE_BEGIN                                         \
     template<>                                              \
@@ -921,71 +809,13 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * Vector3 overloads
  */
-#define CUB_VEC_OVERLOAD_3(T, BaseT)                        \
-    /* Ostream output */                                    \
-    std::ostream& operator<<(                               \
-        std::ostream& os,                                   \
-        const T& val)                                       \
-    {                                                       \
-        os << '('                                           \
-            << CoutCast(val.x) << ','                       \
-            << CoutCast(val.y) << ','                       \
-            << CoutCast(val.z) << ')';                      \
-        return os;                                          \
-    }                                                       \
-    /* Inequality */                                        \
-    __host__ __device__ __forceinline__ bool operator!=(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x != b.x) ||                              \
-            (a.y != b.y) ||                                 \
-            (a.z != b.z);                                   \
-    }                                                       \
-    /* Equality */                                          \
-    __host__ __device__ __forceinline__ bool operator==(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x == b.x) &&                              \
-            (a.y == b.y) &&                                 \
-            (a.z == b.z);                                   \
-    }                                                       \
+#define CUB_VEC_OVERLOAD_3_OLD(T, BaseT)                    \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
         InitValue(gen_mode, value.z, index);                \
-    }                                                       \
-    /* Max */                                               \
-    __host__ __device__ __forceinline__ bool operator>(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
-        if (a.y > b.y) return true; else if (b.y > a.y) return false;   \
-        return a.z > b.z;                                               \
-    }                                                       \
-    /* Min */                                               \
-    __host__ __device__ __forceinline__ bool operator<(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
-        if (a.y < b.y) return true; else if (b.y < a.y) return false;   \
-        return a.z < b.z;                                               \
-    }                                                       \
-    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
-    __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                                \
-        T b)                                                \
-    {                                                       \
-        T retval = make_##T(                                        \
-            a.x + b.x,                                      \
-            a.y + b.y,                                      \
-            a.z + b.z);                                     \
-        return retval;                                      \
     }                                                       \
     CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
@@ -1019,39 +849,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * Vector4 overloads
  */
-#define CUB_VEC_OVERLOAD_4(T, BaseT)                        \
-    /* Ostream output */                                    \
-    std::ostream& operator<<(                               \
-        std::ostream& os,                                   \
-        const T& val)                                       \
-    {                                                       \
-        os << '('                                           \
-            << CoutCast(val.x) << ','                       \
-            << CoutCast(val.y) << ','                       \
-            << CoutCast(val.z) << ','                       \
-            << CoutCast(val.w) << ')';                      \
-        return os;                                          \
-    }                                                       \
-    /* Inequality */                                        \
-    __host__ __device__ __forceinline__ bool operator!=(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x != b.x) ||                              \
-            (a.y != b.y) ||                                 \
-            (a.z != b.z) ||                                 \
-            (a.w != b.w);                                   \
-    }                                                       \
-    /* Equality */                                          \
-    __host__ __device__ __forceinline__ bool operator==(    \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        return (a.x == b.x) &&                              \
-            (a.y == b.y) &&                                 \
-            (a.z == b.z) &&                                 \
-            (a.w == b.w);                                   \
-    }                                                       \
+#define CUB_VEC_OVERLOAD_4_OLD(T, BaseT)                    \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
@@ -1059,38 +857,6 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
         InitValue(gen_mode, value.y, index);                \
         InitValue(gen_mode, value.z, index);                \
         InitValue(gen_mode, value.w, index);                \
-    }                                                       \
-    /* Max */                                               \
-    __host__ __device__ __forceinline__ bool operator>(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
-        if (a.y > b.y) return true; else if (b.y > a.y) return false;   \
-        if (a.z > b.z) return true; else if (b.z > a.z) return false;   \
-        return a.w > b.w;                                               \
-    }                                                       \
-    /* Min */                                               \
-    __host__ __device__ __forceinline__ bool operator<(     \
-        const T &a,                                         \
-        const T &b)                                         \
-    {                                                       \
-        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
-        if (a.y < b.y) return true; else if (b.y < a.y) return false;   \
-        if (a.z < b.z) return true; else if (b.z < a.z) return false;   \
-        return a.w < b.w;                                               \
-    }                                                       \
-    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
-    __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                                \
-        T b)                                                \
-    {                                                       \
-        T retval = make_##T(                                        \
-            a.x + b.x,                                      \
-            a.y + b.y,                                      \
-            a.z + b.z,                                      \
-            a.w + b.w);                                     \
-        return retval;                                      \
     }                                                       \
     CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
@@ -1125,28 +891,27 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
 /**
  * All vector overloads
  */
-#define CUB_VEC_OVERLOAD(COMPONENT_T, BaseT)                    \
-    CUB_VEC_OVERLOAD_1(COMPONENT_T##1, BaseT)                   \
-    CUB_VEC_OVERLOAD_2(COMPONENT_T##2, BaseT)                   \
-    CUB_VEC_OVERLOAD_3(COMPONENT_T##3, BaseT)                   \
-    CUB_VEC_OVERLOAD_4(COMPONENT_T##4, BaseT)
+#define CUB_VEC_OVERLOAD_OLD(COMPONENT_T, BaseT)                \
+    CUB_VEC_OVERLOAD_1_OLD(COMPONENT_T##1, BaseT)               \
+    CUB_VEC_OVERLOAD_2_OLD(COMPONENT_T##2, BaseT)               \
+    CUB_VEC_OVERLOAD_3_OLD(COMPONENT_T##3, BaseT)               \
+    CUB_VEC_OVERLOAD_4_OLD(COMPONENT_T##4, BaseT)
 
 /**
  * Define for types
  */
-CUB_VEC_OVERLOAD(char, signed char)
-CUB_VEC_OVERLOAD(short, short)
-CUB_VEC_OVERLOAD(int, int)
-CUB_VEC_OVERLOAD(long, long)
-CUB_VEC_OVERLOAD(longlong, long long)
-CUB_VEC_OVERLOAD(uchar, unsigned char)
-CUB_VEC_OVERLOAD(ushort, unsigned short)
-CUB_VEC_OVERLOAD(uint, unsigned int)
-CUB_VEC_OVERLOAD(ulong, unsigned long)
-CUB_VEC_OVERLOAD(ulonglong, unsigned long long)
-CUB_VEC_OVERLOAD(float, float)
-CUB_VEC_OVERLOAD(double, double)
-
+CUB_VEC_OVERLOAD_OLD(char, signed char)
+CUB_VEC_OVERLOAD_OLD(short, short)
+CUB_VEC_OVERLOAD_OLD(int, int)
+CUB_VEC_OVERLOAD_OLD(long, long)
+CUB_VEC_OVERLOAD_OLD(longlong, long long)
+CUB_VEC_OVERLOAD_OLD(uchar, unsigned char)
+CUB_VEC_OVERLOAD_OLD(ushort, unsigned short)
+CUB_VEC_OVERLOAD_OLD(uint, unsigned int)
+CUB_VEC_OVERLOAD_OLD(ulong, unsigned long)
+CUB_VEC_OVERLOAD_OLD(ulonglong, unsigned long long)
+CUB_VEC_OVERLOAD_OLD(float, float)
+CUB_VEC_OVERLOAD_OLD(double, double)
 
 //---------------------------------------------------------------------
 // Complex data type TestFoo

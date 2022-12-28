@@ -51,6 +51,7 @@ endif()
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
+
 # This is needed for NVCXX QA, which requires a static set of executable names.
 # Only a single dialect may be enabled when this is off.
 option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
