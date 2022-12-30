@@ -32,7 +32,7 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <cub/cub.cuh>
+#include <cub/device/device_merge_sort.cuh>
 #include <cub/util_allocator.cuh>
 
 #include <thrust/device_vector.h>

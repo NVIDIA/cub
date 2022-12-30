@@ -269,6 +269,16 @@ struct ScanTileState<T, true>
         value = tile_descriptor.value;
     }
 
+    /**
+     * Loads and returns the tile's value. The returned value is undefined if either (a) the tile's status is invalid or
+     * (b) there is no memory fence between reading a non-invalid status and the call to LoadValid.
+     */
+     __device__ __forceinline__ T LoadValid(int tile_idx)                        
+    {                                                                           
+        TxnWord alias = d_tile_descriptors[TILE_STATUS_PADDING + tile_idx];
+        TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+        return tile_descriptor.value;                                           
+    }
 };
 
 
@@ -425,6 +435,15 @@ struct ScanTileState<T, false>
             value = ThreadLoad<LOAD_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx);
         else
             value = ThreadLoad<LOAD_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx);
+    }
+
+    /**
+     * Loads and returns the tile's value. The returned value is undefined if either (a) the tile's status is invalid or
+     * (b) there is no memory fence between reading a non-invalid status and the call to LoadValid.
+     */
+    __device__ __forceinline__ T LoadValid(int tile_idx)                        
+    {                                                                           
+        return d_tile_inclusive[TILE_STATUS_PADDING + tile_idx];                                          
     }
 };
 
