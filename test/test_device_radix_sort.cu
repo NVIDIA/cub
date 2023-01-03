@@ -2006,6 +2006,9 @@ int main(int argc, char** argv)
 #if CUB_IS_INT128_ENABLED 
     TestGen<__int128_t,  false>(num_items, num_segments);
     TestGen<__uint128_t, false>(num_items, num_segments);
+#else
+    // Fix unused static function for MSVC
+    BackendToString(CUB);
 #endif
 
 #endif // TEST_KEY_BYTES switch
