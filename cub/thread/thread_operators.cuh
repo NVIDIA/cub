@@ -69,7 +69,7 @@ struct InequalityWrapper
   template <typename T, typename U>
   __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u)
   {
-    return !op(std::forward<T>(t), std::forward<U>(u));
+    return !op(::cuda::std::forward<T>(t), ::cuda::std::forward<U>(u));
   }
 };
 
@@ -377,10 +377,10 @@ struct BinaryFlip
 
   template <typename T, typename U>
   __device__ auto
-  operator()(T &&t, U &&u) -> decltype(binary_op(std::forward<U>(u),
-                                                 std::forward<T>(t)))
+  operator()(T &&t, U &&u) -> decltype(binary_op(::cuda::std::forward<U>(u),
+                                                 ::cuda::std::forward<T>(t)))
   {
-    return binary_op(std::forward<U>(u), std::forward<T>(t));
+    return binary_op(::cuda::std::forward<U>(u), ::cuda::std::forward<T>(t));
   }
 };
 

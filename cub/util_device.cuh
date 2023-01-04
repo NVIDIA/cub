@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <cuda/std/utility>
+
 #include <cub/detail/device_synchronize.cuh>
 #include <cub/util_arch.cuh>
 #include <cub/util_cpp_dialect.cuh>
@@ -282,7 +284,7 @@ public:
 
                 // We don't use `CubDebug` here because we let the user code
                 // decide whether or not errors are hard errors.
-                payload.error = std::forward<Invocable>(f)(payload.attribute);
+                payload.error = ::cuda::std::forward<Invocable>(f)(payload.attribute);
                 if (payload.error)
                     // Clear the global CUDA error state which may have been
                     // set by the last call. Otherwise, errors may "leak" to
