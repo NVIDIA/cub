@@ -347,7 +347,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &exclusive_output)  ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        T initial_value = 0;
+        T initial_value {};
         ExclusiveScan(input, exclusive_output, initial_value, cub::Sum());
     }
 
@@ -393,7 +393,7 @@ public:
         T               &exclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        T initial_value = 0;
+        T initial_value {};
         ExclusiveScan(input, exclusive_output, initial_value, cub::Sum(), warp_aggregate);
     }
 
