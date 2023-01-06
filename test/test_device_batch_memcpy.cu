@@ -312,9 +312,9 @@ void RunTest(BufferOffsetT num_buffers,
   using RandomInitAliasT         = uint16_t;
   std::size_t num_aliased_factor = sizeof(RandomInitAliasT) / sizeof(uint8_t);
   std::size_t num_aliased_units  = CUB_QUOTIENT_CEILING(num_total_bytes, num_aliased_factor);
-  std::unique_ptr<uint8_t> h_in(new uint8_t[num_aliased_units * num_aliased_factor]);
-  std::unique_ptr<uint8_t> h_out(new uint8_t[num_total_bytes]);
-  std::unique_ptr<uint8_t> h_gpu_results(new uint8_t[num_total_bytes]);
+  std::unique_ptr<uint8_t[]> h_in(new uint8_t[num_aliased_units * num_aliased_factor]);
+  std::unique_ptr<uint8_t[]> h_out(new uint8_t[num_total_bytes]);
+  std::unique_ptr<uint8_t[]> h_gpu_results(new uint8_t[num_total_bytes]);
 
   // Generate random offsets into the random-bits data buffer
   GenerateRandomData(reinterpret_cast<RandomInitAliasT *>(h_in.get()), num_aliased_units);

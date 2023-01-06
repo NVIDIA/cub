@@ -904,15 +904,11 @@ void InitializeSolution(
             // Mask off unwanted portions
             if (num_bits < static_cast<int>(sizeof(KeyT) * 8))
             {
-#if CUB_IS_INT128_ENABLED
-                __uint128_t base = 0;
+                using UnsignedBits = typename cub::Traits<KeyT>::UnsignedBits;
+
+                UnsignedBits base = 0;
                 memcpy(&base, &h_keys[i], sizeof(KeyT));
-                base &= ((__uint128_t{1} << num_bits) - 1) << begin_bit;
-#else 
-                unsigned long long base = 0;
-                memcpy(&base, &h_keys[i], sizeof(KeyT));
-                base &= ((1ull << num_bits) - 1) << begin_bit;
-#endif
+                base &= ((UnsignedBits{1} << num_bits) - 1) << begin_bit;
                 memcpy(&h_pairs[i].key, &base, sizeof(KeyT));
             }
             else
