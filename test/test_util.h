@@ -733,14 +733,14 @@ static std::ostream& operator<<(std::ostream& os, __uint128_t val)
 {
   constexpr int max_digits = 40;
   char buffer[max_digits] = {};
-  char* digit = buffer + max_digits - 1;
+  char* digit = buffer + max_digits;
   const char* ascii = "0123456789";
 
   do 
   {
+    digit--;
     *digit = ascii[val % 10];
     val /= 10;
-    digit--;
   }
   while(val != 0);
 
