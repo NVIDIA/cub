@@ -38,8 +38,10 @@
 #pragma once
 
 #include <cub/config.cuh>
+#include <cub/util_cpp_dialect.cuh>
 #include <cub/util_type.cuh>
 
+#include <cuda/std/functional>
 #include <cuda/std/type_traits>
 #include <cuda/std/utility>
 
@@ -51,6 +53,33 @@ CUB_NAMESPACE_BEGIN
  * @{
  */
 
+/// @brief Inequality functor (wraps equality functor)
+template <typename EqualityOp>
+struct InequalityWrapper
+{
+  /// Wrapped equality operator
+  EqualityOp op;
+
+  /// Constructor
+  __host__ __device__ __forceinline__ InequalityWrapper(EqualityOp op)
+      : op(op)
+  {}
+
+  /// Boolean inequality operator, returns `t != u`
+  template <typename T, typename U>
+  __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u)
+  {
+    return !op(::cuda::std::forward<T>(t), ::cuda::std::forward<U>(u));
+  }
+};
+
+#if CUB_CPP_DIALECT > 2011
+using Equality = ::cuda::std::equal_to<>;
+using Inequality = ::cuda::std::not_equal_to<>;
+using Sum = ::cuda::std::plus<>;
+using Difference = ::cuda::std::minus<>;
+using Division = ::cuda::std::divides<>;
+#else
 /// @brief Default equality functor
 struct Equality
 {
@@ -70,26 +99,6 @@ struct Inequality
   __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u) const
   {
     return ::cuda::std::forward<T>(t) != ::cuda::std::forward<U>(u);
-  }
-};
-
-/// @brief Inequality functor (wraps equality functor)
-template <typename EqualityOp>
-struct InequalityWrapper
-{
-  /// Wrapped equality operator
-  EqualityOp op;
-
-  /// Constructor
-  __host__ __device__ __forceinline__ InequalityWrapper(EqualityOp op)
-      : op(op)
-  {}
-
-  /// Boolean inequality operator, returns `t != u`
-  template <typename T, typename U>
-  __host__ __device__ __forceinline__ bool operator()(T &&t, U &&u)
-  {
-    return !op(std::forward<T>(t), std::forward<U>(u));
   }
 };
 
@@ -128,6 +137,7 @@ struct Division
     return ::cuda::std::forward<T>(t) / ::cuda::std::forward<U>(u);
   }
 };
+#endif
 
 /// @brief Default max functor
 struct Max
@@ -367,10 +377,10 @@ struct BinaryFlip
 
   template <typename T, typename U>
   __device__ auto
-  operator()(T &&t, U &&u) -> decltype(binary_op(std::forward<U>(u),
-                                                 std::forward<T>(t)))
+  operator()(T &&t, U &&u) -> decltype(binary_op(::cuda::std::forward<U>(u),
+                                                 ::cuda::std::forward<T>(t)))
   {
-    return binary_op(std::forward<U>(u), std::forward<T>(t));
+    return binary_op(::cuda::std::forward<U>(u), ::cuda::std::forward<T>(t));
   }
 };
 
