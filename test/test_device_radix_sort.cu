@@ -904,9 +904,11 @@ void InitializeSolution(
             // Mask off unwanted portions
             if (num_bits < static_cast<int>(sizeof(KeyT) * 8))
             {
-                unsigned long long base = 0;
+                using UnsignedBits = typename cub::Traits<KeyT>::UnsignedBits;
+
+                UnsignedBits base = 0;
                 memcpy(&base, &h_keys[i], sizeof(KeyT));
-                base &= ((1ull << num_bits) - 1) << begin_bit;
+                base &= ((UnsignedBits{1} << num_bits) - 1) << begin_bit;
                 memcpy(&h_pairs[i].key, &base, sizeof(KeyT));
             }
             else
@@ -1929,7 +1931,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // %PARAM% TEST_CDP cdp 0:1
-    // %PARAM% TEST_KEY_BYTES bytes 1:2:4:8
+    // %PARAM% TEST_KEY_BYTES bytes 1:2:4:8:16
     // %PARAM% TEST_VALUE_TYPE pairs 0:1:2:3
     //   0->Keys only
     //   1->uchar
@@ -1994,6 +1996,16 @@ int main(int argc, char** argv)
     TestGen<long long, false>         (num_items, num_segments);
     TestGen<unsigned long long, false>(num_items, num_segments);
 #endif // TEST_EXTENDED_KEY_TYPES
+
+#elif TEST_KEY_BYTES == 16
+
+#if CUB_IS_INT128_ENABLED 
+    TestGen<__int128_t,  false>(num_items, num_segments);
+    TestGen<__uint128_t, false>(num_items, num_segments);
+#else
+    // Fix unused static function for MSVC
+    BackendToString(CUB);
+#endif
 
 #endif // TEST_KEY_BYTES switch
 

@@ -159,9 +159,9 @@ void TestDriver(GenMode gen_mode)
   constexpr int tile_size = BlockThreads * ItemsPerThread;
 
   // Allocate host arrays
-  std::unique_ptr<Key> h_keys(new Key[tile_size]);
-  std::unique_ptr<int> h_ranks(new int[tile_size]);
-  std::unique_ptr<int> h_reference_ranks(new int[tile_size]);
+  std::unique_ptr<Key[]> h_keys(new Key[tile_size]);
+  std::unique_ptr<int[]> h_ranks(new int[tile_size]);
+  std::unique_ptr<int[]> h_reference_ranks(new int[tile_size]);
 
   // Allocate device arrays
   Key *d_keys  = nullptr;

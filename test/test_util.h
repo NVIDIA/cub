@@ -728,6 +728,43 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
     return os;
 }
 
+#if CUB_IS_INT128_ENABLED
+static std::ostream& operator<<(std::ostream& os, __uint128_t val)
+{
+  constexpr int max_digits = 40;
+  char buffer[max_digits] = {};
+  char* digit = buffer + max_digits;
+  const char* ascii = "0123456789";
+
+  do 
+  {
+    digit--;
+    *digit = ascii[val % 10];
+    val /= 10;
+  }
+  while(val != 0);
+
+  for (; digit != buffer + max_digits; digit++) {
+    os << *digit;
+  }
+
+  return os;
+}
+
+static std::ostream& operator<<(std::ostream& os, __int128_t val)
+{
+  if (val < 0) {
+    __uint128_t tmp = -val;
+    os << '-' << tmp;
+  } else {
+    __uint128_t tmp = val;
+    os << tmp;
+  }
+
+  return os;
+}
+#endif
+
 
 /******************************************************************************
  * Comparison and ostream operators for CUDA vector types

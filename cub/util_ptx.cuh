@@ -138,6 +138,22 @@ __device__ __forceinline__ unsigned int BFE(
     return (source >> bit_start) & MASK;
 }
 
+#if CUB_IS_INT128_ENABLED 
+/**
+ * Bitfield-extract for 128-bit types.
+ */
+template <typename UnsignedBits>
+__device__ __forceinline__ unsigned int BFE(
+    UnsignedBits            source,
+    unsigned int            bit_start,
+    unsigned int            num_bits,
+    Int2Type<16>            /*byte_len*/)
+{
+    const __uint128_t MASK = (__uint128_t{1} << num_bits) - 1;
+    return (source >> bit_start) & MASK;
+}
+#endif
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
