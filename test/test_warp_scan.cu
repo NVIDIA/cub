@@ -124,7 +124,8 @@ __device__ __forceinline__ void DeviceTest(
 /// Exclusive sum basic
 template <
     typename    WarpScanT,
-    typename    T>
+    typename    T,
+    typename    IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
     WarpScanT                       &warp_scan,
     T                               &data,
@@ -132,7 +133,7 @@ __device__ __forceinline__ void DeviceTest(
     Sum                             &scan_op,
     T                               &aggregate,
     Int2Type<BASIC>                 test_mode,
-    Int2Type<true>                  is_primitive)
+    IsPrimitiveT                    is_primitive)
 {
     // Test basic warp scan
     warp_scan.ExclusiveSum(data, data);
@@ -142,7 +143,8 @@ __device__ __forceinline__ void DeviceTest(
 /// Exclusive sum aggregate
 template <
     typename    WarpScanT,
-    typename    T>
+    typename    T,
+    typename    IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
     WarpScanT                       &warp_scan,
     T                               &data,
@@ -150,7 +152,7 @@ __device__ __forceinline__ void DeviceTest(
     Sum                             &scan_op,
     T                               &aggregate,
     Int2Type<AGGREGATE>             test_mode,
-    Int2Type<true>                  is_primitive)
+    IsPrimitiveT                    is_primitive)
 {
     // Test with cumulative aggregate
     warp_scan.ExclusiveSum(data, data, aggregate);
