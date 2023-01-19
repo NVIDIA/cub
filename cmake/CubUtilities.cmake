@@ -4,6 +4,7 @@ function(cub_enable_rdc_for_cuda_target target_name)
     set_target_properties(${target_name} PROPERTIES
       COMPILE_FLAGS "-gpu=rdc"
     )
+  elseif ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
   else()
     set_target_properties(${target_name} PROPERTIES
       CUDA_SEPARABLE_COMPILATION ON

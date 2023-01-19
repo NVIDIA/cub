@@ -97,6 +97,8 @@ else() # NOT CUB_IN_THRUST
           )
         endif()
         set(arch_flag "-gpu=cc${arch}")
+      elseif ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
+        set(arch_flag "--cuda-gpu-arch=sm_${arch}")
       else()
         set(arch_flag "-gencode arch=compute_${arch},code=sm_${arch}")
       endif()
@@ -179,6 +181,15 @@ if (rdc_requested AND NOT rdc_supported)
     "these options:\n${opts}"
   )
 endif()
+
+
+# 
+# Clang CUDA options 
+#
+if ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
+set(CUB_CUDA_FLAGS_BASE "${CUB_CUDA_FLAGS_BASE} -Wno-unknown-cuda-version -Xclang=-fcuda-allow-variadic-functions")
+endif()
+
 
 # By default RDC is not used:
 set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_NO_RDC}")
