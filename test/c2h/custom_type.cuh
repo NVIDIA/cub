@@ -48,7 +48,7 @@ public:
   __host__ __device__ std::size_t get_val() const { return m_val; }
 };
 
-template <template<typename> typename... Policies>
+template <template<typename> class... Policies>
 class custom_type_t : public custom_type_state_t
                     , public Policies<custom_type_t<Policies...>>...
 {
@@ -139,7 +139,7 @@ public:
 } // c2h
 
 namespace std {
-  template<template<typename> typename... Policies> 
+  template<template<typename> class... Policies> 
   class numeric_limits<c2h::custom_type_t<Policies...>> 
   {
   public:
