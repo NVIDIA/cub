@@ -46,6 +46,36 @@
 CUB_NAMESPACE_BEGIN
 
 
+namespace detail 
+{
+
+template <class A = int, class T = A>
+struct reduce_add_exists : std::false_type 
+{};
+
+template <class A>
+struct reduce_add_exists<A, decltype(__reduce_add_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+{};
+
+template <class A = int, class T = A>
+struct reduce_min_exists : std::false_type 
+{};
+
+template <class A>
+struct reduce_min_exists<A, decltype(__reduce_min_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+{};
+
+template <class A = int, class T = A>
+struct reduce_max_exists : std::false_type 
+{};
+
+template <class A>
+struct reduce_max_exists<A, decltype(__reduce_max_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+{};
+
+}
+
+
 /**
  * \brief WarpReduceShfl provides SHFL-based variants of parallel reduction of items partitioned across a CUDA thread warp.
  *
@@ -421,13 +451,11 @@ struct WarpReduceShfl
         return output;
     }
 
-    // Warp reduce functions are not supported by nvc++ (NVBug 3694682)
-#ifndef _NVHPC_CUDA 
     template <class U = T>
     __device__ __forceinline__ 
     typename std::enable_if<
-               std::is_same<int, U>::value 
-            || std::is_same<unsigned int, U>::value, T>::type
+               (std::is_same<int, U>::value || std::is_same<unsigned int, U>::value)
+            && detail::reduce_add_exists<>::value, T>::type
     ReduceImpl(Int2Type<1> /* all_lanes_valid */,
                T input,
                int /* valid_items */,
@@ -448,8 +476,8 @@ struct WarpReduceShfl
     template <class U = T>
     __device__ __forceinline__ 
     typename std::enable_if<
-               std::is_same<int, U>::value 
-            || std::is_same<unsigned int, U>::value, T>::type
+               (std::is_same<int, U>::value || std::is_same<unsigned int, U>::value)
+            && detail::reduce_min_exists<>::value, T>::type
     ReduceImpl(Int2Type<1> /* all_lanes_valid */,
                T input,
                int /* valid_items */,
@@ -470,8 +498,8 @@ struct WarpReduceShfl
     template <class U = T>
     __device__ __forceinline__ 
     typename std::enable_if<
-               std::is_same<int, U>::value 
-            || std::is_same<unsigned int, U>::value, T>::type
+               (std::is_same<int, U>::value || std::is_same<unsigned int, U>::value)
+            && detail::reduce_max_exists<>::value, T>::type
     ReduceImpl(Int2Type<1> /* all_lanes_valid */,
                T input,
                int /* valid_items */,
@@ -488,7 +516,6 @@ struct WarpReduceShfl
 
       return output;
     }
-#endif // _NVHPC_CUDA 
 
     /// Reduction
     template <
