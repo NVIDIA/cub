@@ -314,6 +314,12 @@ foreach (test_src IN LISTS test_srcs)
         _cub_has_cdp_variant(explicit_cdp "${label}")
         _cub_is_cdp_enabled_variant(enable_cdp "${label}")
 
+        if (enable_cdp)
+          if (NOT CUB_ENABLE_TESTS_WITH_RDC)
+            continue()
+          endif()
+        endif()
+
         cub_add_test(test_target
           ${test_name}.${label}
           "${test_src}"
