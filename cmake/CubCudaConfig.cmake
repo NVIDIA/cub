@@ -187,7 +187,7 @@ endif()
 # Clang CUDA options 
 #
 if ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
-set(CUB_CUDA_FLAGS_BASE "${CUB_CUDA_FLAGS_BASE} -Wno-unknown-cuda-version -Xclang=-fcuda-allow-variadic-functions")
+  set(CUB_CUDA_FLAGS_BASE "${CUB_CUDA_FLAGS_BASE} -Wno-unknown-cuda-version -Xclang=-fcuda-allow-variadic-functions")
 endif()
 
 

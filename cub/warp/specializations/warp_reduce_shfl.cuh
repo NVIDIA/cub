@@ -39,8 +39,8 @@
 #include "../../util_type.cuh"
 
 #include <stdint.h>
-#include <type_traits>
 
+#include <cuda/std/type_traits>
 #include <nv/target>
 
 CUB_NAMESPACE_BEGIN
@@ -49,28 +49,28 @@ CUB_NAMESPACE_BEGIN
 namespace detail 
 {
 
-template <class A = int, class T = A>
-struct reduce_add_exists : std::false_type 
+template <class A = int, class = A>
+struct reduce_add_exists : ::cuda::std::false_type 
 {};
 
-template <class A>
-struct reduce_add_exists<A, decltype(__reduce_add_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+template <class T>
+struct reduce_add_exists<T, decltype(__reduce_add_sync(0xFFFFFFFF, T{}))> : ::cuda::std::true_type 
 {};
 
-template <class A = int, class T = A>
-struct reduce_min_exists : std::false_type 
+template <class T = int, class = T>
+struct reduce_min_exists : ::cuda::std::false_type 
 {};
 
-template <class A>
-struct reduce_min_exists<A, decltype(__reduce_min_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+template <class T>
+struct reduce_min_exists<T, decltype(__reduce_min_sync(0xFFFFFFFF, T{}))> : ::cuda::std::true_type 
 {};
 
-template <class A = int, class T = A>
-struct reduce_max_exists : std::false_type 
+template <class T = int, class = T>
+struct reduce_max_exists : ::cuda::std::false_type 
 {};
 
-template <class A>
-struct reduce_max_exists<A, decltype(__reduce_max_sync(0xFFFFFFFF, std::declval<A>()))> : std::true_type 
+template <class T>
+struct reduce_max_exists<T, decltype(__reduce_max_sync(0xFFFFFFFF, T{}))> : ::cuda::std::true_type 
 {};
 
 }
