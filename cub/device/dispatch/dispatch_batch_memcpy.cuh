@@ -429,12 +429,12 @@ struct DispatchBatchMemcpy : SelectedPolicy
     auto blev_buffer_scan_slot  = temporary_storage_layout.get_slot(MEM_BLEV_BUFFER_SCAN_STATE);
     auto blev_buffer_block_scan_slot = temporary_storage_layout.get_slot(MEM_BLEV_BLOCK_SCAN_STATE);
 
-    auto blev_buffer_srcs_alloc  = blev_buffer_srcs_slot->create_alias<void *>();
-    auto blev_buffer_dsts_alloc  = blev_buffer_dsts_slot->create_alias<void *>();
-    auto blev_buffer_sizes_alloc = blev_buffer_sizes_slot->create_alias<BufferSizeT>();
-    auto blev_buffer_block_alloc = blev_buffer_block_slot->create_alias<BlockOffsetT>();
-    auto blev_buffer_scan_alloc  = blev_buffer_scan_slot->create_alias<uint8_t>();
-    auto blev_block_scan_alloc   = blev_buffer_block_scan_slot->create_alias<uint8_t>();
+    auto blev_buffer_srcs_alloc  = blev_buffer_srcs_slot->template create_alias<void *>();
+    auto blev_buffer_dsts_alloc  = blev_buffer_dsts_slot->template create_alias<void *>();
+    auto blev_buffer_sizes_alloc = blev_buffer_sizes_slot->template create_alias<BufferSizeT>();
+    auto blev_buffer_block_alloc = blev_buffer_block_slot->template create_alias<BlockOffsetT>();
+    auto blev_buffer_scan_alloc  = blev_buffer_scan_slot->template create_alias<uint8_t>();
+    auto blev_block_scan_alloc   = blev_buffer_block_scan_slot->template create_alias<uint8_t>();
 
     std::size_t buffer_offset_scan_storage = 0;
     std::size_t blev_block_scan_storage    = 0;

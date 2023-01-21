@@ -17,7 +17,7 @@ TEST_CASE("Test utils can print __int128", "[test][utils]")
   REQUIRE( print(__int128_t{42}) == "42" );
   REQUIRE( print(__int128_t{-1}) == "-1" );
   REQUIRE( print(__int128_t{-42}) == "-42" );
-  REQUIRE( print(__int128_t{-1} << 120) == "-1329227995784915872903807060280344576" );
+  REQUIRE( print(-1 * (__int128_t{1} << 120)) == "-1329227995784915872903807060280344576" );
 }
 
 TEST_CASE("Test utils can print __uint128", "[test][utils]")

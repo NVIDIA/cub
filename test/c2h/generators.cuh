@@ -73,7 +73,7 @@ void gen(seed_t seed,
 
 }
 
-template <template <typename> typename... Ps>
+template <template <typename> class... Ps>
 void gen(
   seed_t seed,
   thrust::device_vector<c2h::custom_type_t<Ps...>> &data,
