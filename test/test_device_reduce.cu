@@ -38,6 +38,7 @@
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/thread/thread_operators.cuh>
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
 #include <cub/util_type.cuh>
@@ -48,10 +49,83 @@
 
 #include <cstdio>
 #include <limits>
+#include <type_traits>
 #include <typeinfo>
 
 #include "test_util.h"
 #include <nv/target>
+
+#define TEST_HALF_T \
+  (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+
+#define TEST_BF_T \
+  (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+
+#if TEST_HALF_T
+#include <cuda_fp16.h>
+
+// Half support is provided by SM53+. We currently test against a few older architectures. 
+// The specializations below can be removed once we drop these architectures.  
+namespace cub {
+
+template <>
+__host__ __device__ __forceinline__ //
+__half Min::operator()(__half& a, __half& b) const 
+{
+    NV_IF_TARGET(NV_PROVIDES_SM_53, 
+                    (return CUB_MIN(a, b);),
+                    (return CUB_MIN(__half2float(a), __half2float(b));));
+}
+
+template <>
+__host__ __device__ __forceinline__ //
+KeyValuePair<int, __half> 
+ArgMin::operator()(const KeyValuePair<int, __half> &a, 
+                   const KeyValuePair<int, __half> &b) const 
+{
+    const float av = __half2float(a.value);
+    const float bv = __half2float(b.value);
+
+    if ((bv < av) || ((av == bv) && (b.key < a.key)))
+    {
+      return b;
+    }
+
+    return a;
+}
+
+template <>
+__host__ __device__ __forceinline__ //
+__half Max::operator()(__half& a, __half& b) const 
+{
+    NV_IF_TARGET(NV_PROVIDES_SM_53, 
+                    (return CUB_MAX(a, b);),
+                    (return CUB_MAX(__half2float(a), __half2float(b));));
+}
+
+template <>
+__host__ __device__ __forceinline__ //
+KeyValuePair<int, __half> 
+ArgMax::operator()(const KeyValuePair<int, __half> &a, 
+                   const KeyValuePair<int, __half> &b) const 
+{
+    const float av = __half2float(a.value);
+    const float bv = __half2float(b.value);
+
+    if ((bv > av) || ((av == bv) && (b.key < a.key)))
+    {
+      return b;
+    }
+
+    return a;
+}
+
+} // namespace cub
+#endif
+
+#if TEST_BF_T
+#include <cuda_bf16.h>
+#endif
 
 using namespace cub;
 
@@ -107,8 +181,49 @@ struct CustomMax
     {
         return CUB_MAX(a, b);
     }
+
+#if TEST_HALF_T
+    __host__ __device__ __half operator()(__half& a, __half& b) 
+    {
+        return cub::Max{}(a, b);
+    }
+#endif
 };
 
+// Comparing results computed on CPU and GPU for extended floating point types is impossible. 
+// For instance, when used with a constant iterator of two, the accumulator in sequential reference 
+// computation (CPU) bumps into the 4096 limits, which will never change (`4096 + 2 = 4096`). 
+// Meanwhile, per-thread aggregates (`2 * 16 = 32`) are accumulated within and among thread blocks, 
+// yielding `inf` as a result. No reasonable epsilon can be selected to compare `inf` with `4096`. 
+// To make `__half` and `__nv_bfloat16` arithmetic associative, the function object below raises 
+// extended floating points to the area of unsigned short integers. This allows us to test large 
+// inputs with few code-path differences in device algorithms. 
+struct ExtendedFloatSum
+{
+    template <class T>
+    __host__ __device__ T operator()(T a, T b) const
+    {
+        T result{};
+        result.__x = a.raw() + b.raw();
+        return result;
+    }
+
+#if TEST_HALF_T
+    __host__ __device__ __half operator()(__half a, __half b) const
+    {
+        uint16_t result = this->operator()(half_t{a}, half_t(b)).raw();
+        return reinterpret_cast<__half &>(result);
+    }
+#endif
+
+#if TEST_BF_T
+    __device__ __nv_bfloat16 operator()(__nv_bfloat16 a, __nv_bfloat16 b) const
+    {
+        uint16_t result = this->operator()(bfloat16_t{a}, bfloat16_t(b)).raw();
+        return reinterpret_cast<__nv_bfloat16 &>(result);
+    }
+#endif
+};
 
 //---------------------------------------------------------------------
 // Dispatch to different CUB DeviceReduce entrypoints
@@ -160,26 +275,69 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
-    Int2Type<CUB>       /*dispatch_to*/,
-    int                 timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
+    Int2Type<CUB>         /*dispatch_to*/,
+    int                     timing_iterations,
+    size_t *              /*d_temp_storage_bytes*/,
+    cudaError_t *         /*d_cdp_error*/,
 
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    int                 num_items,
-    int                 /*max_segments*/,
-    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
-    EndOffsetIteratorT  /*d_segment_end_offsets*/,
-    cub::Sum            /*reduction_op*/)
+    void*                   d_temp_storage,
+    size_t&                 temp_storage_bytes,
+    InputIteratorT          d_in,
+    OutputIteratorT         d_out,
+    int                     num_items,
+    int                   /*max_segments*/,
+    BeginOffsetIteratorT  /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT    /*d_segment_end_offsets*/,
+    cub::Sum              /*reduction_op*/)
 {
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
+    }
+
+    return error;
+}
+
+/**
+ * Dispatch to extended fp sum entrypoint
+ */
+template <typename InputIteratorT,
+          typename OutputIteratorT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT>
+CUB_RUNTIME_FUNCTION cudaError_t Dispatch(Int2Type<CUB> /*dispatch_to*/,
+                                          int timing_iterations,
+                                          size_t * /*d_temp_storage_bytes*/,
+                                          cudaError_t * /*d_cdp_error*/,
+
+                                          void *d_temp_storage,
+                                          size_t &temp_storage_bytes,
+                                          InputIteratorT d_in,
+                                          OutputIteratorT d_out,
+                                          int num_items,
+                                          int /*max_segments*/,
+                                          BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+                                          EndOffsetIteratorT /*d_segment_end_offsets*/,
+                                          ExtendedFloatSum reduction_op)
+{
+    using InputT  = cub::detail::value_t<InputIteratorT>;
+    using OutputT = cub::detail::non_void_value_t<OutputIteratorT, InputT>;
+
+    OutputT identity{};
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceReduce::Reduce(d_temp_storage,
+                                     temp_storage_bytes,
+                                     d_in,
+                                     d_out,
+                                     num_items,
+                                     reduction_op,
+                                     identity);
     }
 
     return error;
@@ -382,6 +540,51 @@ cudaError_t Dispatch(
         error = DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes,
             d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets);
     }
+    return error;
+}
+
+/**
+ * Dispatch to extended fp sum entrypoint
+ */
+template <typename InputIteratorT,
+          typename OutputIteratorT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT>
+CUB_RUNTIME_FUNCTION cudaError_t Dispatch(Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
+                                          int timing_iterations,
+                                          size_t * /*d_temp_storage_bytes*/,
+                                          cudaError_t * /*d_cdp_error*/,
+
+                                          void *d_temp_storage,
+                                          size_t &temp_storage_bytes,
+                                          InputIteratorT d_in,
+                                          OutputIteratorT d_out,
+                                          int /*num_items*/,
+                                          int max_segments,
+                                          BeginOffsetIteratorT d_segment_begin_offsets,
+                                          EndOffsetIteratorT d_segment_end_offsets,
+                                          ExtendedFloatSum reduction_op)
+{
+    using InputT  = cub::detail::value_t<InputIteratorT>;
+    using OutputT = cub::detail::non_void_value_t<OutputIteratorT, InputT>;
+
+    OutputT identity{};
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::Reduce(d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_in,
+                                              d_out,
+                                              max_segments,
+                                              d_segment_begin_offsets,
+                                              d_segment_end_offsets,
+                                              reduction_op,
+                                              identity);
+    }
+
     return error;
 }
 
@@ -671,7 +874,6 @@ DEFINE_CDP_DISPATCHER(CDP_SEGMENTED, CUB_SEGMENTED)
 //---------------------------------------------------------------------
 // Problem generation
 //---------------------------------------------------------------------
-
 /// Initialize problem
 template <typename InputT>
 void Initialize(
@@ -746,14 +948,42 @@ struct Solution<cub::Sum, InputT, _OutputT>
     using InitT = OutputT;
     using AccumT = cub::detail::accumulator_t<cub::Sum, InitT, InputT>;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
     static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
-        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, cub::Sum reduction_op)
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, ReductionOpT reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            AccumT aggregate;
-            InitValue(INTEGER_SEED, aggregate, 0);
+            AccumT aggregate{};
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = static_cast<OutputT>(aggregate);
+        }
+    }
+};
+
+template <typename InputT, typename _OutputT>
+struct Solution<ExtendedFloatSum, InputT, _OutputT>
+{
+    using OutputT = _OutputT;
+    using InitT   = OutputT;
+    using AccumT  = cub::detail::accumulator_t<cub::Sum, InitT, InputT>;
+
+    template <typename HostInputIteratorT,
+              typename OffsetT,
+              typename BeginOffsetIteratorT,
+              typename EndOffsetIteratorT,
+              typename ReductionOpT>
+    static void Solve(HostInputIteratorT h_in,
+                      OutputT *h_reference,
+                      OffsetT num_segments,
+                      BeginOffsetIteratorT h_segment_begin_offsets,
+                      EndOffsetIteratorT h_segment_end_offsets,
+                      ReductionOpT reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            AccumT aggregate{};
             for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
             h_reference[i] = static_cast<OutputT>(aggregate);
@@ -813,29 +1043,80 @@ struct Solution<cub::ArgMax, InputValueT, OutputValueT>
 // Problem generation
 //---------------------------------------------------------------------
 
+template <class It>
+It unwrap_it(It it) {
+    return it;
+}
+
+#if TEST_HALF_T
+__half* unwrap_it(half_t *it) {
+    return reinterpret_cast<__half*>(it);
+}
+
+template <class OffsetT>
+ConstantInputIterator<__half, OffsetT> unwrap_it(ConstantInputIterator<half_t, OffsetT> it) {
+    half_t wrapped_val = *it;
+    __half val = wrapped_val.operator __half();
+    return ConstantInputIterator<__half, OffsetT>(val);
+}
+#endif
+
+#if TEST_BF_T
+__nv_bfloat16* unwrap_it(bfloat16_t* it) {
+    return reinterpret_cast<__nv_bfloat16*>(it);
+}
+
+template <class OffsetT>
+ConstantInputIterator<__nv_bfloat16, OffsetT> unwrap_it(ConstantInputIterator<bfloat16_t, OffsetT> it) {
+    bfloat16_t wrapped_val = *it;
+    __nv_bfloat16 val = wrapped_val.operator __nv_bfloat16();
+    return ConstantInputIterator<__nv_bfloat16, OffsetT>(val);
+}
+#endif
+
+template <class WrappedItT, //
+          class ItT = decltype(unwrap_it(std::declval<WrappedItT>()))>
+std::integral_constant<bool, !std::is_same<WrappedItT, ItT>::value> //
+reference_extended_fp(WrappedItT)
+{
+    return {};
+}
+
+ExtendedFloatSum unwrap_op(std::true_type /* extended float */, cub::Sum) //
+{
+    return {};
+}
+
+template <bool V, class OpT>
+OpT unwrap_op(std::integral_constant<bool, V> /* base case */, OpT op)
+{
+    return op;
+}
+
 /// Test DeviceReduce for a given problem input
 template <
     typename                BackendT,
-    typename                DeviceInputIteratorT,
-    typename                DeviceOutputIteratorT,
+    typename                DeviceWrappedInputIteratorT,
+    typename                DeviceWrappedOutputIteratorT,
     typename                HostReferenceIteratorT,
     typename                OffsetT,
     typename                BeginOffsetIteratorT,
     typename                EndOffsetIteratorT,
     typename                ReductionOpT>
 void Test(
-    BackendT                backend,
-    DeviceInputIteratorT    d_in,
-    DeviceOutputIteratorT   d_out,
-    OffsetT                 num_items,
-    OffsetT                 num_segments,
-    BeginOffsetIteratorT    d_segment_begin_offsets,
-    EndOffsetIteratorT      d_segment_end_offsets,
-    ReductionOpT            reduction_op,
-    HostReferenceIteratorT  h_reference)
+    BackendT                        backend,
+    DeviceWrappedInputIteratorT     d_wrapped_in,
+    DeviceWrappedOutputIteratorT    d_wrapped_out,
+    OffsetT                         num_items,
+    OffsetT                         num_segments,
+    BeginOffsetIteratorT            d_segment_begin_offsets,
+    EndOffsetIteratorT              d_segment_end_offsets,
+    ReductionOpT                    reduction_op,
+    HostReferenceIteratorT          h_reference)
 {
     // Input data types
-    using InputT = cub::detail::value_t<DeviceInputIteratorT>;
+    auto d_in = unwrap_it(d_wrapped_in);
+    auto d_out = unwrap_it(d_wrapped_out);
 
     // Allocate CDP device arrays for temp storage size and error
     size_t          *d_temp_storage_bytes = NULL;
@@ -861,7 +1142,7 @@ void Test(
         reduction_op));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_out, num_segments, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(h_reference, d_wrapped_out, num_segments, g_verbose, g_verbose);
 
     printf("\t%s", compare ? "FAIL" : "PASS");
 
@@ -886,7 +1167,7 @@ void Test(
         // Display performance
         float avg_millis = elapsed_millis / g_timing_iterations;
         float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
-        float giga_bandwidth = giga_rate * sizeof(InputT);
+        float giga_bandwidth = giga_rate * sizeof(h_reference[0]);
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak",
             avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
 
@@ -900,30 +1181,28 @@ void Test(
     AssertEquals(0, compare);
 }
 
-
-/// Test DeviceReduce
-template <
-    Backend                 BACKEND,
-    typename                OutputValueT,
-    typename                HostInputIteratorT,
-    typename                DeviceInputIteratorT,
-    typename                OffsetT,
-    typename                BeginOffsetIteratorT,
-    typename                EndOffsetIteratorT,
-    typename                ReductionOpT>
-void SolveAndTest(
-    HostInputIteratorT      h_in,
-    DeviceInputIteratorT    d_in,
-    OffsetT                 num_items,
-    OffsetT                 num_segments,
-    BeginOffsetIteratorT    h_segment_begin_offsets,
-    EndOffsetIteratorT      h_segment_end_offsets,
-    BeginOffsetIteratorT    d_segment_begin_offsets,
-    EndOffsetIteratorT      d_segment_end_offsets,
-    ReductionOpT            reduction_op)
+template <Backend BACKEND,
+          typename OutputValueT,
+          typename HostInputIteratorT,
+          typename DeviceInputIteratorT,
+          typename OffsetT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename ReductionOpT>
+void SolveAndTest(HostInputIteratorT h_in,
+                  DeviceInputIteratorT d_in,
+                  OffsetT num_items,
+                  OffsetT num_segments,
+                  BeginOffsetIteratorT h_segment_begin_offsets,
+                  EndOffsetIteratorT h_segment_end_offsets,
+                  BeginOffsetIteratorT d_segment_begin_offsets,
+                  EndOffsetIteratorT d_segment_end_offsets,
+                  ReductionOpT wrapped_reduction_op)
 {
+    auto reduction_op = unwrap_op(reference_extended_fp(d_in), wrapped_reduction_op);
+
     using InputValueT = cub::detail::value_t<DeviceInputIteratorT>;
-    using SolutionT = Solution<ReductionOpT, InputValueT, OutputValueT>;
+    using SolutionT = Solution<decltype(reduction_op), InputValueT, OutputValueT>;
     using OutputT = typename SolutionT::OutputT;
 
     printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
@@ -952,7 +1231,6 @@ void SolveAndTest(
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (h_reference) delete[] h_reference;
 }
-
 
 /// Test specific problem type
 template <
@@ -1121,7 +1399,7 @@ void TestByBackend(
         TransformInputIterator<OffsetT, IdentityOpT, OffsetT*, OffsetT> h_segment_offsets_itr(
             h_segment_offsets,
             identity_op);
-       TransformInputIterator<OffsetT, IdentityOpT, OffsetT*, OffsetT> d_segment_offsets_itr(
+        TransformInputIterator<OffsetT, IdentityOpT, OffsetT*, OffsetT> d_segment_offsets_itr(
             d_segment_offsets,
             identity_op);
 
@@ -1174,7 +1452,7 @@ void TestByGenMode(
 
     InputT val;
     InitValue(UNIFORM, val, 0);
-    ConstantInputIterator<InputT, OffsetT> h_in(val);
+    ConstantInputIterator<InputT, OffsetT> in(val);
 
     OffsetT *h_segment_offsets = new OffsetT[1 + 1];
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
@@ -1185,7 +1463,7 @@ void TestByGenMode(
     constexpr auto Backend   = CDP;
 #endif // TEST_CDP
 
-    SolveAndTest<Backend, OutputT>(h_in, h_in, num_items, 1,
+    SolveAndTest<Backend, OutputT>(in, in, num_items, 1,
         h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL, Sum());
 
     if (h_segment_offsets) delete[] h_segment_offsets;
@@ -1366,6 +1644,7 @@ void TestBigIndices()
   TestBigIndicesHelper<T, std::uint64_t>(1ull << 33);
 }
 
+#if TEST_TYPES == 3
 void TestAccumulatorTypes()
 {
   const int num_items  = 2 * 1024 * 1024;
@@ -1421,6 +1700,7 @@ void TestAccumulatorTypes()
   CubDebugExit(g_allocator.DeviceFree(d_out));
   CubDebugExit(g_allocator.DeviceFree(d_in));
 }
+#endif
 
 template <typename InputT, typename OutputT, typename OffsetT>
 struct GetTileSize
@@ -1503,7 +1783,7 @@ int main(int argc, char** argv)
     g_sm_count = args.deviceProp.multiProcessorCount;
 
     // %PARAM% TEST_CDP cdp 0:1
-    // %PARAM% TEST_TYPES types 0:1:2:3
+    // %PARAM% TEST_TYPES types 0:1:2:3:4
 
 #if TEST_TYPES == 0
     TestType<signed char, signed char>(max_items, max_segments);
@@ -1519,12 +1799,20 @@ int main(int argc, char** argv)
     TestType<uint2, uint2>(max_items, max_segments);
     TestType<ulonglong2, ulonglong2>(max_items, max_segments);
     TestType<ulonglong4, ulonglong4>(max_items, max_segments);
-#else // TEST_TYPES == 3
+#elif TEST_TYPES == 3
     TestType<TestFoo, TestFoo>(max_items, max_segments);
-    TestType<TestBar, TestBar>(max_items, max_segments);
-
     TestAccumulatorTypes();
+
+#if TEST_HALF_T
+    TestType<half_t, half_t>(max_items, max_segments);
+#endif
+#else // TEST_TYPES == 4
+    TestType<TestBar, TestBar>(max_items, max_segments);
     TestBigIndices<std::size_t>();
+
+#if TEST_BF_T
+    TestType<bfloat16_t, bfloat16_t>(max_items, max_segments);
+#endif
 #endif
     printf("\n");
     return 0;
