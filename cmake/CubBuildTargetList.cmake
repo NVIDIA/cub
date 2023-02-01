@@ -66,15 +66,7 @@ function(cub_set_target_properties target_name dialect prefix)
         RUNTIME_OUTPUT_DIRECTORY "${CUB_EXECUTABLE_OUTPUT_DIR}"
     )
 
-    # CMake still emits errors about empty CUDA_ARCHITECTURES when CMP0104
-    # is set to OLD. This suppresses the errors for good.
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-      set_target_properties(${target_name}
-        PROPERTIES
-          CUDA_ARCHITECTURES OFF
-      )
-    endif()
-
+    # TODO is this still needed?
     if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
       set_target_properties(${target_name} PROPERTIES
         CUDA_RESOLVE_DEVICE_SYMBOLS OFF
@@ -230,7 +222,7 @@ function(cub_build_target_list)
   # Some of the iterators and unittests depend on thrust. We should break the
   # cyclical dependency by migrating CUB's Thrust bits into Thrust.
   find_package(Thrust ${CUB_VERSION} EXACT CONFIG
-    HINTS "../../" # Check if we are in thrust/dependencies/cub
+    HINTS "../thrust" # Monorepo path
   )
 
   if (Thrust_FOUND)

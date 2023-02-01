@@ -303,9 +303,7 @@ foreach (test_src IN LISTS test_srcs)
     if (num_variants EQUAL 0)
       # Only one version of this test.
       cub_add_test(test_target ${test_name} "${test_src}" ${cub_target})
-      if (CUB_ENABLE_TESTS_WITH_RDC)
-        cub_enable_rdc_for_cuda_target(${test_target})
-      endif()
+      cub_configure_cuda_target(${test_target} RDC ${CUB_FORCE_RDC})
     else() # has variants:
       # Meta target to build all parametrizations of the current test for the
       # current CUB_TARGET config
@@ -334,10 +332,8 @@ foreach (test_src IN LISTS test_srcs)
         _cub_has_cdp_variant(explicit_cdp "${label}")
         _cub_is_cdp_enabled_variant(enable_cdp "${label}")
 
-        if (enable_cdp)
-          if (NOT CUB_ENABLE_TESTS_WITH_RDC)
-            continue()
-          endif()
+        if (enable_cdp AND NOT CUB_ENABLE_RDC_TESTS)
+          continue()
         endif()
 
         cub_add_test(test_target
@@ -352,12 +348,14 @@ foreach (test_src IN LISTS test_srcs)
         # Enable RDC if the test either:
         # 1. Explicitly requests it (cdp_1 label)
         # 2. Does not have an explicit CDP variant (no cdp_0 or cdp_1) but
-        #    RDC testing is globally enabled.
+        #    RDC testing is forced
         #
         # Tests that explicitly request no cdp (cdp_0 label) should never enable
         # RDC.
-        if (enable_cdp OR ((NOT explicit_cdp) AND CUB_ENABLE_TESTS_WITH_RDC))
-          cub_enable_rdc_for_cuda_target(${test_target})
+        if (explicit_cdp)
+          cub_configure_cuda_target(${test_target} RDC ${enable_cdp})
+        else()
+          cub_configure_cuda_target(${test_target} RDC ${CUB_FORCE_RDC})
         endif()
       endforeach() # Variant
     endif() # Has variants

@@ -1,26 +1,25 @@
-# 3.15 is the minimum.
-# 3.17 for NVC++.
-# 3.18.3 for C++17 + CUDA.
+# 3.15 is the minimum for including the project with add_subdirectory.
+# 3.21 is the minimum for the developer build.
 cmake_minimum_required(VERSION 3.15)
-
-# Remove this when we use the new CUDA_ARCHITECTURES properties.
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
-  cmake_policy(SET CMP0104 OLD)
-endif()
 
 # CXX is only needed for AppendOptionIfAvailable.
 project(CUB NONE)
 
 # Determine whether CUB is the top-level project or included into
 # another project via add_subdirectory().
-if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
-  set(CUB_TOPLEVEL_PROJECT ON)
+if(DEFINED CCCL_TOPLEVEL_PROJECT)
+  set(CUB_TOPLEVEL_PROJECT ${CCCL_TOPLEVEL_PROJECT})
 else()
-  set(CUB_TOPLEVEL_PROJECT OFF)
+  if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
+    set(CUB_TOPLEVEL_PROJECT ON)
+  else()
+    set(CUB_TOPLEVEL_PROJECT OFF)
+  endif()
 endif()
 
 # This must be done before any languages are enabled:
 if (CUB_TOPLEVEL_PROJECT)
+  cmake_minimum_required(VERSION 3.21)
   include(cmake/CubCompilerHacks.cmake)
 endif()
 
@@ -30,15 +29,9 @@ endif()
 # GNUInstallDirs CMake module.
 enable_language(CXX)
 
-# Thrust has its own copy of CUB install rules to handle packaging usecases
-# where we want to install CUB headers but aren't actually building anything.
-# In these cases the add_subdirectory(dependencies/cub) line in Thrust won't get
-# called so we can't rely on CUB providing its own rules.
-if (NOT CUB_IN_THRUST)
-  option(CUB_ENABLE_INSTALL_RULES "Enable installation of CUB" ${CUB_TOPLEVEL_PROJECT})
-  if (CUB_ENABLE_INSTALL_RULES)
-    include(cmake/CubInstallRules.cmake)
-  endif()
+option(CUB_ENABLE_INSTALL_RULES "Enable installation of CUB" ${CUB_TOPLEVEL_PROJECT})
+if (CUB_ENABLE_INSTALL_RULES)
+  include(cmake/CubInstallRules.cmake)
 endif()
 
 # Support adding CUB to a parent project via add_subdirectory.

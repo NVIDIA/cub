@@ -94,7 +94,7 @@ function(cub_build_compiler_targets)
   foreach (cxx_option IN LISTS cxx_compile_options)
     target_compile_options(cub.compiler_interface INTERFACE
       $<$<COMPILE_LANGUAGE:CXX>:${cxx_option}>
-      $<$<COMPILE_LANG_AND_ID:CUDA,NVCXX>:${cxx_option}>
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVCXX>:${cxx_option}> # TODO check that this works with the new nvc++ CMake recipe
       # Only use -Xcompiler with NVCC, not NVC++.
       #
       # CMake can't split genexs, so this can't be formatted better :(
@@ -124,5 +124,7 @@ function(cub_build_compiler_targets)
     $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--promote_warnings>
     # Don't complain about deprecated GPU targets.
     $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Wno-deprecated-gpu-targets>
+    # TODO Clean this up, it's for a spurious "error #128-D: loop is not reachable" on MSVC + nvcc 12.1.
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-diag-suppress 128>
   )
 endfunction()
