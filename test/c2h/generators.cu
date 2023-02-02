@@ -238,8 +238,8 @@ namespace detail
 
 void gen(seed_t seed,
          char* d_out,
-         custom_type_state_t min,
-         custom_type_state_t max,
+         custom_type_state_t /* min */, 
+         custom_type_state_t /* max */,
          std::size_t elements,
          std::size_t element_size)
 {

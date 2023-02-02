@@ -148,7 +148,6 @@ function(cub_add_test target_name_var test_name test_src cub_target)
     set(config_c2h_target ${config_prefix}.test.catch2_helper)
     if (NOT TARGET ${config_c2h_target})
       add_library(${config_c2h_target} STATIC c2h/generators.cu)
-      target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand)
       set_property(TARGET ${config_c2h_target}
         PROPERTY POSITION_INDEPENDENT_CODE ON
       )
@@ -163,6 +162,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
       )
 
       cub_clone_target_properties(${config_c2h_target} ${cub_target})
+      target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand ${cub_target})
     endif() # config_c2h_target
 
     if (CUB_SEPARATE_CATCH2)
