@@ -36,11 +36,15 @@
 #include <iterator>
 
 #include <cub/config.cuh>
+#include <cub/detail/strong_load.cuh>
+#include <cub/detail/strong_store.cuh>
 #include <cub/detail/uninitialized_copy.cuh>
 #include <cub/thread/thread_load.cuh>
 #include <cub/thread/thread_store.cuh>
 #include <cub/util_device.cuh>
 #include <cub/warp/warp_reduce.cuh>
+
+#include <nv/target>
 
 CUB_NAMESPACE_BEGIN
 
@@ -106,6 +110,44 @@ enum ScanTileStatus
     SCAN_TILE_INCLUSIVE,    // Inclusive tile prefix is available
 };
 
+namespace detail 
+{
+
+template <int Delay, unsigned int GridThreshold = 500>
+__device__ __forceinline__ void delay()
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (if (Delay > 0) 
+                {
+                  if (gridDim.x < GridThreshold) 
+                  {
+                    __threadfence_block();
+                  }
+                  else 
+                  {
+                    __nanosleep(Delay); 
+                  }
+                }));
+}
+
+template <int Delay = 350, unsigned int GridThreshold = 500>
+__device__ __forceinline__ void delay_or_prevent_hoisting()
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (delay<Delay, GridThreshold>();),
+               (__threadfence_block();));
+}
+
+template <int Delay = 350, unsigned int GridThreshold = 500>
+__device__ __forceinline__ void delay_on_dc_gpu_or_prevent_hoisting()
+{
+  NV_DISPATCH_TARGET(
+    NV_IS_EXACTLY_SM_80, (delay<Delay, GridThreshold>();),
+    NV_PROVIDES_SM_70,   (delay<    0, GridThreshold>();),
+    NV_IS_DEVICE,        (__threadfence_block();));
+}
+
+}
 
 /**
  * Tile status interface.
@@ -127,20 +169,20 @@ struct ScanTileState<T, true>
     // Status word type
     using StatusWord = cub::detail::conditional_t<
       sizeof(T) == 8,
-      long long,
+      unsigned long long,
       cub::detail::conditional_t<
         sizeof(T) == 4,
-        int,
-        cub::detail::conditional_t<sizeof(T) == 2, short, char>>>;
+        unsigned int,
+        cub::detail::conditional_t<sizeof(T) == 2, unsigned short, unsigned char>>>;
 
     // Unit word type
     using TxnWord = cub::detail::conditional_t<
       sizeof(T) == 8,
-      longlong2,
+      ulonglong2,
       cub::detail::conditional_t<
         sizeof(T) == 4,
-        int2,
-        cub::detail::conditional_t<sizeof(T) == 2, int, uchar2>>>;
+        uint2,
+        unsigned int>>;
 
     // Device word type
     struct TileDescriptor
@@ -188,7 +230,7 @@ struct ScanTileState<T, true>
         int     num_tiles,                          ///< [in] Number of tiles
         size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
     {
-        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TxnWord);       // bytes needed for tile status descriptors
         return cudaSuccess;
     }
 
@@ -230,7 +272,8 @@ struct ScanTileState<T, true>
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
+
+        detail::store_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
     }
 
 
@@ -245,7 +288,8 @@ struct ScanTileState<T, true>
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
+
+        detail::store_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
     }
 
     /**
@@ -257,13 +301,18 @@ struct ScanTileState<T, true>
         T               &value)
     {
         TileDescriptor tile_descriptor;
-        do
-        {
-            __threadfence_block(); // prevent hoisting loads from loop
-            TxnWord alias = ThreadLoad<LOAD_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
-            tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff));
+        {
+          TxnWord alias = detail::load_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
+          tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+        }
+
+        while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff))
+        {   
+          detail::delay_or_prevent_hoisting();
+          TxnWord alias = detail::load_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
+          tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+        }
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
@@ -291,7 +340,7 @@ template <typename T>
 struct ScanTileState<T, false>
 {
     // Status word type
-    typedef char StatusWord;
+    using StatusWord = unsigned int;
 
     // Constants
     enum
@@ -392,12 +441,7 @@ struct ScanTileState<T, false>
     {
         // Update tile inclusive value
         ThreadStore<STORE_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx, tile_inclusive);
-
-        // Fence
-        __threadfence();
-
-        // Update tile status
-        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_INCLUSIVE));
+        detail::store_release(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_INCLUSIVE));
     }
 
 
@@ -408,12 +452,7 @@ struct ScanTileState<T, false>
     {
         // Update tile partial value
         ThreadStore<STORE_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx, tile_partial);
-
-        // Fence
-        __threadfence();
-
-        // Update tile status
-        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_PARTIAL));
+        detail::store_release(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_PARTIAL));
     }
 
     /**
@@ -424,17 +463,21 @@ struct ScanTileState<T, false>
         StatusWord      &status,
         T               &value)
     {
-        do {
-            status = ThreadLoad<LOAD_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx);
+        do
+        {
+          status = detail::load_relaxed(d_tile_status + TILE_STATUS_PADDING + tile_idx);
+          __threadfence();
 
-            __threadfence();    // prevent hoisting loads from loop or loads below above this one
-
-        } while (status == SCAN_TILE_INVALID);
+        } while (WARP_ANY((status == SCAN_TILE_INVALID), 0xffffffff));
 
         if (status == StatusWord(SCAN_TILE_PARTIAL)) 
-            value = ThreadLoad<LOAD_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx);
+        {
+          value = ThreadLoad<LOAD_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx);
+        }
         else
-            value = ThreadLoad<LOAD_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx);
+        {
+          value = ThreadLoad<LOAD_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx);
+        }
     }
 
     /**
@@ -490,7 +533,7 @@ template <
     typename KeyT>
 struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 {
-    typedef KeyValuePair<KeyT, ValueT>KeyValuePairT;
+    using KeyValuePairT = KeyValuePair<KeyT, ValueT>;
 
     // Constants
     enum
@@ -505,17 +548,17 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     // Status word type
     using StatusWord = cub::detail::conditional_t<
       STATUS_WORD_SIZE == 8,
-      long long,
+      unsigned long long,
       cub::detail::conditional_t<
         STATUS_WORD_SIZE == 4,
-        int,
-        cub::detail::conditional_t<STATUS_WORD_SIZE == 2, short, char>>>;
+        unsigned int,
+        cub::detail::conditional_t<STATUS_WORD_SIZE == 2, unsigned short, unsigned char>>>;
 
     // Status word type
     using TxnWord = cub::detail::conditional_t<
       TXN_WORD_SIZE == 16,
-      longlong2,
-      cub::detail::conditional_t<TXN_WORD_SIZE == 8, long long, int>>;
+      ulonglong2,
+      cub::detail::conditional_t<TXN_WORD_SIZE == 8, unsigned long long, unsigned int>>;
 
     // Device word type (for when sizeof(ValueT) == sizeof(KeyT))
     struct TileDescriptorBigStatus
@@ -571,7 +614,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
         int     num_tiles,                          ///< [in] Number of tiles
         size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
     {
-        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TxnWord);       // bytes needed for tile status descriptors
         return cudaSuccess;
     }
 
@@ -613,7 +656,8 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
+
+        detail::store_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
     }
 
 
@@ -629,7 +673,8 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
+
+        detail::store_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx, alias);
     }
 
     /**
@@ -656,11 +701,12 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 //        value.key   = tile_descriptor.key;
 
         TileDescriptor tile_descriptor;
+
         do
         {
-            __threadfence_block(); // prevent hoisting loads from loop
-            TxnWord alias = ThreadLoad<LOAD_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
-            tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+          detail::delay_on_dc_gpu_or_prevent_hoisting();
+          TxnWord alias = detail::load_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
+          tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
         } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff));
 
@@ -769,6 +815,7 @@ struct TilePrefixCallbackOp
         T           window_aggregate;
 
         // Wait for the warp-wide window of predecessor tiles to become valid
+        detail::delay<450>();
         ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
 
         // The exclusive tile prefix starts out as the current window aggregate
