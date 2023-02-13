@@ -78,8 +78,8 @@ CUB_NAMESPACE_BEGIN
  ******************************************************************************/
 
 /**
- * @brief Shifts \p val left by the amount specified by unsigned 32-bit value in \p num_bits. If \p
- * num_bits is larger than 32 bits, \p num_bits is clamped to 32.
+ * @brief Shifts @p val left by the amount specified by unsigned 32-bit value in @p num_bits. If @p
+ * num_bits is larger than 32 bits, @p num_bits is clamped to 32.
  */
 __device__ __forceinline__ uint32_t LogicShiftLeft(uint32_t val, uint32_t num_bits)
 {
@@ -89,10 +89,10 @@ __device__ __forceinline__ uint32_t LogicShiftLeft(uint32_t val, uint32_t num_bi
 }
 
 /**
- * @brief Shifts \p val right by the amount specified by unsigned 32-bit value in \p num_bits. If \p
- * num_bits is larger than 32 bits, \p num_bits is clamped to 32.
+ * @brief Shifts @p val right by the amount specified by unsigned 32-bit value in @p num_bits. If @p
+ * num_bits is larger than 32 bits, @p num_bits is clamped to 32.
  */
-__device__ __forceinline__ uint32_t LogicShiftRight(uint32_t val, unsigned int num_bits)
+__device__ __forceinline__ uint32_t LogicShiftRight(uint32_t val, uint32_t num_bits)
 {
   uint32_t ret{};
   asm("shr.b32 %0, %1, %2;" : "=r"(ret) : "r"(val), "r"(num_bits));

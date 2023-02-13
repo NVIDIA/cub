@@ -538,8 +538,8 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
 
   // Test input data
   std::array<uint64_t, NUM_ITEMS> reference_counters{};
-  thrust::host_vector h_bins(num_increments);
-  thrust::host_vector h_increments(num_increments);
+  thrust::host_vector<uint32_t> h_bins(num_increments);
+  thrust::host_vector<uint32_t> h_increments(num_increments);
 
   // Generate random test input data
   GenerateRandomData(thrust::raw_pointer_cast(h_bins.data()),
@@ -577,10 +577,10 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   increments_in = h_increments;
 
   // Memory for GPU-generated results
-  thrust::host_vector<uint32_t> device_counts(num_increments);
+  thrust::host_vector<uint32_t> host_counts(num_increments);
 
   // Reset counters to arbitrary random value
-  thrust::fill(device_counts.begin(), device_counts.end(), 814920U);
+  thrust::fill(counts_out.begin(), counts_out.end(), 814920U);
 
   // Run tests with densely bit-packed counters
   TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, false>
@@ -597,7 +597,7 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   }
 
   // Reset counters to arbitrary random value
-  thrust::fill(host_counts.begin(), host_counts.end(), 814920U);
+  thrust::fill(counts_out.begin(), counts_out.end(), 814920U);
 
   // Run tests with bit-packed counters, where bit-count is a power-of-two
   TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, true>

@@ -353,10 +353,8 @@ public:
       // current unit, the bit_shift amount will be larger than the bits provided by this unit. As
       // C++'s bit-shift has undefined behaviour if the bits being shifted exceed the operand width, 
       // we use the PTX instruction `shr` to make sure behaviour is well-defined.
-      // We catch negative bit-shift amounts in the ternary and set it to `NUM_BITS_PER_UNIT`
-      const uint32_t bit_shift = ((i * USED_BITS_PER_UNIT) <= target_offset)
-                                   ? (target_offset - i * USED_BITS_PER_UNIT)
-                                   : NUM_BITS_PER_UNIT;
+      // Negative bit-shift amounts wrap around in unsigned integer math and are ultimately clamped.
+      const uint32_t bit_shift = target_offset - i * USED_BITS_PER_UNIT;
       val |= LogicShiftRight(data[i], bit_shift) & ITEM_MASK;
     }
     return val;
@@ -373,10 +371,8 @@ public:
       // current unit, the bit_shift amount will be larger than the bits provided by this unit. As
       // C++'s bit-shift has undefined behaviour if the bits being shifted exceed the operand width, 
       // we use the PTX instruction `shl` to make sure behaviour is well-defined.
-      // We catch negative bit-shift amounts in the ternary and set it to `NUM_BITS_PER_UNIT`
-      const uint32_t bit_shift = ((i * USED_BITS_PER_UNIT) <= target_offset)
-                                   ? (target_offset - i * USED_BITS_PER_UNIT)
-                                   : NUM_BITS_PER_UNIT;
+      // Negative bit-shift amounts wrap around in unsigned integer math and are ultimately clamped.
+      const uint32_t bit_shift = target_offset - i * USED_BITS_PER_UNIT;
       data[i] += LogicShiftLeft(value, bit_shift) & UNIT_MASK;
     }
   }
