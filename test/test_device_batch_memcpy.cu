@@ -79,9 +79,10 @@ void __global__ BaselineBatchMemCpyKernel(InputBufferIt input_buffer_it,
                                           BufferOffsetT num_buffers)
 {
   BufferOffsetT gtid = blockDim.x * blockIdx.x + threadIdx.x;
-  if (gtid >= num_buffers) {
+  if (gtid >= num_buffers)
+  {
     return;
-}
+  }
   for (BufferOffsetT i = 0; i < buffer_sizes[gtid]; i++)
   {
     reinterpret_cast<uint8_t *>(output_buffer_it[gtid])[i] =
@@ -113,9 +114,10 @@ void __global__ BaselineBatchMemCpyPerBlockKernel(InputBufferIt input_buffer_it,
                                                   BufferOffsetT num_buffers)
 {
   BufferOffsetT gbid = blockIdx.x;
-  if (gbid >= num_buffers) {
+  if (gbid >= num_buffers)
+  {
     return;
-}
+  }
   for (BufferOffsetT i = threadIdx.x; i < buffer_sizes[gbid] / 8; i += blockDim.x)
   {
     reinterpret_cast<uint64_t *>(output_buffer_it[gbid])[i] =
@@ -580,6 +582,9 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   // Memory for GPU-generated results
   thrust::host_vector<uint32_t> device_counts(num_increments);
 
+  // Reset counters to arbitrary random value
+  thrust::fill(device_counts.begin(), device_counts.end(), 814920U);
+
   // Run tests with densely bit-packed counters
   TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, false>
     <<<1, 1>>>(thrust::raw_pointer_cast(bins_in.data()),
@@ -593,6 +598,9 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   {
     AssertEquals(counters[i], device_counts[i]);
   }
+
+  // Reset counters to arbitrary random value
+  thrust::fill(device_counts.begin(), device_counts.end(), 814920U);
 
   // Run tests with bit-packed counters, where bit-count is a power-of-two
   TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, true>
