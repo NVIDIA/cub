@@ -511,12 +511,9 @@ __global__ void TestBitPackedCounterKernel(uint32_t *bins,
   using BitPackedCounterT =
     cub::detail::BitPackedCounter<NUM_ITEMS, MAX_ITEM_VALUE, PREFER_POW2_BITS>;
   BitPackedCounterT counter{};
-  if (threadIdx.x == 0 && blockIdx.x == 0)
+  for (uint32_t i = 0; i < num_items; i++)
   {
-    for (uint32_t i = 0; i < num_items; i++)
-    {
-      counter.Add(bins[i], increments[i]);
-    }
+    counter.Add(bins[i], increments[i]);
   }
 
   for (uint32_t i = 0; i < NUM_ITEMS; i++)
@@ -540,9 +537,9 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   std::size_t num_increments = static_cast<double>(MAX_ITEM_VALUE * NUM_ITEMS) / avg_increment;
 
   // Test input data
-  std::array<uint64_t, NUM_ITEMS> counters{};
-  std::vector<uint32_t> h_bins(num_increments);
-  std::vector<uint32_t> h_increments(num_increments);
+  std::array<uint64_t, NUM_ITEMS> reference_counters{};
+  thrust::host_vector h_bins(num_increments);
+  thrust::host_vector h_increments(num_increments);
 
   // Generate random test input data
   GenerateRandomData(thrust::raw_pointer_cast(h_bins.data()),
@@ -560,13 +557,13 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   for (std::size_t i = 0; i < num_increments; i++)
   {
     // New increment for this bin would overflow => zero this increment
-    if (counters[h_bins[i]] + h_increments[i] >= MAX_ITEM_VALUE)
+    if (reference_counters[h_bins[i]] + h_increments[i] >= MAX_ITEM_VALUE)
     {
       h_increments[i] = 0;
     }
     else
     {
-      counters[h_bins[i]] += h_increments[i];
+      reference_counters[h_bins[i]] += h_increments[i];
     }
   }
 
@@ -593,14 +590,14 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
                num_increments);
 
   // Result verification
-  device_counts = counts_out;
+  host_counts = counts_out;
   for (uint32_t i = 0; i < NUM_ITEMS; i++)
   {
-    AssertEquals(counters[i], device_counts[i]);
+    AssertEquals(reference_counters[i], host_counts[i]);
   }
 
   // Reset counters to arbitrary random value
-  thrust::fill(device_counts.begin(), device_counts.end(), 814920U);
+  thrust::fill(host_counts.begin(), host_counts.end(), 814920U);
 
   // Run tests with bit-packed counters, where bit-count is a power-of-two
   TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, true>
@@ -610,10 +607,10 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
                num_increments);
 
   // Result verification
-  device_counts = counts_out;
+  host_counts = counts_out;
   for (uint32_t i = 0; i < NUM_ITEMS; i++)
   {
-    AssertEquals(counters[i], device_counts[i]);
+    AssertEquals(reference_counters[i], host_counts[i]);
   }
 }
 
