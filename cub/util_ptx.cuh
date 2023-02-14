@@ -77,6 +77,8 @@ CUB_NAMESPACE_BEGIN
  * Inlined PTX intrinsics
  ******************************************************************************/
 
+namespace detail
+{
 /**
  * @brief Shifts @p val left by the amount specified by unsigned 32-bit value in @p num_bits. If @p
  * num_bits is larger than 32 bits, @p num_bits is clamped to 32.
@@ -98,6 +100,7 @@ __device__ __forceinline__ uint32_t LogicShiftRight(uint32_t val, uint32_t num_b
   asm("shr.b32 %0, %1, %2;" : "=r"(ret) : "r"(val), "r"(num_bits));
   return ret;
 }
+} // namespace detail
 
 /**
  * \brief Shift-right then add.  Returns (\p x >> \p shift) + \p addend.
