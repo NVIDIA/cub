@@ -343,37 +343,37 @@ private:
 public:
   __device__ __forceinline__ uint32_t Get(uint32_t index) const
   {
-    const int32_t target_offset = index * BITS_PER_ITEM;
-    uint32_t val                = 0;
+    const uint32_t target_offset = index * BITS_PER_ITEM;
+    uint32_t val                 = 0;
 
 #pragma unroll
     for (uint32_t i = 0; i < NUM_TOTAL_UNITS; ++i)
     {
       // In case the bit-offset of the counter at <index> is larger than the bit range of the
-      // current unit, the bit_shift amount will be larger than the bits provided by this unit. If
-      // the bit-offset of the counter at <index> is smaller than the bit range of the current unit,
-      // the computed bit-offset will be negative, which, once casted to an unsigned type will be
-      // larger than the bits provided by this unit.
-      const uint32_t bit_shift = static_cast<uint32_t>(target_offset - i * USED_BITS_PER_UNIT);
-      val |= (data[i] >> bit_shift) & ITEM_MASK;
+      // current unit, the bit_shift amount will be larger than the bits provided by this unit. As
+      // C++'s bit-shift has undefined behaviour if the bits being shifted exceed the operand width,
+      // we use the PTX instruction `shr` to make sure behaviour is well-defined.
+      // Negative bit-shift amounts wrap around in unsigned integer math and are ultimately clamped.
+      const uint32_t bit_shift = target_offset - i * USED_BITS_PER_UNIT;
+      val |= detail::LogicShiftRight(data[i], bit_shift) & ITEM_MASK;
     }
     return val;
   }
 
   __device__ __forceinline__ void Add(uint32_t index, uint32_t value)
   {
-    const int32_t target_offset = index * BITS_PER_ITEM;
+    const uint32_t target_offset = index * BITS_PER_ITEM;
 
 #pragma unroll
     for (uint32_t i = 0; i < NUM_TOTAL_UNITS; ++i)
     {
       // In case the bit-offset of the counter at <index> is larger than the bit range of the
-      // current unit, the bit_shift amount will be larger than the bits provided by this unit. If
-      // the bit-offset of the counter at <index> is smaller than the bit range of the current unit,
-      // the computed bit-offset will be negative, which, once casted to an unsigned type will be
-      // larger than the bits provided by this unit.
-      const uint32_t bit_shift = static_cast<uint32_t>(target_offset - i * USED_BITS_PER_UNIT);
-      data[i] += (value << bit_shift) & UNIT_MASK;
+      // current unit, the bit_shift amount will be larger than the bits provided by this unit. As
+      // C++'s bit-shift has undefined behaviour if the bits being shifted exceed the operand width,
+      // we use the PTX instruction `shl` to make sure behaviour is well-defined.
+      // Negative bit-shift amounts wrap around in unsigned integer math and are ultimately clamped.
+      const uint32_t bit_shift = target_offset - i * USED_BITS_PER_UNIT;
+      data[i] += detail::LogicShiftLeft(value, bit_shift) & UNIT_MASK;
     }
   }
 

@@ -31,6 +31,7 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/fill.h>
+#include <thrust/host_vector.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/logical.h>
 #include <thrust/sequence.h>
@@ -78,9 +79,10 @@ void __global__ BaselineBatchMemCpyKernel(InputBufferIt input_buffer_it,
                                           BufferOffsetT num_buffers)
 {
   BufferOffsetT gtid = blockDim.x * blockIdx.x + threadIdx.x;
-  if (gtid >= num_buffers) {
+  if (gtid >= num_buffers)
+  {
     return;
-}
+  }
   for (BufferOffsetT i = 0; i < buffer_sizes[gtid]; i++)
   {
     reinterpret_cast<uint8_t *>(output_buffer_it[gtid])[i] =
@@ -112,9 +114,10 @@ void __global__ BaselineBatchMemCpyPerBlockKernel(InputBufferIt input_buffer_it,
                                                   BufferOffsetT num_buffers)
 {
   BufferOffsetT gbid = blockIdx.x;
-  if (gbid >= num_buffers) {
+  if (gbid >= num_buffers)
+  {
     return;
-}
+  }
   for (BufferOffsetT i = threadIdx.x; i < buffer_sizes[gbid] / 8; i += blockDim.x)
   {
     reinterpret_cast<uint64_t *>(output_buffer_it[gbid])[i] =
@@ -499,6 +502,118 @@ void TestVectorizedCopy()
   }
 }
 
+template <uint32_t NUM_ITEMS, uint32_t MAX_ITEM_VALUE, bool PREFER_POW2_BITS>
+__global__ void TestBitPackedCounterKernel(uint32_t *bins,
+                                           uint32_t *increments,
+                                           uint32_t *counts_out,
+                                           uint32_t num_items)
+{
+  using BitPackedCounterT =
+    cub::detail::BitPackedCounter<NUM_ITEMS, MAX_ITEM_VALUE, PREFER_POW2_BITS>;
+  BitPackedCounterT counter{};
+  for (uint32_t i = 0; i < num_items; i++)
+  {
+    counter.Add(bins[i], increments[i]);
+  }
+
+  for (uint32_t i = 0; i < NUM_ITEMS; i++)
+  {
+    counts_out[i] = counter.Get(i);
+  }
+}
+
+/**
+ * @brief Tests BitPackedCounter that's used for computing the histogram of buffer sizes (i.e.,
+ * small, medium, large).
+ */
+template <uint32_t NUM_ITEMS, uint32_t MAX_ITEM_VALUE>
+void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
+{
+
+  constexpr uint32_t min_increment = 0;
+  constexpr uint32_t max_increment = 4;
+  constexpr double avg_increment   = static_cast<double>(min_increment) +
+                                   (static_cast<double>(max_increment - min_increment) / 2.0);
+  std::size_t num_increments = static_cast<double>(MAX_ITEM_VALUE * NUM_ITEMS) / avg_increment;
+
+  // Test input data
+  std::array<uint64_t, NUM_ITEMS> reference_counters{};
+  thrust::host_vector<uint32_t> h_bins(num_increments);
+  thrust::host_vector<uint32_t> h_increments(num_increments);
+
+  // Generate random test input data
+  GenerateRandomData(thrust::raw_pointer_cast(h_bins.data()),
+                     num_increments,
+                     0U,
+                     NUM_ITEMS - 1U,
+                     seed);
+  GenerateRandomData(thrust::raw_pointer_cast(h_increments.data()),
+                     num_increments,
+                     min_increment,
+                     max_increment,
+                     (seed + 17));
+
+  // Make sure test data does not overflow any of the counters
+  for (std::size_t i = 0; i < num_increments; i++)
+  {
+    // New increment for this bin would overflow => zero this increment
+    if (reference_counters[h_bins[i]] + h_increments[i] >= MAX_ITEM_VALUE)
+    {
+      h_increments[i] = 0;
+    }
+    else
+    {
+      reference_counters[h_bins[i]] += h_increments[i];
+    }
+  }
+
+  // Device memory
+  thrust::device_vector<uint32_t> bins_in(num_increments);
+  thrust::device_vector<uint32_t> increments_in(num_increments);
+  thrust::device_vector<uint32_t> counts_out(NUM_ITEMS);
+
+  // Initialize device-side test data
+  bins_in       = h_bins;
+  increments_in = h_increments;
+
+  // Memory for GPU-generated results
+  thrust::host_vector<uint32_t> host_counts(num_increments);
+
+  // Reset counters to arbitrary random value
+  thrust::fill(counts_out.begin(), counts_out.end(), 814920U);
+
+  // Run tests with densely bit-packed counters
+  TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, false>
+    <<<1, 1>>>(thrust::raw_pointer_cast(bins_in.data()),
+               thrust::raw_pointer_cast(increments_in.data()),
+               thrust::raw_pointer_cast(counts_out.data()),
+               num_increments);
+
+  // Result verification
+  host_counts = counts_out;
+  for (uint32_t i = 0; i < NUM_ITEMS; i++)
+  {
+    AssertEquals(reference_counters[i], host_counts[i]);
+  }
+
+  // Reset counters to arbitrary random value
+  thrust::fill(counts_out.begin(), counts_out.end(), 814920U);
+
+  // Run tests with bit-packed counters, where bit-count is a power-of-two
+  TestBitPackedCounterKernel<NUM_ITEMS, MAX_ITEM_VALUE, true>
+    <<<1, 1>>>(thrust::raw_pointer_cast(bins_in.data()),
+               thrust::raw_pointer_cast(increments_in.data()),
+               thrust::raw_pointer_cast(counts_out.data()),
+               num_increments);
+
+  // Result verification
+  host_counts = counts_out;
+  for (uint32_t i = 0; i < NUM_ITEMS; i++)
+  {
+    AssertEquals(reference_counters[i], host_counts[i]);
+  }
+}
+
 int main(int argc, char **argv)
 {
   CommandLineArgs args(argc, argv);
@@ -511,6 +626,19 @@ int main(int argc, char **argv)
   //---------------------------------------------------------------------
   TestVectorizedCopy<uint32_t>();
   TestVectorizedCopy<uint4>();
+
+  //---------------------------------------------------------------------
+  // BitPackedCounter tests
+  //---------------------------------------------------------------------
+  TestBitPackedCounter<1, 1>();
+  TestBitPackedCounter<1, (0x01U << 16)>();
+  TestBitPackedCounter<4, 1>();
+  TestBitPackedCounter<4, 2>();
+  TestBitPackedCounter<4, 255>();
+  TestBitPackedCounter<4, 256>();
+  TestBitPackedCounter<8, 1024>();
+  TestBitPackedCounter<32, 1>();
+  TestBitPackedCounter<32, 256>();
 
   //---------------------------------------------------------------------
   // DeviceMemcpy::Batched tests
