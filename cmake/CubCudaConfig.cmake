@@ -55,8 +55,8 @@ else() # NOT CUB_IN_THRUST
   set(CUB_CUDA_FLAGS_RDC)
   set(CUB_CUDA_FLAGS_NO_RDC)
 
-  # Archs that don't support RDC:
-  set(no_rdc_archs 53 62 72)
+  # Archs that don't support CDP:
+  set(no_rdc_archs 53 62 72 87)
 
   # Find the highest arch:
   list(SORT all_archs)
