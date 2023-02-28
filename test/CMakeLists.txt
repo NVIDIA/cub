@@ -163,6 +163,10 @@ function(cub_add_test target_name_var test_name test_src cub_target)
 
       cub_clone_target_properties(${config_c2h_target} ${cub_target})
       target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand ${cub_target})
+
+      if (CUB_IN_THRUST)
+        thrust_fix_clang_nvcc_build_for(${config_c2h_target})
+      endif()
     endif() # config_c2h_target
 
     if (CUB_SEPARATE_CATCH2)
@@ -191,6 +195,10 @@ function(cub_add_test target_name_var test_name test_src cub_target)
           target_link_options(${config_c2run_target} PRIVATE "-cuda")
         endif()
 
+        if (CUB_IN_THRUST)
+          thrust_fix_clang_nvcc_build_for(${config_c2run_target})
+        endif()
+
         add_test(NAME ${config_c2run_target}
           COMMAND "$<TARGET_FILE:${config_c2run_target}>"
         )
@@ -199,6 +207,10 @@ function(cub_add_test target_name_var test_name test_src cub_target)
       add_library(${test_target} OBJECT "${test_src}")
       target_link_libraries(${config_c2run_target} PRIVATE ${test_target})
     endif() # CUB_SEPARATE_CATCH2
+
+    if (CUB_IN_THRUST)
+      thrust_fix_clang_nvcc_build_for(${test_target})
+    endif()
 
     target_link_libraries(${test_target} PRIVATE
       ${cub_target}
@@ -219,6 +231,10 @@ function(cub_add_test target_name_var test_name test_src cub_target)
     cub_clone_target_properties(${test_target} ${cub_target})
     target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
     target_compile_definitions(${test_target} PRIVATE CUB_DEBUG_HOST_ASSERTIONS)
+
+    if (CUB_IN_THRUST)
+      thrust_fix_clang_nvcc_build_for(${test_target})
+    endif()
 
     # Add to the active configuration's meta target
     add_dependencies(${config_meta_target} ${test_target})
