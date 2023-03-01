@@ -47,6 +47,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
+#include <cuda/std/limits>
 #include <cuda/std/type_traits>
 
 #include <nv/target>
@@ -243,13 +244,45 @@ public:
     struct ScaleTransform
     {
     private:
-      using CommonT = typename cuda::std::common_type<LevelT, SampleT>::type;
-      static_assert(cuda::std::is_convertible<CommonT, int>::value,
+      using CommonT = typename ::cuda::std::common_type<LevelT, SampleT>::type;
+      static_assert(::cuda::std::is_convertible<CommonT, int>::value,
                     "The common type of `LevelT` and `SampleT` must be "
                     "convertible to `int`.");
-      static_assert(cuda::std::is_trivially_copyable<CommonT>::value,
+      static_assert(::cuda::std::is_trivially_copyable<CommonT>::value,
                     "The common type of `LevelT` and `SampleT` must be "
                     "trivially copyable.");
+
+      // An arithmetic type that's used for bin computation of integral types, guaranteed to not
+      // overflow for (max_level - min_level) * scale.fraction.bins. Since we drop invalid samples
+      // of less than min_level, (sample - min_level) is guaranteed to be non-negative. We use the
+      // rule: 2^l * 2^r = 2^(l + r) to determine a sufficiently large type to hold the
+      // multiplication result.
+      // If CommonT used to be a 128-bit wide integral type already, we use CommonT's arithmetic
+      using IntArithmeticT = cub::detail::conditional_t<       //
+        sizeof(SampleT) + sizeof(CommonT) <= sizeof(uint32_t), //
+        uint32_t,                                              //
+#if CUB_IS_INT128_ENABLED
+        cub::detail::conditional_t<                            //
+          (::cuda::std::is_same<CommonT, __int128_t>::value || //
+           ::cuda::std::is_same<CommonT, __uint128_t>::value), //
+          CommonT,                                             //
+          uint64_t>                                            //
+#else
+        uint64_t
+#endif
+        >;
+
+      // Alias template that excludes __[u]int128 from the integral types
+      template <typename T>
+      using is_integral_excl_int128 =
+#if CUB_IS_INT128_ENABLED
+        cub::detail::conditional_t<
+          ::cuda::std::is_same<T, __int128_t>::value && ::cuda::std::is_same<T, __uint128_t>::value,
+          ::cuda::std::false_type,
+          ::cuda::std::is_integral<T>>;
+#else
+        ::cuda::std::is_integral<T>;
+#endif
 
       union ScaleT
       {
@@ -274,7 +307,7 @@ public:
       ScaleT ComputeScale(int num_levels,
                           T   max_level,
                           T   min_level,
-                          cuda::std::true_type /* is_fp */)
+                          ::cuda::std::true_type /* is_fp */)
       {
         ScaleT result;
         result.reciprocal =
@@ -288,7 +321,7 @@ public:
       ScaleT ComputeScale(int num_levels,
                           T   max_level,
                           T   min_level,
-                          cuda::std::false_type /* is_fp */)
+                          ::cuda::std::false_type /* is_fp */)
       {
         ScaleT result;
         result.fraction.bins  = static_cast<T>(num_levels - 1);
@@ -305,7 +338,7 @@ public:
         return this->ComputeScale(num_levels,
                                   max_level,
                                   min_level,
-                                  cuda::std::is_floating_point<T>{});
+                                  ::cuda::std::is_floating_point<T>{});
       }
 
 #ifdef __CUDA_FP16_TYPES_EXIST__
@@ -318,11 +351,11 @@ public:
                      (return this->ComputeScale(num_levels,
                                                 max_level,
                                                 min_level,
-                                                cuda::std::true_type{});),
+                                                ::cuda::std::true_type{});),
                      (return this->ComputeScale(num_levels,
                                                 __half2float(max_level),
                                                 __half2float(min_level),
-                                                cuda::std::true_type{});));
+                                                ::cuda::std::true_type{});));
       }
 #endif
 
@@ -346,69 +379,102 @@ public:
       }
 #endif
 
+      /**
+       * @brief Bin computation for floating point (and extended floating point) types
+       */
       template <typename T>
-      __host__ __device__ __forceinline__
-      int ComputeBin(T      sample,
-                     T      min_level,
-                     ScaleT scale,
-                     cuda::std::true_type /* is_fp */)
+      __host__ __device__ __forceinline__ int
+      ComputeBin(T sample, T min_level, ScaleT scale, ::cuda::std::true_type /* is_fp */)
       {
         return static_cast<int>((sample - min_level) * scale.reciprocal);
       }
 
+      /**
+       * @brief Bin computation for custom types and __[u]int128
+       */
       template <typename T>
-      __host__ __device__ __forceinline__
-      int ComputeBin(T      sample,
-                     T      min_level,
-                     ScaleT scale,
-                     cuda::std::false_type /* is_fp */)
+      __host__ __device__ __forceinline__ int
+      ComputeBin(T sample, T min_level, ScaleT scale, ::cuda::std::false_type /* is_fp */)
       {
         return static_cast<int>(((sample - min_level) * scale.fraction.bins) /
                                 scale.fraction.range);
       }
 
-      template <typename T>
-      __host__ __device__ __forceinline__
-      int ComputeBin(T sample, T min_level, ScaleT scale)
+      /**
+       * @brief Bin computation for integral types of up to 64-bit types
+       */
+      template <typename T,
+                typename ::cuda::std::enable_if<is_integral_excl_int128<T>::value, int>::type = 0>
+      __host__ __device__ __forceinline__ int ComputeBin(T sample, T min_level, ScaleT scale)
       {
-        return this->ComputeBin(sample,
-                                min_level,
-                                scale,
-                                cuda::std::is_floating_point<T>{});
+        return static_cast<int>((static_cast<IntArithmeticT>(sample - min_level) *
+                                 static_cast<IntArithmeticT>(scale.fraction.bins)) /
+                                static_cast<IntArithmeticT>(scale.fraction.range));
+      }
+
+      template <typename T,
+                typename ::cuda::std::enable_if<!is_integral_excl_int128<T>::value, int>::type = 0>
+      __host__ __device__ __forceinline__ int ComputeBin(T sample, T min_level, ScaleT scale)
+      {
+        return this->ComputeBin(sample, min_level, scale, ::cuda::std::is_floating_point<T>{});
       }
 
 #ifdef __CUDA_FP16_TYPES_EXIST__
-      __host__ __device__ __forceinline__
-      int ComputeBin(__half sample, __half min_level, ScaleT scale)
+      __host__ __device__ __forceinline__ int ComputeBin(__half sample,
+                                                         __half min_level,
+                                                         ScaleT scale)
       {
         NV_IF_TARGET(NV_PROVIDES_SM_53,
-                     (return this->ComputeBin(sample,
-                                              min_level,
-                                              scale,
-                                              cuda::std::true_type{});),
-                     (return static_cast<int>((__half2float(sample) -
-                                               __half2float(min_level)) *
+                     (return this->ComputeBin(sample, min_level, scale, ::cuda::std::true_type{});),
+                     (return static_cast<int>((__half2float(sample) - __half2float(min_level)) *
                                               __half2float(scale.reciprocal));));
       }
 #endif
 
-    public:
+      __host__ __device__ __forceinline__ bool MayOverflow(CommonT /* num_bins */,
+                                                           ::cuda::std::false_type /* is_integral */)
+      {
+        return false;
+      }
 
-      // Initializer
-      __host__ __device__ __forceinline__ void Init(int    num_levels,
-                                                    LevelT max_level,
-                                                    LevelT min_level)
+      /**
+       * @brief Returns true if the bin computation for a given combination of range `(max_level -
+       * min_level)` and number of bins may overflow.
+       */
+      __host__ __device__ __forceinline__ bool MayOverflow(CommonT num_bins,
+                                                           ::cuda::std::true_type /* is_integral */)
+      {
+        return static_cast<IntArithmeticT>(m_max - m_min) >
+               (::cuda::std::numeric_limits<IntArithmeticT>::max() /
+                static_cast<IntArithmeticT>(num_bins));
+      }
+
+    public:
+      /**
+       * @brief Initializes the ScaleTransform for the given parameters
+       * @return cudaErrorInvalidValue if the ScaleTransform for the given values may overflow,
+       * cudaSuccess otherwise
+       */
+      __host__ __device__ __forceinline__ cudaError_t Init(int num_levels,
+                                                           LevelT max_level,
+                                                           LevelT min_level)
       {
         m_max = static_cast<CommonT>(max_level);
         m_min = static_cast<CommonT>(min_level);
+
+        // Check whether accurate bin computation for an integral sample type may overflow
+        if (MayOverflow(static_cast<CommonT>(num_levels - 1), ::cuda::std::is_integral<CommonT>{}))
+        {
+          return cudaErrorInvalidValue;
+        }
+
         m_scale = this->ComputeScale(num_levels, m_max, m_min);
+        return cudaSuccess;
       }
 
       // Method for converting samples to bin-ids
       template <CacheLoadModifier LOAD_MODIFIER>
-      __host__ __device__ __forceinline__ void BinSelect(SampleT sample,
-                                                         int    &bin,
-                                                         bool    valid)
+      __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool valid)
       {
         const CommonT common_sample = static_cast<CommonT>(sample);
 
@@ -417,7 +483,6 @@ public:
           bin = this->ComputeBin(common_sample, m_min, m_scale);
         }
       }
-
     };
 
     // Pass-through bin transform operator
@@ -1069,12 +1134,25 @@ public:
 
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
-                privatized_decode_op[channel].Init(num_output_levels[channel],
-                                                   upper_level[channel],
-                                                   lower_level[channel]);
+              error = privatized_decode_op[channel].Init(num_output_levels[channel],
+                                                         upper_level[channel],
+                                                         lower_level[channel]);
+              if (CubDebug(error != cudaSuccess))
+              {
+                // Make sure to also return a reasonable value for `temp_storage_bytes` in case of
+                // an overflow of the bin computation, in which case a subsequent algorithm
+                // invocation will also fail
+                if (!d_temp_storage)
+                {
+                  temp_storage_bytes = 1U;
+                }
+                return error;
+              }
 
-                if (num_output_levels[channel] > max_levels)
-                    max_levels = num_output_levels[channel];
+              if (num_output_levels[channel] > max_levels)
+              {
+                max_levels = num_output_levels[channel];
+              }
             }
             int max_num_output_bins = max_levels - 1;
 

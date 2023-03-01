@@ -72,10 +72,17 @@ struct DeviceHistogram
    *
    * @par
    * - The number of histogram bins is (`num_levels - 1`)
-   * - All bins comprise the same width of sample values: 
-   *   `(upper_level - lower_level) / (num_levels - 1)`
-   * - The ranges `[d_samples, d_samples + num_samples)` and 
-   *   `[d_histogram, d_histogram + num_levels - 1)` shall not overlap 
+   * - All bins comprise the same width of sample values:
+   *   `(upper_level - lower_level) / (num_levels - 1)`.
+   * - If the common type of `SampleT` and `LevelT` is of integral type, the bin for a sample is
+   *   computed as `(sample - lower_level) * (num_levels - 1) / (upper_level - lower_level)`, round
+   *   down to the nearest whole number. To protect against potential overflows, if the product
+   *   `(upper_level - lower_level) * (num_levels - 1)` exceeds the number representable by an
+   *   `uint64_t`, the cuda error `cudaErrorInvalidValue` is returned. If the common type is 128
+   *   bits wide, bin computation will use 128-bit arithmetic and `cudaErrorInvalidValue` will only
+   *   be returned if bin computation would overflow for 128-bit arithmetic.
+   * - The ranges `[d_samples, d_samples + num_samples)` and
+   *   `[d_histogram, d_histogram + num_levels - 1)` shall not overlap
    *   in any way.
    * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
    *   and SampleT must be valid arithmetic types. The common type must be
@@ -245,6 +252,13 @@ struct DeviceHistogram
    * - The number of histogram bins is (`num_levels - 1`)
    * - All bins comprise the same width of sample values:
    *   `(upper_level - lower_level) / (num_levels - 1)`
+   * - If the common type of `SampleT` and `LevelT` is of integral type, the bin for a sample is
+   *   computed as `(sample - lower_level) * (num_levels - 1) / (upper_level - lower_level)`, round
+   *   down to the nearest whole number. To protect against potential overflows, if the product
+   *   `(upper_level - lower_level) * (num_levels - 1)` exceeds the number representable by an
+   *   `uint64_t`, the cuda error `cudaErrorInvalidValue` is returned. If the common type is 128
+   *   bits wide, bin computation will use 128-bit arithmetic and `cudaErrorInvalidValue` will only
+   *   be returned if bin computation would overflow for 128-bit arithmetic.
    * - For a given row `r` in `[0, num_rows)`, let 
    *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)` and 
    *   `row_end = row_begin + num_row_samples`. The ranges
@@ -434,9 +448,17 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
    *   have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
-   * - For a given channel `c` in `[0, NUM_ACTIVE_CHANNELS)`, the ranges 
-   *   `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` and 
-   *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap 
+   * - If the common type of sample and level is of integral type, the bin for a sample is
+   *   computed as `(sample - lower_level[i]) * (num_levels - 1) / (upper_level[i] -
+   *   lower_level[i])`, round down to the nearest whole number. To protect against potential
+   *   overflows, if, for any channel `i`, the product `(upper_level[i] - lower_level[i]) *
+   *   (num_levels[i] - 1)` exceeds the number representable by an `uint64_t`, the cuda error
+   *   `cudaErrorInvalidValue` is returned. If the common type is 128 bits wide, bin computation
+   *   will use 128-bit arithmetic and `cudaErrorInvalidValue` will only be returned if bin
+   *   computation would overflow for 128-bit arithmetic.
+   * - For a given channel `c` in `[0, NUM_ACTIVE_CHANNELS)`, the ranges
+   *   `[d_samples, d_samples + NUM_CHANNELS * num_pixels)` and
+   *   `[d_histogram[c], d_histogram[c] + num_levels[c] - 1)` shall not overlap
    *   in any way.
    * - `cuda::std::common_type<LevelT, SampleT>` must be valid, and both LevelT
    *   and SampleT must be valid arithmetic types. The common type must be
@@ -633,6 +655,14 @@ struct DeviceHistogram
    * - For channel<sub><em>i</em></sub>, the range of values for all histogram 
    *   bins have the same width: 
    *   `(upper_level[i] - lower_level[i]) / (num_levels[i] - 1)`
+   * - If the common type of sample and level is of integral type, the bin for a sample is
+   *   computed as `(sample - lower_level[i]) * (num_levels - 1) / (upper_level[i] -
+   *   lower_level[i])`, round down to the nearest whole number. To protect against potential
+   *   overflows, if, for any channel `i`, the product `(upper_level[i] - lower_level[i]) *
+   *   (num_levels[i] - 1)` exceeds the number representable by an `uint64_t`, the cuda error
+   *   `cudaErrorInvalidValue` is returned. If the common type is 128 bits wide, bin computation
+   *   will use 128-bit arithmetic and `cudaErrorInvalidValue` will only be returned if bin
+   *   computation would overflow for 128-bit arithmetic.
    * - For a given row `r` in `[0, num_rows)`, and sample `s` in 
    *   `[0, num_row_pixels)`, let 
    *   `row_begin = d_samples + r * row_stride_bytes / sizeof(SampleT)`, 
