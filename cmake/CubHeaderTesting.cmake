@@ -30,6 +30,10 @@ function(cub_add_header_test label definitions)
     target_compile_definitions(${headertest_target} PRIVATE ${definitions})
     cub_clone_target_properties(${headertest_target} ${cub_target})
 
+    if (CUB_IN_THRUST)
+      thrust_fix_clang_nvcc_build_for(${headertest_target})
+    endif()
+
     add_dependencies(cub.all.headers ${headertest_target})
     add_dependencies(${config_prefix}.all ${headertest_target})
   endforeach()
