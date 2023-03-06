@@ -42,6 +42,10 @@ function(cub_add_example target_name_var example_name example_src cub_target)
   cub_clone_target_properties(${example_target} ${cub_target})
   target_include_directories(${example_target} PRIVATE "${CUB_SOURCE_DIR}/examples")
 
+  if (CUB_IN_THRUST)
+    thrust_fix_clang_nvcc_build_for(${example_target})
+  endif()
+
   # Add to the active configuration's meta target
   add_dependencies(${config_meta_target} ${example_target})
 
