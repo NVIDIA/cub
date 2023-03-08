@@ -534,7 +534,8 @@ void TestBitPackedCounter(const std::uint_fast32_t seed = 320981U)
   constexpr uint32_t max_increment = 4;
   constexpr double avg_increment   = static_cast<double>(min_increment) +
                                    (static_cast<double>(max_increment - min_increment) / 2.0);
-  std::size_t num_increments = static_cast<double>(MAX_ITEM_VALUE * NUM_ITEMS) / avg_increment;
+  std::uint32_t num_increments = 
+      static_cast<uint32_t>(static_cast<double>(MAX_ITEM_VALUE * NUM_ITEMS) / avg_increment);
 
   // Test input data
   std::array<uint64_t, NUM_ITEMS> reference_counters{};

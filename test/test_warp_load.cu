@@ -28,17 +28,18 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <iterator>
-
-#include <cub/warp/warp_load.cuh>
 #include <cub/iterator/cache_modified_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/util_allocator.cuh>
+#include <cub/warp/warp_load.cuh>
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/sequence.h>
 
+#include <iterator>
+
+#include "fill_striped.cuh"
 #include "test_util.h"
 
 using namespace cub;
@@ -216,7 +217,7 @@ thrust::device_vector<T> GenInput()
     constexpr int fake_block_size = ItemsPerThread *
                                     (BlockThreads / WarpThreads);
 
-    FillStriped<ItemsPerThread, WarpThreads, fake_block_size>(h_input.begin());
+    fill_striped<ItemsPerThread, WarpThreads, fake_block_size>(h_input.begin());
     input = h_input;
   }
   else

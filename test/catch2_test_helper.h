@@ -78,6 +78,18 @@ using cartesian_product = metal::cartesian<TypeLists...>;
 template <typename T, T... Ts>
 using enum_type_list = c2h::type_list<std::integral_constant<T, Ts>...>;
 
+template <typename T0, typename T1>
+using pair = metal::pair<T0, T1>;
+
+template <typename P>
+using first = metal::first<P>;
+
+template <typename P>
+using second = metal::second<P>;
+
+template <std::size_t start, std::size_t size, std::size_t stride = 1>
+using iota = metal::iota<metal::number<start>, metal::number<size>, metal::number<stride>>;
+
 } // namespace c2h 
 
 namespace detail
