@@ -55,11 +55,9 @@
 #include "test_util.h"
 #include <nv/target>
 
-#define TEST_HALF_T \
-  (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#define TEST_HALF_T !_NVHPC_CUDA
 
-#define TEST_BF_T \
-  (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#define TEST_BF_T !_NVHPC_CUDA
 
 #if TEST_HALF_T
 #include <cuda_fp16.h>

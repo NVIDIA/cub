@@ -43,11 +43,11 @@
 #include <typeinfo>
 #include <vector>
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
     #include <cuda_fp16.h>
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
     #include <cuda_bf16.h>
 #endif
 
@@ -984,14 +984,14 @@ struct UnwrapHalfAndBfloat16 {
     using Type = T;
 };
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
 template <>
 struct UnwrapHalfAndBfloat16<half_t> {
     using Type = __half;
 };
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
 template <>
 struct UnwrapHalfAndBfloat16<bfloat16_t> {
     using Type = __nv_bfloat16;
@@ -1962,11 +1962,11 @@ int main(int argc, char** argv)
 #ifdef TEST_EXTENDED_KEY_TYPES
     TestGen<short, false>             (num_items, num_segments);
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
     TestGen<half_t, false>            (num_items, num_segments);
 #endif // CTK >= 9
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
 #if !defined(__ICC)
     // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
     TestGen<bfloat16_t, false>        (num_items, num_segments);
