@@ -39,12 +39,13 @@
 #include <limits>
 #include <type_traits>
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#include <cuda.h>
+
+#if !_NVHPC_CUDA
     #include <cuda_fp16.h>
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
-  !defined(CUB_DISABLE_BF16_SUPPORT)
-#include <cuda_bf16.h>
+#if !_NVHPC_CUDA && !defined(CUB_DISABLE_BF16_SUPPORT)
+    #include <cuda_bf16.h>
 #endif
 
 #include <cub/detail/uninitialized_copy.cuh>
@@ -62,7 +63,7 @@ CUB_NAMESPACE_BEGIN
 #define CUB_IS_INT128_ENABLED 1
 #endif // !defined(__CUDACC_RTC_INT128__)
 #else  // !defined(__CUDACC_RTC__)
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11050) 
+#if CUDA_VERSION >= 11050
 #if (CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC) || \
     (CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG) || \
     defined(__ICC) || defined(_NVHPC_CUDA)
@@ -1107,7 +1108,7 @@ struct FpLimits<double>
     }
 };
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
 template <>
 struct FpLimits<__half>
 {
@@ -1123,8 +1124,7 @@ struct FpLimits<__half>
 };
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
-  !defined(CUB_DISABLE_BF16_SUPPORT)
+#if !_NVHPC_CUDA && !defined(CUB_DISABLE_BF16_SUPPORT)
 template <>
 struct FpLimits<__nv_bfloat16>
 {
@@ -1278,11 +1278,10 @@ struct NumericTraits<__int128_t>
 
 template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int, float> {};
 template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long, double> {};
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
+#if !_NVHPC_CUDA
     template <> struct NumericTraits<__half> :          BaseTraits<FLOATING_POINT, true, false, unsigned short, __half> {};
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA &&   \
-  !defined(CUB_DISABLE_BF16_SUPPORT)
+#if !_NVHPC_CUDA && !defined(CUB_DISABLE_BF16_SUPPORT)
     template <> struct NumericTraits<__nv_bfloat16> :   BaseTraits<FLOATING_POINT, true, false, unsigned short, __nv_bfloat16> {};
 #endif
 
