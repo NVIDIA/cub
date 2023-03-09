@@ -1001,13 +1001,25 @@ struct Solution<cub::ArgMin, InputValueT, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate(1, Traits<InputValueT>::Max()); // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
-            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
+            const auto segment_begin = h_segment_begin_offsets[i];
+            const auto segment_end = h_segment_end_offsets[i];
+
+            if (segment_begin < segment_end) 
             {
-                OutputT item(j - h_segment_begin_offsets[i], OutputValueT(h_in[j]));
-                aggregate = reduction_op(aggregate, item);
+                OutputT aggregate(0, OutputValueT(h_in[segment_begin]));
+                for (int j = segment_begin + 1; j < segment_end; ++j)
+                {
+                    OutputT item(j - segment_begin, OutputValueT(h_in[j]));
+                    aggregate = reduction_op(aggregate, item);
+                }
+                h_reference[i] = aggregate;
             }
-            h_reference[i] = aggregate;
+            else 
+            {
+                // Guaranteed output for empty segments
+                OutputT aggregate(1, Traits<InputValueT>::Max()); // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
+                h_reference[i] = aggregate;
+            }
         }
     }
 };
@@ -1025,13 +1037,24 @@ struct Solution<cub::ArgMax, InputValueT, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate(1, Traits<InputValueT>::Lowest()); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
-            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
+            const auto segment_begin = h_segment_begin_offsets[i];
+            const auto segment_end = h_segment_end_offsets[i];
+
+            if (segment_begin < segment_end) 
             {
-                OutputT item(j - h_segment_begin_offsets[i], OutputValueT(h_in[j]));
-                aggregate = reduction_op(aggregate, item);
+                OutputT aggregate(0, OutputValueT(h_in[segment_begin])); 
+                for (int j = segment_begin + 1; j < segment_end; ++j)
+                {
+                    OutputT item(j - segment_begin, OutputValueT(h_in[j]));
+                    aggregate = reduction_op(aggregate, item);
+                }
+                h_reference[i] = aggregate;
             }
-            h_reference[i] = aggregate;
+            else 
+            {
+                OutputT aggregate(1, Traits<InputValueT>::Lowest());
+                h_reference[i] = aggregate;
+            }
         }
     }
 };
@@ -1698,6 +1721,78 @@ void TestAccumulatorTypes()
   CubDebugExit(g_allocator.DeviceFree(d_out));
   CubDebugExit(g_allocator.DeviceFree(d_in));
 }
+
+/**
+ * ArgMin should return max value for empty input. This interferes with
+ * input data containing infinity values. This test checks that ArgMin
+ * works correctly with infinity values.
+ */
+void TestFloatInfInArgMin()
+{
+  using in_t     = float;
+  using offset_t = int;
+  using out_t    = cub::KeyValuePair<offset_t, in_t>;
+
+  const int n     = 10;
+  const float inf = ::cuda::std::numeric_limits<float>::infinity();
+
+  thrust::device_vector<in_t> in(n, inf);
+  thrust::device_vector<out_t> out(1);
+
+  const in_t *d_in = thrust::raw_pointer_cast(in.data());
+  out_t *d_out     = thrust::raw_pointer_cast(out.data());
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
+
+  CubDebugExit(cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_out, n));
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+  d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+  CubDebugExit(cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_out, n));
+
+  const out_t result = out[0];
+  AssertEquals(result.key, 0);
+  AssertEquals(result.value, inf);
+}
+
+/**
+ * ArgMax should return lowest value for empty input. This interferes with
+ * input data containing infinity values. This test checks that ArgMax
+ * works correctly with infinity values.
+ */
+void TestFloatInfInArgMax()
+{
+  using in_t = float;
+  using offset_t = int;
+  using out_t = cub::KeyValuePair<offset_t, in_t>;
+
+  const int n = 10;
+  const float inf = ::cuda::std::numeric_limits<float>::infinity();
+  
+  thrust::device_vector<in_t> in(n, -inf);
+  thrust::device_vector<out_t> out(1);
+
+  const in_t *d_in = thrust::raw_pointer_cast(in.data());
+  out_t *d_out = thrust::raw_pointer_cast(out.data());
+
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};  
+
+  CubDebugExit(cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out, n));
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+  d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+  CubDebugExit(cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out, n));
+
+  const out_t result = out[0];
+  AssertEquals(result.key, 0);
+  AssertEquals(result.value, -inf);
+}
+
+void TestFloatInfInArg()
+{
+  TestFloatInfInArgMin();
+  TestFloatInfInArgMax();
+}
 #endif
 
 template <typename InputT, typename OutputT, typename OffsetT>
@@ -1800,6 +1895,7 @@ int main(int argc, char** argv)
 #elif TEST_TYPES == 3
     TestType<TestFoo, TestFoo>(max_items, max_segments);
     TestAccumulatorTypes();
+    TestFloatInfInArg();
 
 #if TEST_HALF_T
     TestType<half_t, half_t>(max_items, max_segments);

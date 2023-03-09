@@ -757,6 +757,10 @@ struct DeviceSegmentedReduce
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
 
+    using AccumT = OutputTupleT;
+
+    using InitT = detail::reduce::empty_problem_init_t<AccumT>;
+
     // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
     using ArgIndexInputIteratorT =
       ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT>;
@@ -764,27 +768,26 @@ struct DeviceSegmentedReduce
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
     // Initial value
-    OutputTupleT initial_value(1, Traits<InputValueT>::Max()); // replace with
-                                                               // std::numeric_limits<T>::max()
-                                                               // when C++11
-                                                               // support is
-                                                               // more prevalent
+    // TODO Address https://github.com/NVIDIA/cub/issues/651
+    InitT initial_value{AccumT(1, Traits<InputValueT>::Max())}; 
 
     return DispatchSegmentedReduce<ArgIndexInputIteratorT,
                                    OutputIteratorT,
                                    BeginOffsetIteratorT,
                                    EndOffsetIteratorT,
                                    OffsetT,
-                                   cub::ArgMin>::Dispatch(d_temp_storage,
-                                                          temp_storage_bytes,
-                                                          d_indexed_in,
-                                                          d_out,
-                                                          num_segments,
-                                                          d_begin_offsets,
-                                                          d_end_offsets,
-                                                          cub::ArgMin(),
-                                                          initial_value,
-                                                          stream);
+                                   cub::ArgMin,
+                                   InitT,
+                                   AccumT>::Dispatch(d_temp_storage,
+                                                     temp_storage_bytes,
+                                                     d_indexed_in,
+                                                     d_out,
+                                                     num_segments,
+                                                     d_begin_offsets,
+                                                     d_end_offsets,
+                                                     cub::ArgMin(),
+                                                     initial_value,
+                                                     stream);
   }
 
   template <typename InputIteratorT,
@@ -1127,6 +1130,10 @@ struct DeviceSegmentedReduce
       cub::detail::non_void_value_t<OutputIteratorT,
                                     KeyValuePair<OffsetT, InputValueT>>;
 
+    using AccumT = OutputTupleT;
+
+    using InitT = detail::reduce::empty_problem_init_t<AccumT>;
+
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
 
@@ -1136,16 +1143,18 @@ struct DeviceSegmentedReduce
 
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
-    // Initial value, replace with std::numeric_limits<T>::lowest() when C++11 
-    // support is more prevalent
-    OutputTupleT initial_value(1, Traits<InputValueT>::Lowest());
+    // Initial value
+    // TODO Address https://github.com/NVIDIA/cub/issues/651
+    InitT initial_value{AccumT(1, Traits<InputValueT>::Lowest())}; 
 
     return DispatchSegmentedReduce<ArgIndexInputIteratorT,
                                    OutputIteratorT,
                                    BeginOffsetIteratorT,
                                    EndOffsetIteratorT,
                                    OffsetT,
-                                   cub::ArgMax>::Dispatch(d_temp_storage,
+                                   cub::ArgMax,
+                                   InitT,
+                                   AccumT>::Dispatch(d_temp_storage,
                                                           temp_storage_bytes,
                                                           d_indexed_in,
                                                           d_out,
