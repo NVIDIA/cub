@@ -43,6 +43,7 @@
 #include "../util_ptx.cuh"
 #include "../util_type.cuh"
 
+#include <cuda/std/type_traits>
 
 CUB_NAMESPACE_BEGIN
 
@@ -199,13 +200,15 @@ private:
      ******************************************************************************/
 
     // Integer type for digit counters (to be packed into words of type PackedCounters)
-    typedef unsigned short DigitCounter;
+    using DigitCounter = unsigned short;
 
     // Integer type for packing DigitCounters into columns of shared memory banks
     using PackedCounter =
       cub::detail::conditional_t<SMEM_CONFIG == cudaSharedMemBankSizeEightByte,
                                  unsigned long long,
                                  unsigned int>;
+
+    static constexpr DigitCounter max_tile_size = ::cuda::std::numeric_limits<DigitCounter>::max();
 
     enum
     {
@@ -450,6 +453,9 @@ public:
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile
         DigitExtractorT digit_extractor)                    ///< [in] The digit extractor
     {
+        static_assert(BLOCK_THREADS * KEYS_PER_THREAD <= max_tile_size,
+                      "DigitCounter type is too small to hold this number of keys");
+
         DigitCounter    thread_prefixes[KEYS_PER_THREAD];   // For each key, the count of previous keys in this tile having the same digit
         DigitCounter*   digit_counters[KEYS_PER_THREAD];    // For each key, the byte-offset of its corresponding digit counter in smem
 
@@ -514,6 +520,9 @@ public:
         DigitExtractorT digit_extractor,                    ///< [in] The digit extractor
         int             (&exclusive_digit_prefix)[BINS_TRACKED_PER_THREAD])            ///< [out] The exclusive prefix sum for the digits [(threadIdx.x * BINS_TRACKED_PER_THREAD) ... (threadIdx.x * BINS_TRACKED_PER_THREAD) + BINS_TRACKED_PER_THREAD - 1]
     {
+        static_assert(BLOCK_THREADS * KEYS_PER_THREAD <= max_tile_size,
+                      "DigitCounter type is too small to hold this number of keys");
+
         // Rank keys
         RankKeys(keys, ranks, digit_extractor);
 
