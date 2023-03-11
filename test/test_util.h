@@ -1653,31 +1653,3 @@ __device__ __host__ bool operator!=(const HugeDataType &lhs,
 
   return false;
 }
-
-
-template <int LogicalWarpThreads,
-          int ItemsPerThread,
-          int BlockThreads,
-          typename IteratorT>
-void FillStriped(IteratorT it)
-{
-  using T = CUB_NS_QUALIFIER::detail::value_t<IteratorT>;
-
-  const int warps_in_block = BlockThreads / LogicalWarpThreads;
-  const int items_per_warp = LogicalWarpThreads * ItemsPerThread;
-
-  for (int warp_id = 0; warp_id < warps_in_block; warp_id++)
-  {
-    const T warp_offset_val = static_cast<T>(items_per_warp * warp_id);
-
-    for (int lane_id = 0; lane_id < LogicalWarpThreads; lane_id++)
-    {
-      const T lane_offset = warp_offset_val + static_cast<T>(lane_id);
-
-      for (int item = 0; item < ItemsPerThread; item++)
-      {
-        *(it++) = lane_offset + static_cast<T>(item * LogicalWarpThreads);
-      }
-    }
-  }
-}

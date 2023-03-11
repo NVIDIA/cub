@@ -27,17 +27,17 @@
 
 #define C2H_EXPORTS
 
-#include <c2h/generators.cuh>
-#include <c2h/custom_type.cuh>
-
-#include <curand.h>
+#include <thrust/distance.h>
+#include <thrust/execution_policy.h>
+#include <thrust/for_each.h>
+#include <thrust/tabulate.h>
 
 #include <cstdint>
 
-#include <thrust/distance.h>
-#include <thrust/tabulate.h>
-#include <thrust/for_each.h>
-#include <thrust/execution_policy.h>
+#include <c2h/custom_type.cuh>
+#include <c2h/generators.cuh>
+#include <curand.h>
+#include <fill_striped.cuh>
 
 namespace c2h
 {
@@ -380,5 +380,38 @@ VEC_SPECIALIZATION(double, 2);
 VEC_SPECIALIZATION(uchar, 3);
 
 VEC_SPECIALIZATION(ulonglong, 4);
+
+template <typename VecType, typename Type>
+struct vec_gen_t
+{
+  std::size_t n;
+  scalar_to_vec_t<VecType> convert;
+
+  vec_gen_t(std::size_t n)
+      : n(n)
+  {}
+
+  template <typename CounterT>
+  __device__ VecType operator()(CounterT id)
+  {
+    return convert(static_cast<Type>(id) % n);
+  }
+};
+
+#define VEC_GEN_MOD_SPECIALIZATION(VEC_TYPE, SCALAR_TYPE)                                          \
+  template <>                                                                                      \
+  void gen<VEC_TYPE>(modulo_t mod, thrust::device_vector<VEC_TYPE> & data)                         \
+  {                                                                                                \
+    thrust::tabulate(data.begin(), data.end(), vec_gen_t<VEC_TYPE, SCALAR_TYPE>{mod.get()});       \
+  }
+
+VEC_GEN_MOD_SPECIALIZATION(short2, short);
+
+VEC_GEN_MOD_SPECIALIZATION(uchar3, unsigned char);
+
+VEC_GEN_MOD_SPECIALIZATION(ulonglong4, unsigned long long);
+
+VEC_GEN_MOD_SPECIALIZATION(ushort4, unsigned short);
+
 } // c2h
 
