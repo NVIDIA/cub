@@ -24,7 +24,7 @@ We recommend the [CUB Project Website](http://nvlabs.github.io/cub) for further 
 <br><hr>
 <h3>A Simple Example</h3>
 
-```C++
+```cpp
 #include <cub/cub.cuh>
 
 // Block-sorting CUDA kernel
@@ -160,7 +160,7 @@ CUB uses the [CMake build system](https://cmake.org/) to build unit tests,
 examples, and header tests. To build CUB as a developer, the following
 recipe should be followed:
 
-```
+```bash
 # Clone Thrust and CUB from Github. CUB is located in Thrust's
 # `dependencies/cub` submodule.
 git clone --recursive https://github.com/NVIDIA/thrust.git
