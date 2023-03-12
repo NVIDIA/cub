@@ -6,6 +6,7 @@
 enabled = true
 name = "CUB"
 project = "CUB"
+logo = "img/logo.png"
 
 enhanced_search_enabled = true
 api_output_directory = "api"
@@ -31,7 +32,9 @@ doxygen_input = [
     "../cub/thread/*.cuh",
     "../cub/warp/*.cuh",
     "../cub/block/*.cuh",
-    "../cub/device/*.cuh"
+    "../cub/device/*.cuh",
+    "../cub/grid/*.cuh",
+    "../cub/iterator/*.cuh"
 ]
 
 # Using wildcards is also supported in `doxygen_input`. Assuming there are no other `.h` files
@@ -88,10 +91,12 @@ doxygen_predefined = [
     "__device__",
     "__host__",
     "__forceinline__",
+    "__declspec(x)=",
     "__align__(x)=",
     "CUB_STATIC_ASSERT(cond,msg)=",
     "CUB_RUNTIME_FUNCTION",
-    "CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED"
+    "CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED",
+    "CUB_IGNORE_DEPRECATED_CPP_DIALECT"
 ]
 
 # make sure to use ./fetch_imgs.sh 
@@ -99,5 +104,10 @@ doxygen_conf_extra = """
   IMAGE_PATH             = ${config_root}/img
   DOXYFILE_ENCODING      = UTF-8
   INPUT_ENCODING         = UTF-8
-  EXTENSION_MAPPING      = cuh=c++
+  EXTENSION_MAPPING      = cuh=c++ cu=c++
+  EXAMPLE_PATH           = ../examples/device
+  EXAMPLE_RECURSIVE      = NO
+  EXAMPLE_PATTERNS       = *.cu
+  EXCLUDE_SYMBOLS        = "*detail*" "CUB_DETAIL*"
+  AUTOLINK_SUPPORT       = YES
 """

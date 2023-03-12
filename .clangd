@@ -39,6 +39,7 @@ CompileFlags:
     - "-Xfatbin*"
     - "-Xcompiler*"
     - "-Xcudafe*"
+    - "-rdc=*"
     - "-gpu=*"
     - "--diag_suppress*"
     # strip CUDA arch flags

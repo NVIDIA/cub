@@ -32,84 +32,1026 @@
 #include <type_traits>
 #include <utility>
 
-#include <thrust/host_vector.h>
-#include <thrust/sequence.h>
-
-struct pair_decomposer_t
+// example-begin custom-type
+struct custom_t
 {
-  template <template <typename> class... Ps>
-  __host__ __device__ ::cuda::std::tuple<std::size_t &, std::size_t &>
-  operator()(c2h::custom_type_t<Ps...> &key) const
-  {
-    return {key.key, key.val};
-  }
+  float f;
+  int unused;
+  long long int lli;
+
+  custom_t() = default;
+  __device__ custom_t(float f, long long int lli)
+      : f(f)
+      , unused(42)
+      , lli(lli)
+  {}
 };
 
-struct pair_custom_sort_op_t
+static __device__ bool operator==(const custom_t &lhs, const custom_t &rhs)
 {
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int /* begin_bit */,
-                             int /* end_bit */,
-                             cub::Int2Type<0> /* striped */)
-  {
-    block_radix_sort.Sort(keys, pair_decomposer_t{});
-  }
-
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int /* begin_bit */,
-                             int /* end_bit */,
-                             cub::Int2Type<1> /* striped */)
-  {
-    block_radix_sort.SortBlockedToStriped(keys, pair_decomposer_t{});
-  }
-};
-
-constexpr int items_per_thread = 1;
-constexpr int threads_in_block = 2;
-constexpr int tile_size = items_per_thread * threads_in_block;
-
-constexpr int radix_bits = 8;
-constexpr bool memoize = true;
-constexpr cub::BlockScanAlgorithm algorithm = cub::BLOCK_SCAN_WARP_SCANS;
-constexpr cudaSharedMemConfig shmem_config = cudaSharedMemBankSizeFourByte;
-
-template <class KeyT>
-thrust::device_vector<KeyT> reference_sort_keys(const thrust::device_vector<KeyT> &keys_in)
-{
-  thrust::host_vector<KeyT> host_keys = keys_in;
-  std::sort(host_keys.begin(), host_keys.end());
-  return host_keys;
+  return lhs.f == rhs.f && lhs.lli == rhs.lli;
 }
 
-TEST_CASE("Block radix sort can sort custom pairs", "[radix][sort][block]")
+struct decomposer_t
 {
-  using key_t = c2h::custom_type_t<c2h::equal_comparable_t,                 //
-                                   c2h::lexicographical_less_comparable_t,  //
-                                   c2h::lexicographical_greater_comparable_t>;
+  __device__ ::cuda::std::tuple<float &, long long int &> //
+  operator()(custom_t &key) const
+  {
+    return {key.f, key.lli};
+  }
+};
+// example-end custom-type
 
-  // const bool is_descending = false;
-  const bool striped = GENERATE(false, true);
-  const int begin_bit = 0;
-  const int end_bit = sizeof(std::size_t) * 8 * 2;
+__global__ void sort_keys()
+{
+  // example-begin keys
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3>;
 
-  thrust::device_vector<key_t> in_keys(tile_size);
-  thrust::device_vector<key_t> out_keys(tile_size);
-  c2h::gen(CUB_SEED(2), in_keys);
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
 
-  auto reference_keys = reference_sort_keys(in_keys);
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+2.5, 4}, //
+       {-2.5, 0}, //
+       {+1.1, 3}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 1}, //
+       {-0.0, 2}, //
+       {+3.7, 5}  //
+     }};
 
-  block_radix_sort<items_per_thread, threads_in_block, radix_bits, memoize, algorithm, shmem_config>(
-    pair_custom_sort_op_t{},
-    thrust::raw_pointer_cast(in_keys.data()),
-    thrust::raw_pointer_cast(out_keys.data()),
-    begin_bit,
-    end_bit,
-    striped);
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage).Sort(thread_keys[threadIdx.x], decomposer_t{});
 
-  INFO( "striped = " << striped );
-  REQUIRE( reference_keys == out_keys );
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {-2.5, 0}, //
+       {+0.0, 1}, //
+       {-0.0, 2}  //
+     },
+     {
+       // thread 1 expected keys
+       {+1.1, 3}, //
+       {+2.5, 4}, //
+       {+3.7, 5}  //
+     }};
+  // example-end keys
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+}
+
+__global__ void sort_keys_bits()
+{
+  // example-begin keys-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 1 key each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 1>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][1] = //
+    {{
+       {24.2, 1ll << 61} // thread 0 keys
+     },
+     {
+       {42.4, 1ll << 60} // thread 1 keys
+     }};
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 00100000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00010000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .Sort(thread_keys[threadIdx.x], decomposer_t{}, begin_bit, end_bit);
+
+  custom_t expected_output[2][3] = //
+    {{
+       {42.4, 1ll << 60}, // thread 0 expected keys
+     },
+     {
+       {24.2, 1ll << 61} // thread 1 expected keys
+     }};
+  // example-end keys-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+}
+
+__global__ void sort_keys_descending()
+{
+  // example-begin keys-descending
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+1.1, 2}, //
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 3}, //
+       {-2.5, 5}, //
+       {+3.7, 0}  //
+     }};
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage).SortDescending(thread_keys[threadIdx.x], decomposer_t{});
+
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {+3.7, 0}, //
+       {+2.5, 1}, //
+       {+1.1, 2}, //
+     },
+     {
+       // thread 1 expected keys
+       {-0.0, 4}, //
+       {+0.0, 3}, //
+       {-2.5, 5}  //
+     }};
+  // example-end keys-descending
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+}
+
+__global__ void sort_keys_descending_bits()
+{
+  // example-begin keys-descending-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 1 key each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 1>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][1] = //
+    {{
+       {42.4, 1ll << 60} // thread 0 keys
+     },
+     {
+       {24.2, 1ll << 61} // thread 1 keys
+     }};
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000010001010011001100110011010 00010000000000...0000
+  // decompose(in[1]) = 01000001110000011001100110011010 00100000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescending(thread_keys[threadIdx.x], decomposer_t{}, begin_bit, end_bit);
+
+  custom_t expected_output[2][3] = //
+    {{
+       {24.2, 1ll << 61}, // thread 0 expected keys
+     },
+     {
+       {42.4, 1ll << 60}  // thread 1 expected keys
+     }};
+  // example-end keys-descending-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+}
+
+__global__ void sort_pairs()
+{
+  // example-begin pairs
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+2.5, 4}, //
+       {-2.5, 0}, //
+       {+1.1, 3}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 1}, //
+       {-0.0, 2}, //
+       {+3.7, 5}  //
+     }};
+
+  int thread_values[2][3] = //
+    {{4, 0, 3},             // thread 0 values
+     {1, 2, 5}};            // thread 1 values
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .Sort(thread_keys[threadIdx.x], thread_values[threadIdx.x], decomposer_t{});
+
+  custom_t expected_keys[2][3] = //
+    {{
+       // thread 0 expected keys
+       {-2.5, 0}, //
+       {+0.0, 1}, //
+       {-0.0, 2}  //
+     },
+     {
+       // thread 1 expected keys
+       {+1.1, 3}, //
+       {+2.5, 4}, //
+       {+3.7, 5}  //
+     }};
+
+  int expected_values[2][3] = //
+    {{0, 1, 2},  // thread 0 expected values
+     {3, 4, 5}}; // thread 1 expected values
+  // example-end pairs
+
+  assert(thread_keys[threadIdx.x][0] == expected_keys[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_keys[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_keys[threadIdx.x][2]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+  assert(thread_values[threadIdx.x][2] == expected_values[threadIdx.x][2]);
+}
+
+__global__ void sort_pairs_bits()
+{
+  // example-begin pairs-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 1, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][1] = //
+    {{
+       {24.2, 1ll << 61} // thread 0 keys
+     },
+     {
+       {42.4, 1ll << 60} // thread 1 keys
+     }};
+
+  int thread_values[2][1] = //
+    {{1},  // thread 0 values
+     {0}}; // thread 1 values
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 00100000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00010000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .Sort(thread_keys[threadIdx.x], thread_values[threadIdx.x], decomposer_t{}, begin_bit, end_bit);
+
+  custom_t expected_keys[2][3] = //
+    {{
+       {42.4, 1ll << 60}, // thread 0 expected keys
+     },
+     {
+       {24.2, 1ll << 61} // thread 1 expected keys
+     }};
+
+  int expected_values[2][1] = //
+    {{0},  // thread 0 values
+     {1}}; // thread 1 values
+  // example-end pairs-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_keys[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+}
+
+__global__ void sort_pairs_descending()
+{
+  // example-begin pairs-descending
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+1.1, 2}, //
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 3}, //
+       {-2.5, 5}, //
+       {+3.7, 0}  //
+     }};
+
+  int thread_values[2][3] = //
+    {{2, 1, 4},  // thread 0 values
+     {3, 5, 0}}; // thread 1 values
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescending(thread_keys[threadIdx.x], thread_values[threadIdx.x], decomposer_t{});
+
+  custom_t expected_keys[2][3] = //
+    {{
+       // thread 0 expected keys
+       {+3.7, 0}, //
+       {+2.5, 1}, //
+       {+1.1, 2}, //
+     },
+     {
+       // thread 1 expected keys
+       {-0.0, 4}, //
+       {+0.0, 3}, //
+       {-2.5, 5}  //
+     }};
+
+  int expected_values[2][3] = //
+    {{0, 1, 2},  // thread 0 expected values
+     {4, 3, 5}}; // thread 1 expected values
+  // example-end pairs-descending
+
+  assert(thread_keys[threadIdx.x][0] == expected_keys[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_keys[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_keys[threadIdx.x][2]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+  assert(thread_values[threadIdx.x][2] == expected_values[threadIdx.x][2]);
+}
+
+__global__ void sort_pairs_descending_bits()
+{
+  // example-begin pairs-descending-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 1, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][1] = //
+    {{
+       {42.4, 1ll << 60} // thread 0 keys
+     },
+     {
+       {24.2, 1ll << 61} // thread 1 keys
+     }};
+
+  int thread_values[2][1] = //
+    {{1},  // thread 0 values
+     {0}}; // thread 1 values
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000010001010011001100110011010 00010000000000...0000
+  // decompose(in[1]) = 01000001110000011001100110011010 00100000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescending(thread_keys[threadIdx.x],
+                    thread_values[threadIdx.x],
+                    decomposer_t{},
+                    begin_bit,
+                    end_bit);
+
+  custom_t expected_output[2][3] = //
+    {{
+       {24.2, 1ll << 61}, // thread 0 expected keys
+     },
+     {
+       {42.4, 1ll << 60}  // thread 1 expected keys
+     }};
+
+  int expected_values[2][1] = //
+    {{0},  // thread 0 expected values
+     {1}}; // thread 1 expected values
+  // example-end pairs-descending-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+}
+
+__global__ void sort_keys_blocked_to_striped()
+{
+  // example-begin keys-striped
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+2.5, 4}, //
+       {-2.5, 0}, //
+       {+1.1, 3}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 1}, //
+       {-0.0, 2}, //
+       {+3.7, 5}  //
+     }};
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage).SortBlockedToStriped(thread_keys[threadIdx.x], decomposer_t{});
+
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {-2.5, 0}, //
+       {-0.0, 2}, //
+       {+2.5, 4}  //
+     },
+     {
+       // thread 1 expected keys
+       {+0.0, 1}, //
+       {+1.1, 3}, //
+       {+3.7, 5}  //
+     }};
+  // example-end keys-striped
+  
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+}
+
+__global__ void sort_keys_blocked_to_striped_bits()
+{
+  // example-begin keys-striped-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 2 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 2>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][2] = //
+    {{ // thread 0 keys
+       {24.2, 1ll << 62}, 
+       {42.4, 1ll << 61} 
+     },
+     { // thread 1 keys
+       {42.4, 1ll << 60}, 
+       {24.2, 1ll << 59}  
+     }};
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 01000000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00100000000000...0000
+  // decompose(in[2]) = 01000001110000011001100110011010 00010000000000...0000
+  // decompose(in[3]) = 01000010001010011001100110011010 00001000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0100xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[2]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[3]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0000xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortBlockedToStriped(thread_keys[threadIdx.x], decomposer_t{}, begin_bit, end_bit);
+
+  custom_t expected_output[2][3] = //
+    {{ // thread 0 expected keys
+       {24.2, 1ll << 59}, 
+       {42.4, 1ll << 61}
+     },
+     { // thread 1 expected keys
+       {42.4, 1ll << 60},
+       {24.2, 1ll << 62} 
+     }};
+  // example-end keys-striped-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+}
+
+__global__ void sort_pairs_blocked_to_striped()
+{
+  // example-begin pairs-striped
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+2.5, 4}, //
+       {-2.5, 0}, //
+       {+1.1, 3}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 1}, //
+       {-0.0, 2}, //
+       {+3.7, 5}  //
+     }};
+
+  int thread_values[2][3] = //
+    {{4, 0, 3},  // thread 0 values
+     {1, 2, 5}}; // thread 1 values
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortBlockedToStriped(thread_keys[threadIdx.x], thread_values[threadIdx.x], decomposer_t{});
+
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {-2.5, 0}, //
+       {-0.0, 2}, //
+       {+2.5, 4}  //
+     },
+     {
+       // thread 1 expected keys
+       {+0.0, 1}, //
+       {+1.1, 3}, //
+       {+3.7, 5}  //
+     }};
+
+  int expected_values[2][3] = //
+    {{0, 2, 4},  // thread 0 values
+     {1, 3, 5}}; // thread 1 values
+  // example-end pairs-striped
+  
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+  assert(thread_values[threadIdx.x][2] == expected_values[threadIdx.x][2]);
+}
+
+__global__ void sort_pairs_blocked_to_striped_bits()
+{
+  // example-begin pairs-striped-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 2 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 2, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][2] = //
+    {{ // thread 0 keys
+       {24.2, 1ll << 62}, 
+       {42.4, 1ll << 61} 
+     },
+     { // thread 1 keys
+       {42.4, 1ll << 60}, 
+       {24.2, 1ll << 59}  
+     }};
+
+  int thread_values[2][2] = //
+    {{3, 2},  // thread 0 values
+     {1, 0}}; // thread 1 values
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 01000000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00100000000000...0000
+  // decompose(in[2]) = 01000001110000011001100110011010 00010000000000...0000
+  // decompose(in[3]) = 01000010001010011001100110011010 00001000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0100xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[2]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[3]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0000xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortBlockedToStriped(thread_keys[threadIdx.x],
+                          thread_values[threadIdx.x],
+                          decomposer_t{},
+                          begin_bit,
+                          end_bit);
+
+  custom_t expected_output[2][3] = //
+    {{ // thread 0 expected keys
+       {24.2, 1ll << 59}, 
+       {42.4, 1ll << 61}
+     },
+     { // thread 1 expected keys
+       {42.4, 1ll << 60},
+       {24.2, 1ll << 62} 
+     }};
+
+  int expected_values[2][2] = //
+    {{0, 2},  // thread 0 values
+     {1, 3}}; // thread 1 values
+  // example-end pairs-striped-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+}
+
+__global__ void sort_keys_descending_blocked_to_striped()
+{
+  // example-begin keys-striped-descending
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+1.1, 2}, //
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 3}, //
+       {-2.5, 5}, //
+       {+3.7, 0}  //
+     }};
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescendingBlockedToStriped(thread_keys[threadIdx.x], decomposer_t{});
+
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {+3.7, 0}, //
+       {+1.1, 2}, //
+       {+0.0, 3}  //
+     },
+     {
+       // thread 1 expected keys
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+       {-2.5, 5}  //
+     }};
+  // example-end keys-striped-descending
+  
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+}
+
+__global__ void sort_keys_descending_blocked_to_striped_bits()
+{
+  // example-begin keys-striped-descending-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 2 keys each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 2>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][2] = //
+    {{ // thread 0 keys
+       {24.2, 1ll << 62}, 
+       {42.4, 1ll << 61} 
+     },
+     { // thread 1 keys
+       {42.4, 1ll << 60}, 
+       {24.2, 1ll << 59}  
+     }};
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 01000000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00100000000000...0000
+  // decompose(in[2]) = 01000001110000011001100110011010 00010000000000...0000
+  // decompose(in[3]) = 01000010001010011001100110011010 00001000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0100xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[2]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[3]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0000xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescendingBlockedToStriped(thread_keys[threadIdx.x], decomposer_t{}, begin_bit, end_bit);
+
+  custom_t expected_output[2][2] = //
+    {{ // thread 0 expected keys
+       {24.2, 1ll << 62}, //
+       {42.4, 1ll << 60}  //
+     },
+     { // thread 1 expected keys
+       {42.4, 1ll << 61}, //
+       {24.2, 1ll << 59}  //
+     }};
+  // example-end keys-striped-descending-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+}
+
+__global__ void sort_pairs_descending_blocked_to_striped()
+{
+  // example-begin pairs-striped-descending
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 3 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 3, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][3] = //
+    {{
+       // thread 0 keys
+       {+1.1, 2}, //
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+     },
+     {
+       // thread 1 keys
+       {+0.0, 3}, //
+       {-2.5, 5}, //
+       {+3.7, 0}  //
+     }};
+
+  int thread_values[2][3] = //
+    {{2, 1, 4},  // thread 0 values
+     {3, 5, 0}}; // thread 1 values
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescendingBlockedToStriped(thread_keys[threadIdx.x],
+                                    thread_values[threadIdx.x],
+                                    decomposer_t{});
+
+  custom_t expected_output[2][3] = //
+    {{
+       // thread 0 expected keys
+       {+3.7, 0}, //
+       {+1.1, 2}, //
+       {+0.0, 3}  //
+     },
+     {
+       // thread 1 expected keys
+       {+2.5, 1}, //
+       {-0.0, 4}, //
+       {-2.5, 5}  //
+     }};
+
+  int expected_values[2][3] = //
+    {{0, 2, 3},  // thread 0 values
+     {1, 4, 5}}; // thread 1 values
+  // example-end pairs-striped-descending
+  
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+  assert(thread_keys[threadIdx.x][2] == expected_output[threadIdx.x][2]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+  assert(thread_values[threadIdx.x][2] == expected_values[threadIdx.x][2]);
+}
+
+__global__ void sort_pairs_descending_blocked_to_striped_bits()
+{
+  // example-begin pairs-striped-descending-bits
+  // Specialize `cub::BlockRadixSort` for a 1D block of 2 threads owning 2 keys and values each
+  using block_radix_sort_t = cub::BlockRadixSort<custom_t, 2, 2, int>;
+
+  // Allocate shared memory for `cub::BlockRadixSort`
+  __shared__ block_radix_sort_t::TempStorage temp_storage;
+
+  // Obtain a segment of consecutive items that are blocked across threads
+  custom_t thread_keys[2][2] = //
+    {{ // thread 0 keys
+       {24.2, 1ll << 62}, 
+       {42.4, 1ll << 61} 
+     },
+     { // thread 1 keys
+       {42.4, 1ll << 60}, 
+       {24.2, 1ll << 59}  
+     }};
+
+  int thread_values[2][2] = //
+    {{3, 2},  // thread 0 values
+     {1, 0}}; // thread 1 values
+
+  const int begin_bit = sizeof(long long int) * 8 - 4; // 60
+  const int end_bit = sizeof(long long int) * 8 + 4; // 68
+
+  // Decomposition orders the bits as follows:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = 01000001110000011001100110011010 01000000000000...0000
+  // decompose(in[1]) = 01000010001010011001100110011010 00100000000000...0000
+  // decompose(in[2]) = 01000001110000011001100110011010 00010000000000...0000
+  // decompose(in[3]) = 01000010001010011001100110011010 00001000000000...0000
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+  //
+  // The bit subrange `[60, 68)` specifies differentiating key bits:
+  //
+  //                    <------------- fp32 -----------> <------ int64 ------>
+  // decompose(in[0]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0100xxxxxxxxxx...xxxx
+  // decompose(in[1]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0010xxxxxxxxxx...xxxx
+  // decompose(in[2]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0001xxxxxxxxxx...xxxx
+  // decompose(in[3]) = xxxxxxxxxxxxxxxxxxxxxxxxxxxx1010 0000xxxxxxxxxx...xxxx
+  //                    <-----------  higher bits  /  lower bits  -----------> 
+
+  // Collectively sort the keys
+  block_radix_sort_t(temp_storage)
+    .SortDescendingBlockedToStriped(thread_keys[threadIdx.x],
+                                    thread_values[threadIdx.x],
+                                    decomposer_t{},
+                                    begin_bit,
+                                    end_bit);
+
+  custom_t expected_output[2][2] = //
+    {{ // thread 0 expected keys
+       {24.2, 1ll << 62}, //
+       {42.4, 1ll << 60}  //
+     },
+     { // thread 1 expected keys
+       {42.4, 1ll << 61}, //
+       {24.2, 1ll << 59}  //
+     }};
+
+  int expected_values[2][2] = //
+    {{3, 1},  // thread 0 values
+     {2, 0}}; // thread 1 values
+  // example-end pairs-striped-descending-bits
+
+  assert(thread_keys[threadIdx.x][0] == expected_output[threadIdx.x][0]);
+  assert(thread_keys[threadIdx.x][1] == expected_output[threadIdx.x][1]);
+
+  assert(thread_values[threadIdx.x][0] == expected_values[threadIdx.x][0]);
+  assert(thread_values[threadIdx.x][1] == expected_values[threadIdx.x][1]);
+}
+
+TEST_CASE("Block radix sort works in some corner cases", "[radix][sort][block]")
+{
+  sort_keys<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_descending<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_descending_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_descending<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_descending_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_blocked_to_striped<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_blocked_to_striped_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_blocked_to_striped<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_blocked_to_striped_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_descending_blocked_to_striped<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_keys_descending_blocked_to_striped_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_descending_blocked_to_striped<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
+
+  sort_pairs_descending_blocked_to_striped_bits<<<1, 2>>>();
+  REQUIRE(cudaSuccess == cudaGetLastError());
+  REQUIRE(cudaSuccess == cudaDeviceSynchronize());
 }

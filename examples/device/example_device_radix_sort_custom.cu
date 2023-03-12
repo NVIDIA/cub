@@ -32,6 +32,7 @@
 #include <functional>
 #include <limits>
 #include <type_traits>
+#include "cub/block/radix_rank_sort_operations.cuh"
 
 #include <thrust/detail/raw_pointer_cast.h>
 #include <thrust/device_vector.h>
@@ -43,15 +44,16 @@ struct custom_t
   float f;
 };
 
-struct custom_decomposer_t
+struct decomposer_t
 {
-  __host__ __device__ ::cuda::std::tuple<std::uint16_t&, float&> operator()(custom_t &key) const
+  __host__ __device__ //
+  ::cuda::std::tuple<std::uint16_t&, float&> operator()(custom_t &key) const
   {
     return {key.i, key.f};
   }
 };
 
-void print_intro()
+int main()
 {
   std::cout << "This example illustrates use of radix sort with custom type.\n";
   std::cout << "Let's define a simple structure of the following form:\n\n";
@@ -90,9 +92,10 @@ void print_intro()
 
   std::cout << "Let's say we are trying to compare l={42, -4.2f} with g={42, 4.2f}:\n";
 
-  std::cout << '\t';
+  std::cout << "\n\t";
   print_segment(" `.f` ", 32);
-  print_segment(" `.i` ", 32);
+  print_segment(" padding -", 16);
+  print_segment(" `.s` ", 16);
   std::cout << '\n';
 
   custom_t l{42, -4.2f};
@@ -101,115 +104,157 @@ void print_intro()
   std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
 
   std::cout << "As you can see, `l` key happened to be larger in the bit-lexicographicl order.\n";
-  std::cout << "Since there's no reflection in C++, we can't expect the type and convert \n";
+  std::cout << "Since there's no reflection in C++, we can't inspect the type and convert \n";
   std::cout << "each field into the bit-lexicographicl order. You can tell CUB how to do that\n";
   std::cout << "by specializing cub::RadixTraits for the `custom_t`:\n\n";
 
-  std::cout << "\tstruct custom_bit_conversation_policy_t {\n";
-  std::cout << "\t  using fp_traits                 = cub::RadixTraits<float>;\n";
-  std::cout << "\t  using fp_bit_ordered            = fp_traits::bit_ordered_type;\n";
-  std::cout << "\t  using fp_bit_ordered_conversion = fp_traits::bit_ordered_conversion_policy;\n";
-  std::cout << "\t\n";
-  std::cout << "\t  static __host__ __device__ std::uint64_t to_bit_ordered(std::uint64_t val) {\n";
-  std::cout
-    << "\t    return embed_fp(val, fp_bit_ordered_conversion::to_bit_ordered(extract_fp(val)));\n";
-  std::cout << "\t  }\n\n";
-  std::cout
-    << "\t  static __host__ __device__ std::uint64_t from_bit_ordered(std::uint64_t val) {\n";
-  std::cout << "\t    return embed_fp(val, "
-               "fp_bit_ordered_conversion::from_bit_ordered(extract_fp(val)));\n";
+  std::cout << "\tstruct decomposer_t \n";
+  std::cout << "\t{\n";
+  std::cout << "\t  __host__ __device__ \n";
+  std::cout << "\t  ::cuda::std::tuple<std::uint16_t&, float&> operator()(custom_t &key) const \n";
+  std::cout << "\t  {\n";
+  std::cout << "\t    return {key.i, key.f};\n";
   std::cout << "\t  }\n";
-  std::cout << "\t};\n\n";
+  std::cout << "\t};\n";
+  std::cout << "\n";
 
-  std::cout << "After conversion we have:\n\n";
+  std::cout << "Decomposer allows you to specify which fields are most significant and which\n";
+  std::cout << "are least significant. In our case, `f` is the most significant field and\n";
+  std::cout << "`i` is the least significant field. The decomposer is then used by CUB to convert\n";
+  std::cout << "the `custom_t` into the bit-lexicographicl order:\n\n";
 
-  std::cout << '\t';
+  using conversion_policy = cub::detail::radix::traits_t<custom_t>::bit_ordered_conversion_policy;
+  l = conversion_policy::to_bit_ordered(decomposer_t{}, l);
+  g = conversion_policy::to_bit_ordered(decomposer_t{}, g);
+
+  std::cout << "\n\t";
   print_segment(" `.f` ", 32);
-  print_segment(" `.i` ", 32);
+  print_segment(" padding -", 16);
+  print_segment(" `.s` ", 16);
   std::cout << '\n';
 
-  std::cout << "\ts";
-  print_segment(" exp. ", 8);
-  print_segment(" mantissa -", 23);
-  print_segment(" unsigned integer ", 32);
+  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
+  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+
   std::cout << '\n';
-}
+  std::cout << "As you can see, `g` is now actually larger than `l` in the bit-lexicographicl order.\n";
+  std::cout << "After binning, CUB is able to restore the original key:\n\n";
 
-void sort()
-{
-  int n = 2;
-  thrust::device_vector<custom_t> in(n);
-  thrust::device_vector<custom_t> out(n);
+  l = conversion_policy::from_bit_ordered(decomposer_t{}, l);
+  g = conversion_policy::from_bit_ordered(decomposer_t{}, g);
 
-  in[0] = custom_t{ 0, 1 };
-  in[1] = custom_t{ 0, 0 };
+  std::cout << "\n\t";
+  print_segment(" `.f` ", 32);
+  print_segment(" padding -", 16);
+  print_segment(" `.s` ", 16);
+  std::cout << '\n';
 
-  std::uint8_t *d_temp_storage{};
-  std::size_t temp_storage_size{};
+  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
+  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
 
-  // example-begin keys-only
+  using inversion_policy = cub::detail::radix::traits_t<custom_t>::bit_ordered_inversion_policy;
+  std::cout << '\n';
+  std::cout << "We are also able to inverse differentiating bits:\n";
+
+  l = inversion_policy::inverse(decomposer_t{}, l);
+  g = inversion_policy::inverse(decomposer_t{}, g);
+
+  std::cout << "\n\t";
+  print_segment(" `.f` ", 32);
+  print_segment(" padding -", 16);
+  print_segment(" `.s` ", 16);
+  std::cout << '\n';
+
+  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
+  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+
+  std::cout << '\n';
+  std::cout << "We as well can compute the minimal and minimal / maximal keys:\n";
+
+  l = cub::detail::radix::traits_t<custom_t>::min_raw_binary_key(decomposer_t{});
+  g = cub::detail::radix::traits_t<custom_t>::max_raw_binary_key(decomposer_t{});
+
+  std::cout << "\n\t";
+  print_segment(" `.f` ", 32);
+  print_segment(" padding -", 16);
+  print_segment(" `.s` ", 16);
+  std::cout << '\n';
+
+  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
+  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+
+  std::cout << "We can even compute the number of differentiating bits:\n\n";
+
+  std::cout << "end:\t";
+  std::cout << cub::detail::radix::traits_t<custom_t>::default_end_bit(decomposer_t{});
+  std::cout << '\n';
+  std::cout << "size:\t";
+  std::cout << sizeof(custom_t) * CHAR_BIT;
+  std::cout << "\n\n";
+
+  std::cout << "All of these operations are used behind the scenes by CUB to sort custom types:\n\n";
+
+  const int num_items = 6;
+  thrust::device_vector<custom_t> in = {
+    {4, +2.5f},
+    {0, -2.5f},
+    {3, +1.1f},
+    {1, +0.0f},
+    {2, -0.0f},
+    {5, +3.7f}
+  };
+
+  std::cout << "in:\n";
+  for (custom_t key: in) {
+    std::cout << "\t{.i = " << key.i << ", .f = " << key.f << "},\n";
+  }
+
+  thrust::device_vector<custom_t> out(num_items);
+
   const custom_t *d_in = thrust::raw_pointer_cast(in.data());
-  custom_t *d_out = thrust::raw_pointer_cast(out.data());
+  custom_t *d_out      = thrust::raw_pointer_cast(out.data());
 
-  cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_size, 
-                                 d_in, d_out, n, custom_decomposer_t{});
+  // 1) Get temp storage size
+  std::uint8_t *d_temp_storage{};
+  std::size_t temp_storage_bytes{};
 
-  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_size);
+  cub::DeviceRadixSort::SortKeys(d_temp_storage,
+                                 temp_storage_bytes,
+                                 d_in,
+                                 d_out,
+                                 num_items,
+                                 decomposer_t{});
+
+  // 2) Allocate temp storage
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
   d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
 
-  cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_size, 
-                                 d_in, d_out, n, custom_decomposer_t{});
-  // example-end keys-only
+  // 3) Sort keys
+  cub::DeviceRadixSort::SortKeys(d_temp_storage,
+                                 temp_storage_bytes,
+                                 d_in,
+                                 d_out,
+                                 num_items,
+                                 decomposer_t{});
+  cudaDeviceSynchronize();
 
-  thrust::host_vector<custom_t> result = out;
-  std::cout << "{ " << result[0].i << " " << result[0].f << " }" << std::endl; 
-  std::cout << "{ " << result[1].i << " " << result[1].f << " }" << std::endl; 
-}
+  std::cout << "\n";
+  std::cout << "sort:\n";
+  std::cout << "\n";
 
-template <class T>
-void print(T)
-{
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-}
+  std::cout << "\tcub::DeviceRadixSort::SortKeys(d_temp_storage,\n";
+  std::cout << "\t                               temp_storage_bytes,\n";
+  std::cout << "\t                               d_in,\n";
+  std::cout << "\t                               d_out,\n";
+  std::cout << "\t                               num_items,\n";
+  std::cout << "\t                               decomposer_t{});\n\n";
 
-void print(custom_t aggregate)
-{
-  std::cout << std::bitset<64>(reinterpret_cast<std::uint64_t &>(aggregate)) << std::endl;
-}
-
-void print(std::uint32_t aggregate) { std::cout << std::bitset<32>(aggregate) << std::endl; }
-
-int main()
-{
-  /*
-  custom_t key{4, 2.0f};
-
-  ::cub::detail::max_raw_binary_key(custom_decomposer_t{}, key);
-  print(key);
-
-  ::cub::detail::min_raw_binary_key(custom_decomposer_t{}, key);
-  print(key);
-
-  ::cub::detail::to_bit_ordered(custom_decomposer_t{}, key);
-  print(key);
-
-  ::cub::detail::from_bit_ordered(custom_decomposer_t{}, key);
-  print(key);
-
-  ::cub::detail::inverse(custom_decomposer_t{}, key.i);
-  print(key);
-
-  const int end_bit = ::cub::detail::default_end_bit(custom_decomposer_t{}, key);
-  std::cout << "end bit = " << end_bit << std::endl;
-
-  for (int begin_bit = 16; begin_bit < end_bit; begin_bit += 4) {
-    std::uint32_t bits = ::cub::detail::custom_digit_extractor_t<custom_decomposer_t>(custom_decomposer_t{}, begin_bit, 4).Digit(key);
-    std::cout << begin_bit << " -> " << std::bitset<4>(bits) << std::endl;
+  std::cout << "out:\n";
+  for (custom_t key: out) {
+    std::cout << "\t{.i = " << key.i << ", .f = " << key.f << "},\n";
   }
-  */
 
-  // sort();
-  print_intro();
-
-  return 0;
+  std::cout << '\n';
+  std::cout << "If you have any issues with radix sort support of custom types, \n";
+  std::cout << "please feel free to use this example to identify the problem.\n\n";
 }

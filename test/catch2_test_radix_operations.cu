@@ -8,9 +8,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "catch2/catch.hpp"
-#include "catch2_test_helper.h"
-#include "thrust/type_traits/integer_sequence.h"
+#include <catch2_test_helper.h>
 
 template <typename KeyT>
 struct fundamental_extractor_t
@@ -31,9 +29,9 @@ struct fundamental_extractor_t
 };
 
 template <class T>
-thrust::host_vector<char> get_random_buffer()
+thrust::host_vector<std::uint8_t> get_random_buffer()
 {
-  thrust::device_vector<char> buffer(sizeof(T));
+  thrust::device_vector<std::uint8_t> buffer(sizeof(T));
   c2h::gen(CUB_SEED(3), buffer);
   return buffer;
 }
@@ -525,7 +523,7 @@ CUB_TEST("Radix operations reorder values for pair types",
   REQUIRE(l_2 == std::numeric_limits<T2>::lowest());
 
   {
-    tpl_t ref{0, 0};
+    tpl_t ref{T1{0}, T2{0}};
     const tpl_t unordered_val = tpl_t{l_1, l_2};
     const tpl_t ordered_val   = conversion_policy::to_bit_ordered(decomposer_t{}, unordered_val);
 

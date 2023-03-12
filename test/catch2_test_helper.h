@@ -59,7 +59,6 @@
 #define VAR_IDX 0
 #endif
 
-// It's a port of cartesian product from https://github.com/NVIDIA/nvbench
 namespace c2h
 {
 

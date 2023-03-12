@@ -172,8 +172,9 @@ class AgentSubWarpSort
     // Lowest() -> -1.79769e+308 = 00...00b -> TwiddleIn -> -0 = 10...00b
     // LOWEST   -> -nan          = 11...11b -> TwiddleIn ->  0 = 00...00b
 
+    // Segmented sort doesn't support custom types at the moment.
     bit_ordered_type default_key_bits = IS_DESCENDING 
-                                      ? traits::min_raw_binary_key(detail::fundamental_decomposer_t{}) // TODO Pass decomposer
+                                      ? traits::min_raw_binary_key(detail::fundamental_decomposer_t{})
                                       : traits::max_raw_binary_key(detail::fundamental_decomposer_t{});
     return reinterpret_cast<KeyT &>(default_key_bits);
   }
