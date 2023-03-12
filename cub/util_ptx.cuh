@@ -727,6 +727,7 @@ __device__ __forceinline__ T ShuffleIndex(
 }
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 namespace detail 
 {
 
@@ -790,6 +791,7 @@ struct warp_matcher_t<LABEL_BITS, CUB_PTX_WARP_THREADS>
 };
 
 } // namespace detail
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
  * Compute a 32b mask of threads having the same least-significant

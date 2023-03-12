@@ -82,7 +82,8 @@ template <
     typename AgentRadixSortHistogramPolicy,
     bool IS_DESCENDING,
     typename KeyT,
-    typename OffsetT>
+    typename OffsetT,
+    typename DecomposerT = detail::fundamental_decomposer_t>
 struct AgentRadixSortHistogram
 {
     // constants
@@ -97,10 +98,16 @@ struct AgentRadixSortHistogram
         NUM_PARTS = AgentRadixSortHistogramPolicy::NUM_PARTS,
     };
 
+    using traits = detail::radix::traits_t<KeyT>;
+    using bit_ordered_type = typename traits::bit_ordered_type;
+    using bit_ordered_conversion = typename traits::bit_ordered_conversion_policy;
+
     typedef RadixSortTwiddle<IS_DESCENDING, KeyT> Twiddle;
     typedef std::uint32_t ShmemCounterT;
     typedef ShmemCounterT ShmemAtomicCounterT;
-    typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
+
+    using fundamental_digit_extractor_t = ShiftDigitExtractor<KeyT>;
+    using digit_extractor_t = typename traits::digit_extractor_t<fundamental_digit_extractor_t, DecomposerT>;
 
     struct _TempStorage
     {
@@ -117,7 +124,7 @@ struct AgentRadixSortHistogram
     OffsetT* d_bins_out;
 
     // data to compute the histogram
-    const UnsignedBits* d_keys_in;
+    const bit_ordered_type* d_keys_in;
 
     // number of data items
     OffsetT num_items;
@@ -128,13 +135,23 @@ struct AgentRadixSortHistogram
     // number of sorting passes
     int num_passes;
 
-    __device__ __forceinline__ AgentRadixSortHistogram
-        (TempStorage& temp_storage, OffsetT* d_bins_out, const KeyT* d_keys_in,
-         OffsetT num_items, int begin_bit, int end_bit) :
-          s(temp_storage.Alias()), d_bins_out(d_bins_out),
-          d_keys_in(reinterpret_cast<const UnsignedBits*>(d_keys_in)),
-          num_items(num_items), begin_bit(begin_bit), end_bit(end_bit),
-          num_passes((end_bit - begin_bit + RADIX_BITS - 1) / RADIX_BITS)
+    DecomposerT decomposer;
+
+    __device__ __forceinline__ AgentRadixSortHistogram(TempStorage &temp_storage,
+                                                       OffsetT *d_bins_out,
+                                                       const KeyT *d_keys_in,
+                                                       OffsetT num_items,
+                                                       int begin_bit,
+                                                       int end_bit,
+                                                       DecomposerT decomposer = {})
+        : s(temp_storage.Alias())
+        , d_bins_out(d_bins_out)
+        , d_keys_in(reinterpret_cast<const bit_ordered_type *>(d_keys_in))
+        , num_items(num_items)
+        , begin_bit(begin_bit)
+        , end_bit(end_bit)
+        , num_passes((end_bit - begin_bit + RADIX_BITS - 1) / RADIX_BITS)
+        , decomposer(decomposer)
     {}
 
     __device__ __forceinline__ void Init()
@@ -157,7 +174,7 @@ struct AgentRadixSortHistogram
     }
 
     __device__ __forceinline__
-    void LoadTileKeys(OffsetT tile_offset, UnsignedBits (&keys)[ITEMS_PER_THREAD])    
+    void LoadTileKeys(OffsetT tile_offset, bit_ordered_type (&keys)[ITEMS_PER_THREAD])    
     {
         // tile_offset < num_items always, hence the line below works
         bool full_tile = num_items - tile_offset >= TILE_ITEMS;
@@ -170,18 +187,18 @@ struct AgentRadixSortHistogram
         {
             LoadDirectStriped<BLOCK_THREADS>(
                 threadIdx.x, d_keys_in + tile_offset, keys,
-                num_items - tile_offset, Twiddle::DefaultKey());
+                num_items - tile_offset, Twiddle::DefaultKey(decomposer));
         }
 
         #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
-            keys[u] = Twiddle::In(keys[u]);
+            keys[u] = Twiddle::In(keys[u], decomposer);
         }
     }
 
     __device__ __forceinline__
-    void AccumulateSharedHistograms(OffsetT tile_offset, UnsignedBits (&keys)[ITEMS_PER_THREAD])
+    void AccumulateSharedHistograms(OffsetT tile_offset, bit_ordered_type (&keys)[ITEMS_PER_THREAD])
     {
         int part = LaneId() % NUM_PARTS;
         #pragma unroll
@@ -189,11 +206,10 @@ struct AgentRadixSortHistogram
              current_bit < end_bit; current_bit += RADIX_BITS, ++pass)
         {
             int num_bits = CUB_MIN(RADIX_BITS, end_bit - current_bit);
-            ShiftDigitExtractor<KeyT> digit_extractor(current_bit, num_bits);
             #pragma unroll
             for (int u = 0; u < ITEMS_PER_THREAD; ++u)
             {
-                int bin = digit_extractor.Digit(keys[u]);
+                std::uint32_t bin = digit_extractor(current_bit, num_bits).Digit(keys[u]);
                 // Using cuda::atomic<> results in lower performance on GP100,
                 // so atomicAdd() is used instead.
                 atomicAdd(&s.bins[pass][bin][part], 1);
@@ -242,7 +258,7 @@ struct AgentRadixSortHistogram
                  offset += TILE_ITEMS * gridDim.x)
             {
                 OffsetT tile_offset = portion_offset + offset;
-                UnsignedBits keys[ITEMS_PER_THREAD];
+                bit_ordered_type keys[ITEMS_PER_THREAD];
                 LoadTileKeys(tile_offset, keys);
                 AccumulateSharedHistograms(tile_offset, keys);
             }
@@ -252,6 +268,13 @@ struct AgentRadixSortHistogram
             AccumulateGlobalHistograms();
             CTA_SYNC();
         }
+    }
+
+    __device__ __forceinline__ digit_extractor_t digit_extractor(int current_bit, int num_bits)
+    {
+        return traits::template digit_extractor<fundamental_digit_extractor_t>(current_bit,
+                                                                               num_bits,
+                                                                               decomposer);
     }
 };
 

@@ -40,6 +40,9 @@
 #include <cub/device/dispatch/dispatch_radix_sort.cuh>
 #include <cub/util_deprecated.cuh>
 
+#include <cuda/std/type_traits>
+
+
 CUB_NAMESPACE_BEGIN
 
 /**
@@ -117,6 +120,94 @@ CUB_NAMESPACE_BEGIN
  */
 struct DeviceRadixSort
 {
+private:
+  template <typename KeyT, typename NumItemsT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t custom_radix_sort(::cuda::std::false_type,
+                                                            void *d_temp_storage,
+                                                            size_t &temp_storage_bytes,
+                                                            const KeyT *d_keys_in,
+                                                            KeyT *d_keys_out,
+                                                            NumItemsT num_items,
+                                                            DecomposerT decomposer,
+                                                            int begin_bit,
+                                                            int end_bit,
+                                                            cudaStream_t stream);
+
+  template <typename KeyT, typename OffsetT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t custom_radix_sort(::cuda::std::true_type,
+                                                            void *d_temp_storage,
+                                                            size_t &temp_storage_bytes,
+                                                            const KeyT *d_keys_in,
+                                                            KeyT *d_keys_out,
+                                                            OffsetT num_items,
+                                                            DecomposerT decomposer,
+                                                            int begin_bit,
+                                                            int end_bit,
+                                                            cudaStream_t stream)
+  {
+    // We cast away const-ness, but will *not* write to these arrays.
+    // `DispatchRadixSort::Dispatch` will allocate temporary storage and
+    // create a new double-buffer internally when the `is_overwrite_ok` flag
+    // is not set.
+    constexpr bool is_overwrite_okay = false;
+    DoubleBuffer<KeyT> d_keys(const_cast<KeyT *>(d_keys_in), d_keys_out);
+
+    // Null value type
+    DoubleBuffer<NullType> d_values;
+
+    return DispatchRadixSort<false,
+                             KeyT,
+                             NullType,
+                             OffsetT,
+                             DeviceRadixSortPolicy<KeyT, NullType, OffsetT>,
+                             DecomposerT>::Dispatch(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    d_keys,
+                                                    d_values,
+                                                    static_cast<OffsetT>(num_items),
+                                                    begin_bit,
+                                                    end_bit,
+                                                    is_overwrite_okay,
+                                                    stream,
+                                                    decomposer);
+  }
+
+  template <typename KeyT, typename NumItemsT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t custom_radix_sort(::cuda::std::false_type,
+                                                            void *d_temp_storage,
+                                                            size_t &temp_storage_bytes,
+                                                            const KeyT *d_keys_in,
+                                                            KeyT *d_keys_out,
+                                                            NumItemsT num_items,
+                                                            DecomposerT decomposer,
+                                                            cudaStream_t stream);
+
+  template <typename KeyT, typename OffsetT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t custom_radix_sort(::cuda::std::true_type,
+                                                            void *d_temp_storage,
+                                                            size_t &temp_storage_bytes,
+                                                            const KeyT *d_keys_in,
+                                                            KeyT *d_keys_out,
+                                                            OffsetT num_items,
+                                                            DecomposerT decomposer,
+                                                            cudaStream_t stream)
+  {
+    const int begin_bit = 0;
+    const int end_bit   = detail::radix::traits_t<KeyT>::default_end_bit(decomposer);
+
+    return DeviceRadixSort::custom_radix_sort(::cuda::std::true_type{},
+                                              d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_keys_in,
+                                              d_keys_out,
+                                              num_items,
+                                              decomposer,
+                                              begin_bit,
+                                              end_bit,
+                                              stream);
+  }
+
+public:
 
   /******************************************************************//**
    * \name KeyT-value pairs
@@ -937,6 +1028,158 @@ struct DeviceRadixSort
       stream);
   }
 
+  //! @rst 
+  //! Sorts keys into ascending order. (`~2N` auxiliary storage required)
+  //! 
+  //! - The contents of the input data are not altered by the sorting operation.
+  //! - Pointers to contiguous memory must be used; iterators are not currently
+  //!   supported.
+  //! - In-place operations are not supported. There must be no overlap between
+  //!   any of the provided ranges:
+  //!   - `[d_keys_in,    d_keys_in    + num_items)`
+  //!   - `[d_keys_out,   d_keys_out   + num_items)`
+  //! - An optional bit subrange `[begin_bit, end_bit)` of differentiating key 
+  //!   bits can be specified. This can reduce overall sorting overhead and 
+  //!   yield a corresponding performance improvement.
+  //! - @devicestorageNP  For sorting using only `O(P)` temporary storage, see 
+  //!   the sorting interface using DoubleBuffer wrappers below.
+  //! - @devicestorage
+  //!
+  //! Performance
+  //! ====================================
+  //!
+  //! The following charts illustrate saturated sorting performance across 
+  //! different CUDA architectures for uniform-random `uint32` and `uint64` 
+  //! keys, respectively.
+  //!
+  //! Snippet
+  //! ====================================
+  //!
+  //! The code snippet below illustrates the sorting of a device vector of 
+  //! ``int`` keys.
+  //!
+  //! .. literalinclude:: ../../examples/device/example_device_radix_sort_custom.cu
+  //!     :language: c++
+  //!     :dedent:
+  //!     :start-after: example-begin keys-only
+  //!     :end-before: example-end keys-only
+  //!
+  //! .. code-block:: c++
+  //!
+  //!     #include <cub/cub.cuh>   
+  //!     // or equivalently <cub/device/device_radix_sort.cuh>
+  //!     // Declare, allocate, and initialize device-accessible pointers 
+  //!     // for sorting data
+  //!     int  num_items;          // e.g., 7
+  //!     int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+  //!     int  *d_keys_out;        // e.g., [        ...        ]
+  //!     ...
+  //!     // Determine temporary device storage requirements
+  //!     void     *d_temp_storage = NULL;
+  //!     size_t   temp_storage_bytes = 0;
+  //!     cub::DeviceRadixSort::SortKeys(
+  //!       d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+  //!     // Allocate temporary storage
+  //!     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+  //!     // Run sorting operation
+  //!     cub::DeviceRadixSort::SortKeys(
+  //!       d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+  //!     // d_keys_out            <-- [0, 3, 5, 6, 7, 8, 9]
+  //!
+  //! @endrst
+  //!
+  //! @tparam KeyT      
+  //!   **[inferred]** KeyT type
+  //!
+  //! @tparam NumItemsT 
+  //!   **[inferred]** Type of num_items
+  //!
+  //! @tparam NumItemsT 
+  //!   **[inferred]** Type of num_items
+  //!
+  //! @param[in] d_temp_storage 
+  //!   Device-accessible allocation of temporary storage. When `nullptr`, the 
+  //!   required allocation size is written to `temp_storage_bytes` and no work 
+  //!   is done.
+  //!
+  //! @param[in,out] temp_storage_bytes 
+  //!   Reference to size in bytes of `d_temp_storage` allocation
+  //!
+  //! @param[in] d_keys_in 
+  //!   Pointer to the input data of key data to sort
+  //!
+  //! @param[out] d_keys_out 
+  //!   Pointer to the sorted output sequence of key data
+  //!
+  //! @param[in] num_items 
+  //!   Number of items to sort
+  //!
+  //! @param[in] begin_bit 
+  //!   **[optional]** The least-significant bit index (inclusive) needed for 
+  //!   key comparison
+  //!
+  //! @param[in] end_bit 
+  //!   **[optional]** The most-significant bit index (exclusive) needed for key 
+  //!   comparison (e.g., `sizeof(unsigned int) * 8`)
+  //!
+  //! @param[in] stream 
+  //!   **[optional]** CUDA stream to launch kernels within. 
+  //!   Default is stream<sub>0</sub>.
+  template <typename KeyT, typename NumItemsT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t
+  SortKeys(void *d_temp_storage,
+           size_t &temp_storage_bytes,
+           const KeyT *d_keys_in,
+           KeyT *d_keys_out,
+           NumItemsT num_items,
+           DecomposerT decomposer,
+           int begin_bit,
+           int end_bit,
+           cudaStream_t stream = 0)
+  {
+    // unsigned integer type for global offsets
+    using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
+    using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
+
+    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+
+    return DeviceRadixSort::custom_radix_sort(decomposer_check_t{},
+                                              d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_keys_in,
+                                              d_keys_out,
+                                              static_cast<offset_t>(num_items),
+                                              decomposer,
+                                              begin_bit,
+                                              end_bit,
+                                              stream);
+  }
+
+  template <typename KeyT, typename NumItemsT, typename DecomposerT>
+  CUB_RUNTIME_FUNCTION static cudaError_t SortKeys(void *d_temp_storage,
+                                                   size_t &temp_storage_bytes,
+                                                   const KeyT *d_keys_in,
+                                                   KeyT *d_keys_out,
+                                                   NumItemsT num_items,
+                                                   DecomposerT decomposer,
+                                                   cudaStream_t stream = 0)
+  {
+    // unsigned integer type for global offsets
+    using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
+    using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
+
+    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+
+    return DeviceRadixSort::custom_radix_sort(decomposer_check_t{},
+                                              d_temp_storage,
+                                              temp_storage_bytes,
+                                              d_keys_in,
+                                              d_keys_out,
+                                              static_cast<offset_t>(num_items),
+                                              decomposer,
+                                              stream);
+  }
+
   template <typename KeyT, typename NumItemsT>
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1411,7 +1654,6 @@ struct DeviceRadixSort
   }
 
   //@}  end member group
-
 };
 
 /**

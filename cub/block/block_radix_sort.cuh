@@ -189,8 +189,9 @@ private:
     };
 
     // KeyT traits and unsigned bits type
-    typedef Traits<KeyT>                        KeyTraits;
-    typedef typename KeyTraits::UnsignedBits    UnsignedBits;
+    using traits = detail::radix::traits_t<KeyT>;
+    using bit_ordered_type = typename traits::bit_ordered_type;
+    using bit_ordered_conversion = typename traits::bit_ordered_conversion_policy;
 
     /// Ascending BlockRadixRank utility type
     typedef BlockRadixRank<
@@ -217,7 +218,8 @@ private:
         DescendingBlockRadixRank;
 
     /// Digit extractor type
-    typedef BFEDigitExtractor<KeyT> DigitExtractorT;
+    // TODO Support custom types
+    using fundamental_digit_extractor_t = BFEDigitExtractor<KeyT>;
 
     /// BlockExchange utility type for keys
     typedef BlockExchange<KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeKeys;
@@ -257,11 +259,12 @@ private:
     }
 
     /// Rank keys (specialized for ascending sort)
+    template <class DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
-        UnsignedBits    (&unsigned_keys)[ITEMS_PER_THREAD],
-        int             (&ranks)[ITEMS_PER_THREAD],
-        DigitExtractorT digit_extractor,
-        Int2Type<false> /*is_descending*/)
+        bit_ordered_type  (&unsigned_keys)[ITEMS_PER_THREAD],
+        int               (&ranks)[ITEMS_PER_THREAD],
+        DigitExtractorT   digit_extractor,
+        Int2Type<false>   /*is_descending*/)
     {
         AscendingBlockRadixRank(temp_storage.asending_ranking_storage).RankKeys(
                 unsigned_keys,
@@ -270,11 +273,12 @@ private:
     }
 
     /// Rank keys (specialized for descending sort)
+    template <class DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
-        UnsignedBits    (&unsigned_keys)[ITEMS_PER_THREAD],
-        int             (&ranks)[ITEMS_PER_THREAD],
-        DigitExtractorT digit_extractor,
-        Int2Type<true>  /*is_descending*/)
+        bit_ordered_type  (&unsigned_keys)[ITEMS_PER_THREAD],
+        int               (&ranks)[ITEMS_PER_THREAD],
+        DigitExtractorT   digit_extractor,
+        Int2Type<true>    /*is_descending*/)
     {
         DescendingBlockRadixRank(temp_storage.descending_ranking_storage).RankKeys(
                 unsigned_keys,
@@ -318,30 +322,30 @@ private:
     {}
 
     /// Sort blocked arrangement
-    template <int DESCENDING, int KEYS_ONLY>
+    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::fundamental_decomposer_t>
     __device__ __forceinline__ void SortBlocked(
         KeyT                    (&keys)[ITEMS_PER_THREAD],          ///< Keys to sort
         ValueT                  (&values)[ITEMS_PER_THREAD],        ///< Values to sort
         int                     begin_bit,                          ///< The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                            ///< The past-the-end (most-significant) bit index needed for key comparison
         Int2Type<DESCENDING>    is_descending,                      ///< Tag whether is a descending-order sort
-        Int2Type<KEYS_ONLY>     is_keys_only)                       ///< Tag whether is keys-only sort
+        Int2Type<KEYS_ONLY>     is_keys_only,                       ///< Tag whether is keys-only sort
+        DecomposerT             decomposer = {})
     {
-        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
-            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+        bit_ordered_type (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<bit_ordered_type(&)[ITEMS_PER_THREAD]>(keys);
 
-        // Twiddle bits if necessary
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = bit_ordered_conversion::to_bit_ordered(decomposer, unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
         while (true)
         {
             int pass_bits = CUB_MIN(RADIX_BITS, end_bit - begin_bit);
-            DigitExtractorT digit_extractor(begin_bit, pass_bits);
+            auto digit_extractor = traits::template digit_extractor<fundamental_digit_extractor_t>(begin_bit, pass_bits, decomposer);
 
             // Rank the blocked keys
             int ranks[ITEMS_PER_THREAD];
@@ -366,7 +370,7 @@ private:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = bit_ordered_conversion::from_bit_ordered(decomposer, unsigned_keys[KEY]);
         }
     }
 
@@ -375,30 +379,30 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /// Sort blocked -> striped arrangement
-    template <int DESCENDING, int KEYS_ONLY>
+    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::fundamental_decomposer_t>
     __device__ __forceinline__ void SortBlockedToStriped(
         KeyT                    (&keys)[ITEMS_PER_THREAD],          ///< Keys to sort
         ValueT                  (&values)[ITEMS_PER_THREAD],        ///< Values to sort
         int                     begin_bit,                          ///< The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                            ///< The past-the-end (most-significant) bit index needed for key comparison
         Int2Type<DESCENDING>    is_descending,                      ///< Tag whether is a descending-order sort
-        Int2Type<KEYS_ONLY>     is_keys_only)                       ///< Tag whether is keys-only sort
+        Int2Type<KEYS_ONLY>     is_keys_only,                       ///< Tag whether is keys-only sort
+        DecomposerT             decomposer = {})
     {
-        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
-            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+        bit_ordered_type (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<bit_ordered_type (&)[ITEMS_PER_THREAD]>(keys);
 
-        // Twiddle bits if necessary
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = bit_ordered_conversion::to_bit_ordered(decomposer, unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
         while (true)
         {
             int pass_bits = CUB_MIN(RADIX_BITS, end_bit - begin_bit);
-            DigitExtractorT digit_extractor(begin_bit, pass_bits);
+            auto digit_extractor = traits::template digit_extractor<fundamental_digit_extractor_t>(begin_bit, pass_bits, decomposer);
 
             // Rank the blocked keys
             int ranks[ITEMS_PER_THREAD];
@@ -433,7 +437,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = bit_ordered_conversion::from_bit_ordered(decomposer, unsigned_keys[KEY]);
         }
     }
 
@@ -522,6 +526,33 @@ public:
         SortBlocked(keys, values, begin_bit, end_bit, Int2Type<false>(), Int2Type<KEYS_ONLY>());
     }
 
+    template <class DecomposerT>
+    __device__ __forceinline__ void Sort(KeyT (&keys)[ITEMS_PER_THREAD], 
+                                         DecomposerT decomposer,
+                                         int begin_bit,
+                                         int end_bit)
+    {
+        NullType values[ITEMS_PER_THREAD];
+
+        SortBlocked(keys,
+                    values,
+                    begin_bit,
+                    end_bit,
+                    Int2Type<false>(),
+                    Int2Type<KEYS_ONLY>(),
+                    decomposer);
+    }
+
+    // TODO Docs
+    // TODO begin bit / end bit -> decomposer OR decomposer -> begin bit / end bit?
+    template <class DecomposerT>
+    __device__ __forceinline__ void Sort(KeyT (&keys)[ITEMS_PER_THREAD], DecomposerT decomposer)
+    {
+        Sort(keys,
+             decomposer,
+             0,
+             detail::radix::traits_t<KeyT>::default_end_bit(decomposer));
+    }
 
     /**
      * \brief Performs an ascending block-wide radix sort across a [<em>blocked arrangement</em>](index.html#sec5sec3) of keys and values.
@@ -733,6 +764,20 @@ public:
         SortBlockedToStriped(keys, values, begin_bit, end_bit, Int2Type<false>(), Int2Type<KEYS_ONLY>());
     }
 
+
+    template <class DecomposerT>
+    __device__ __forceinline__ void SortBlockedToStriped(KeyT (&keys)[ITEMS_PER_THREAD], DecomposerT decomposer)
+    {
+        NullType values[ITEMS_PER_THREAD];
+
+        SortBlockedToStriped(keys,
+                             values,
+                             0,
+                             detail::radix::traits_t<KeyT>::default_end_bit(decomposer),
+                             Int2Type<false>(),
+                             Int2Type<KEYS_ONLY>(),
+                             decomposer);
+    }
 
     /**
      * \brief Performs an ascending radix sort across a [<em>blocked arrangement</em>](index.html#sec5sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec5sec3).

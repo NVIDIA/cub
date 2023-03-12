@@ -47,41 +47,46 @@
 CUB_NAMESPACE_BEGIN
 
 
-/**
- * @brief DeviceReduce provides device-wide, parallel operations for computing 
- *        a reduction across a sequence of data items residing within 
- *        device-accessible memory. ![](reduce_logo.png)
- * @ingroup SingleModule
- *
- * @par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)">*reduction*</a> 
- * (or *fold*) uses a binary combining operator to compute a single aggregate 
- * from a sequence of input elements.
- *
- * @par Usage Considerations
- * @cdp_class{DeviceReduce}
- *
- * @par Performance
- * @linear_performance{reduction, reduce-by-key, and run-length encode}
- *
- * @par
- * The following chart illustrates DeviceReduce::Sum
- * performance across different CUDA architectures for \p int32 keys.
- *
- * @image html reduce_int32.png
- *
- * @par
- * The following chart illustrates DeviceReduce::ReduceByKey (summation)
- * performance across different CUDA architectures for `fp32` values. Segments 
- * are identified by `int32` keys, and have lengths uniformly sampled 
- * from `[1, 1000]`.
- *
- * @image html reduce_by_key_fp32_len_500.png
- *
- * @par
- * @plots_below
- *
- */
+//! @ingroup SingleModule
+//!
+//! @rst
+//! DeviceReduce provides device-wide, parallel operations for computing 
+//! a reduction across a sequence of data items residing within 
+//! device-accessible memory. 
+//!
+//! .. image:: ../img/reduce_logo.png
+//!     :align: center
+//!
+//! Overview
+//! ====================================
+//! A `reduction <http://en.wikipedia.org/wiki/Reduce_(higher-order_function)>`_
+//! (or *fold*) uses a binary combining operator to compute a single aggregate 
+//! from a sequence of input elements.
+//!
+//! Usage Considerations
+//! ====================================
+//! @cdp_class{DeviceReduce}
+//!
+//! Performance
+//! ====================================
+//! @linear_performance{reduction, reduce-by-key, and run-length encode}
+//!
+//! The following chart illustrates DeviceReduce::Sum
+//! performance across different CUDA architectures for \p int32 keys.
+//!
+//! .. image:: ../img/reduce_int32.png
+//!     :align: center
+//!
+//! @par
+//! The following chart illustrates DeviceReduce::ReduceByKey (summation)
+//! performance across different CUDA architectures for `fp32` values. Segments 
+//! are identified by `int32` keys, and have lengths uniformly sampled 
+//! from `[1, 1000]`.
+//!
+//! .. image:: ../img/reduce_by_key_fp32_len_500.png
+//!     :align: center
+//!
+//! @endrst
 struct DeviceReduce
 {
   /**
