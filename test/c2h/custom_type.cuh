@@ -78,6 +78,22 @@ public:
 };
 
 template <class CustomType>
+class lexicographical_less_comparable_t
+{
+  // The CUDA compiler follows the IA64 ABI for class layout, while the 
+  // Microsoft host compiler does not.
+  char workaround_msvc;
+
+public:
+  __host__ __device__ bool operator<(const CustomType& other) const
+  {
+    return static_cast<const CustomType &>(*this).get_key() < other.get_key() ||
+           (static_cast<const CustomType &>(*this).get_key() == other.get_key() &&
+            static_cast<const CustomType &>(*this).get_val() < other.get_val());
+  }
+};
+
+template <class CustomType>
 class equal_comparable_t
 {
   // The CUDA compiler follows the IA64 ABI for class layout, while the 
