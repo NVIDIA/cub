@@ -612,10 +612,11 @@ struct DeviceReduce
 
     // The output tuple type
     using OutputTupleT =
-      cub::detail::non_void_value_t<OutputIteratorT,
-                                    KeyValuePair<OffsetT, InputValueT>>;
+      cub::detail::non_void_value_t<OutputIteratorT, KeyValuePair<OffsetT, InputValueT>>;
 
-    using InitT = OutputTupleT;
+    using AccumT = OutputTupleT;
+    
+    using InitT = detail::reduce::empty_problem_init_t<AccumT>;
 
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
@@ -627,23 +628,22 @@ struct DeviceReduce
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
     // Initial value
-
-    // replace with std::numeric_limits<T>::max() when C++11 support is
-    // more prevalent
-    InitT initial_value(1, Traits<InputValueT>::Max()); 
+    // TODO Address https://github.com/NVIDIA/cub/issues/651
+    InitT initial_value{AccumT(1, Traits<InputValueT>::Max())}; 
 
     return DispatchReduce<ArgIndexInputIteratorT,
                           OutputIteratorT,
                           OffsetT,
                           cub::ArgMin,
-                          InitT>::Dispatch(d_temp_storage,
-                                           temp_storage_bytes,
-                                           d_indexed_in,
-                                           d_out,
-                                           num_items,
-                                           cub::ArgMin(),
-                                           initial_value,
-                                           stream);
+                          InitT,
+                          AccumT>::Dispatch(d_temp_storage,
+                                            temp_storage_bytes,
+                                            d_indexed_in,
+                                            d_out,
+                                            num_items,
+                                            cub::ArgMin(),
+                                            initial_value,
+                                            stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
@@ -900,10 +900,12 @@ struct DeviceReduce
       cub::detail::non_void_value_t<OutputIteratorT,
                                     KeyValuePair<OffsetT, InputValueT>>;
 
+    using AccumT = OutputTupleT;
+
     // The output value type
     using OutputValueT = typename OutputTupleT::Value;
 
-    using InitT = OutputTupleT;
+    using InitT = detail::reduce::empty_problem_init_t<AccumT>;
 
     // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
     using ArgIndexInputIteratorT =
@@ -912,23 +914,22 @@ struct DeviceReduce
     ArgIndexInputIteratorT d_indexed_in(d_in);
 
     // Initial value
-
-    // replace with std::numeric_limits<T>::lowest() when C++11 support is
-    // more prevalent
-    InitT initial_value(1, Traits<InputValueT>::Lowest()); 
+    // TODO Address https://github.com/NVIDIA/cub/issues/651
+    InitT initial_value{AccumT(1, Traits<InputValueT>::Lowest())}; 
 
     return DispatchReduce<ArgIndexInputIteratorT,
                           OutputIteratorT,
                           OffsetT,
                           cub::ArgMax,
-                          InitT>::Dispatch(d_temp_storage,
-                                           temp_storage_bytes,
-                                           d_indexed_in,
-                                           d_out,
-                                           num_items,
-                                           cub::ArgMax(),
-                                           initial_value,
-                                           stream);
+                          InitT,
+                          AccumT>::Dispatch(d_temp_storage,
+                                            temp_storage_bytes,
+                                            d_indexed_in,
+                                            d_out,
+                                            num_items,
+                                            cub::ArgMax(),
+                                            initial_value,
+                                            stream);
   }
 
   template <typename InputIteratorT, typename OutputIteratorT>
