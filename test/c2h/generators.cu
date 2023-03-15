@@ -303,7 +303,6 @@ void gen<TYPE>( \
   INSTANTIATE_RND(TYPE); \
   INSTANTIATE_MOD(TYPE)
 
-INSTANTIATE(char);
 INSTANTIATE(std::uint8_t);
 INSTANTIATE(std::uint16_t);
 INSTANTIATE(std::uint32_t);

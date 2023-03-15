@@ -167,6 +167,10 @@ function(cub_add_test target_name_var test_name test_src cub_target)
       if (CUB_IN_THRUST)
         thrust_fix_clang_nvcc_build_for(${config_c2h_target})
       endif()
+
+      if (CUB_ENABLE_TESTS_WITH_RDC)
+        cub_enable_rdc_for_cuda_target(${config_c2h_target})
+      endif()
     endif() # config_c2h_target
 
     if (CUB_SEPARATE_CATCH2)
