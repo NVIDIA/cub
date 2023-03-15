@@ -33,14 +33,20 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <limits>
-#include <algorithm>
-#include <typeinfo>
-
-#include <cub/util_allocator.cuh>
-#include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_histogram.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
+#include <cub/util_allocator.cuh>
+
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/transform_iterator.h>
+
+#include <cuda/std/type_traits>
+
+#include <algorithm>
+#include <limits>
+#include <typeinfo>
 
 #include "test_util.h"
 
@@ -425,77 +431,83 @@ struct SearchTransform
     }
 };
 
+// Template to scale samples to evenly-spaced bins
+template <typename LevelT, typename = void>
+struct ScaleTransform;
 
-// Scales samples to evenly-spaced bins
+// [Integral types] Scales samples to evenly-spaced bins
 template <typename LevelT>
-struct ScaleTransform
+struct ScaleTransform<LevelT,
+                      typename ::cuda::std::enable_if<::cuda::std::is_integral<LevelT>::value>::type>
 {
-    int    num_levels;  // Number of levels in array
-    LevelT max;         // Max sample level (exclusive)
-    LevelT min;         // Min sample level (inclusive)
-    LevelT scale;       // Bin scaling factor
+  int num_levels; // Number of levels in array
+  LevelT max;     // Max sample level (exclusive)
+  LevelT min;     // Min sample level (inclusive)
 
-    void Init(
-        int    num_levels_,  // Number of levels in array
-        LevelT max_,         // Max sample level (exclusive)
-        LevelT min_,         // Min sample level (inclusive)
-        LevelT scale_)       // Bin scaling factor
+  void Init(int num_levels_, // Number of levels in array
+            LevelT max_,     // Max sample level (exclusive)
+            LevelT min_)     // Min sample level (inclusive)
+  {
+    this->num_levels = num_levels_;
+    this->max        = max_;
+    this->min        = min_;
+  }
+
+  // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
+  template <typename SampleT>
+  int operator()(SampleT sample)
+  {
+    if ((sample < min) || (sample >= max))
     {
-        this->num_levels = num_levels_;
-        this->max = max_;
-        this->min = min_;
-        this->scale = scale_;
+      // Sample out of range
+      return num_levels;
     }
 
-    // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
-    template <typename SampleT>
-    int operator()(SampleT sample)
-    {
-        if ((sample < min) || (sample >= max))
-        {
-            // Sample out of range
-            return num_levels;
-        }
-
-        return (int) ((((LevelT) sample) - min) / scale);
-    }
+    // Accurate bin computation following the arithmetic we guarantee in the HistoEven docs
+    return static_cast<int>(
+      (static_cast<uint64_t>(sample - min) * static_cast<uint64_t>(num_levels - 1)) /
+      static_cast<uint64_t>(max - min));
+  }
 };
 
-// Scales samples to evenly-spaced bins
-template <>
-struct ScaleTransform<float>
+// [[Extended] floating point types] Scales samples to evenly-spaced bins
+template <typename LevelT>
+struct ScaleTransform<LevelT,
+                      typename ::cuda::std::enable_if<::cuda::std::is_floating_point<LevelT>::value
+#if TEST_HALF_T
+                                                      || ::cuda::std::is_same<LevelT, half_t>::value
+#endif
+                                                      >::type>
 {
-    int   num_levels;  // Number of levels in array
-    float max;         // Max sample level (exclusive)
-    float min;         // Min sample level (inclusive)
-    float scale;       // Bin scaling factor
+  int num_levels; // Number of levels in array
+  LevelT max;     // Max sample level (exclusive)
+  LevelT min;     // Min sample level (inclusive)
+  LevelT scale;   // Bin scaling factor
 
-    void Init(
-        int   _num_levels,  // Number of levels in array
-        float _max,         // Max sample level (exclusive)
-        float _min,         // Min sample level (inclusive)
-        float _scale)       // Bin scaling factor
+  void Init(int _num_levels, // Number of levels in array
+            LevelT _max,     // Max sample level (exclusive)
+            LevelT _min)     // Min sample level (inclusive)
+  {
+    this->num_levels = _num_levels;
+    this->max        = _max;
+    this->min        = _min;
+    this->scale      = LevelT{1.0f} /
+                  static_cast<LevelT>((max - min) / static_cast<LevelT>(num_levels - 1));
+  }
+
+  // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
+  template <typename SampleT>
+  int operator()(SampleT sample)
+  {
+    if ((sample < min) || (sample >= max))
     {
-        this->num_levels = _num_levels;
-        this->max = _max;
-        this->min = _min;
-        this->scale = 1.0f / _scale;
+      // Sample out of range
+      return num_levels;
     }
 
-    // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
-    template <typename SampleT>
-    int operator()(SampleT sample)
-    {
-        if ((sample < min) || (sample >= max))
-        {
-            // Sample out of range
-            return num_levels;
-        }
-
-        return (int) ((((float) sample) - min) * scale);
-    }
+    return (int)((((float)sample) - min) * scale);
+  }
 };
-
 
 /**
  * Generate sample
@@ -674,14 +686,10 @@ void TestEven(
 
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        int bins = num_levels[channel] - 1;
-        h_histogram[channel] = new CounterT[bins];
+      int bins             = num_levels[channel] - 1;
+      h_histogram[channel] = new CounterT[bins];
 
-        transform_op[channel].Init(
-            num_levels[channel],
-            upper_level[channel],
-            lower_level[channel],
-            static_cast<LevelT>(((upper_level[channel] - lower_level[channel]) / static_cast<LevelT>(bins))));
+      transform_op[channel].Init(num_levels[channel], upper_level[channel], lower_level[channel]);
     }
 
     InitializeBins<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
@@ -1541,6 +1549,74 @@ void TestIntegerBinCalcs()
   CubDebugExit(g_allocator.DeviceFree(d_samples));
 }
 
+/**
+ * @brief Our bin computation for HistogramEven is guaranteed only for when (max_level - min_level)
+ * * num_bins does not overflow when using uint64_t arithmetic. In case bin computation could
+ * overflow, we expect cudaErrorInvalidValue to be returned.
+ */
+template<typename SampleT>
+void TestOverflow()
+{
+  using CounterT                   = uint32_t;
+  constexpr std::size_t test_cases = 2;
+
+  // Test data common across tests
+  SampleT lower_level = 0;
+  SampleT upper_level = ::cuda::std::numeric_limits<SampleT>::max();
+  thrust::counting_iterator<SampleT> d_samples{0UL};
+  thrust::device_vector<CounterT> d_histo_out(1024);
+  CounterT *d_histogram = thrust::raw_pointer_cast(d_histo_out.data());
+  int num_samples       = 1000;
+
+  // Prepare per-test specific data
+  constexpr std::size_t canary_bytes = 3;
+  std::array<std::size_t, test_cases> temp_storage_bytes{canary_bytes, canary_bytes};
+  std::array<int, test_cases> num_bins{1, 2};
+  // Since test #1 is just a single bin, we expect it to succeed
+  // Since we promote up to 64-bit integer arithmetic we expect tests to not overflow for types of
+  // up to 4 bytes. For 64-bit and wider types, we do not perform further promotion to even wider
+  // types, hence we expect cudaErrorInvalidValue to be returned to indicate of a potential overflow
+  std::array<cudaError_t, test_cases> expected_status{
+    cudaSuccess, 
+    sizeof(SampleT) <= 4UL ? cudaSuccess : cudaErrorInvalidValue};
+
+  // Verify we always initializes temp_storage_bytes
+  cudaError_t error{cudaSuccess};
+  for (std::size_t i = 0; i < test_cases; i++)
+  {
+    error = cub::DeviceHistogram::HistogramEven(nullptr,
+                                                temp_storage_bytes[i],
+                                                d_samples,
+                                                d_histogram,
+                                                num_bins[i] + 1,
+                                                lower_level,
+                                                upper_level,
+                                                num_samples);
+
+    // Ensure that temp_storage_bytes has been initialized even in the presence of error
+    AssertTrue(temp_storage_bytes[i] != canary_bytes);
+  }
+
+  // Allocate sufficient temporary storage
+  thrust::device_vector<std::uint8_t> temp_storage(
+    std::max(temp_storage_bytes[0], temp_storage_bytes[1]));
+
+  for (std::size_t i = 0; i < test_cases; i++)
+  {
+    error = cub::DeviceHistogram::HistogramEven(thrust::raw_pointer_cast(temp_storage.data()),
+                                                temp_storage_bytes[i],
+                                                d_samples,
+                                                d_histogram,
+                                                num_bins[i] + 1,
+                                                lower_level,
+                                                upper_level,
+                                                num_samples);
+
+    // Ensure we do not return an error on querying temporary storage requirements
+    AssertEquals(error, expected_status[i]);
+  }
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -1572,6 +1648,10 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    TestOverflow<uint8_t>();
+    TestOverflow<uint16_t>();
+    TestOverflow<uint32_t>();
+    TestOverflow<uint64_t>();
     using true_t = Int2Type<true>;
     using false_t = Int2Type<false>;
 
@@ -1584,6 +1664,11 @@ int main(int argc, char** argv)
 
     TestChannels <signed char,      int, int,   int>(256,   256 + 1,  true_t{}, true_t{});
     TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, true_t{}, false_t{});
+
+    // Make sure bin computation works fine when using int32 arithmetic
+    TestChannels <unsigned short,   int, unsigned short,   int>(std::numeric_limits<unsigned short>::max(),  std::numeric_limits<unsigned short>::max() + 1, true_t{}, false_t{});
+    // Make sure bin computation works fine when requiring int64 arithmetic
+    TestChannels <unsigned int,   int, unsigned int,   int>(std::numeric_limits<unsigned int>::max(),  8192 + 1, true_t{}, false_t{});
 #if !defined(__ICC)
     // Fails with ICC for unknown reasons, see #332.
     TestChannels <float,            int, float, int>(1.0,   256 + 1,  true_t{}, false_t{});
