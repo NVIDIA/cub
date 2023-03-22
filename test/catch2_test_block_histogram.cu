@@ -194,10 +194,13 @@ CUB_TEST("Block histogram can be computed with random input",
   thrust::device_vector<int> d_histogram(params::bins);
   thrust::device_vector<sample_t> d_samples(params::num_samples);
 
-  c2h::gen(CUB_SEED(10),
-           d_samples,
-           static_cast<sample_t>(0),
-           static_cast<sample_t>(params::bins - 1));
+  const sample_t min_bin = static_cast<sample_t>(0);
+  const sample_t max_bin = 
+    static_cast<sample_t>(
+      std::min(static_cast<std::int32_t>(std::numeric_limits<sample_t>::max()),
+               static_cast<std::int32_t>(params::bins - 1)));
+
+  c2h::gen(CUB_SEED(10), d_samples, min_bin, max_bin);
 
   thrust::host_vector<sample_t> h_samples = d_samples;
   auto h_reference = compute_host_reference(params::bins, h_samples);
