@@ -44,6 +44,7 @@
 #include "test_util.h"
 
 #include <cstdio>
+#include <limits>
 #include <typeinfo>
 
 using namespace cub;
@@ -1082,17 +1083,17 @@ int main(int argc, char** argv)
 
     TestSize<TestFoo>(num_items,
                       TestFoo::MakeTestFoo(0, 0, 0, 0),
-                      TestFoo::MakeTestFoo(1ll << 63,
-                                           1 << 31,
-                                           static_cast<short>(1 << 15),
-                                           static_cast<char>(1 << 7)));
+                      TestFoo::MakeTestFoo(std::numeric_limits<TestFoo::x_t>::max(),
+                                           std::numeric_limits<TestFoo::y_t>::max(),
+                                           std::numeric_limits<TestFoo::z_t>::max(),
+                                           std::numeric_limits<TestFoo::w_t>::max()));
 
-    TestSize<TestBar>(num_items, TestBar(0, 0), TestBar(1ll << 63, 1 << 31));
+    TestSize<TestBar>(num_items, 
+                      TestBar(0, 0), 
+                      TestBar(std::numeric_limits<long long>::max(), 
+                              std::numeric_limits<int>::max()));
 
 #endif
 
     return 0;
 }
-
-
-
