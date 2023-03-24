@@ -289,10 +289,10 @@ host_csr_matrix<ValueT> make_random_csr_matrix(int num_rows,
 
       if (std::is_floating_point<ValueT>::value)
       {
-        // Keep fp numbers somewhat small, from -100 -> 100; otherwise we run
+        // Keep fp numbers somewhat small, from -50 -> 50; otherwise we run
         // into issues with nans/infs
         ValueT value =
-          (RandomValue(static_cast<ValueT>(200)) - static_cast<ValueT>(100));
+          (RandomValue(static_cast<ValueT>(100)) - static_cast<ValueT>(50));
         mat.append_value(row, col, value);
       }
       else
@@ -340,7 +340,7 @@ thrust::host_vector<ValueT> make_random_vector(int len)
     if (std::is_floating_point<ValueT>::value)
     { // Keep fp numbers somewhat small; otherwise we run into issues with
       // nans/infs
-      val = RandomValue(static_cast<ValueT>(200)) - static_cast<ValueT>(100);
+      val = RandomValue(static_cast<ValueT>(100)) - static_cast<ValueT>(50);
     }
     else
     {
@@ -568,7 +568,7 @@ void test_types()
   test_type<double>();
   test_type<signed char>();
   test_type<int>();
-  test_type<unsigned long long>();
+  test_type<long long>();
 }
 
 int main(int argc, char** argv)

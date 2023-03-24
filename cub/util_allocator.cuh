@@ -38,8 +38,8 @@
 
 #include <set>
 #include <map>
+#include <mutex>
 
-#include "host/mutex.cuh"
 #include <math.h>
 
 CUB_NAMESPACE_BEGIN
@@ -243,7 +243,7 @@ struct CachingDeviceAllocator
     // Fields
     //---------------------------------------------------------------------
 
-    cub::Mutex      mutex;              /// Mutex for thread-safety
+    std::mutex      mutex;              /// Mutex for thread-safety
 
     unsigned int    bin_growth;         /// Geometric growth factor for bin-sizes
     unsigned int    min_bin;            /// Minimum bin enumeration
@@ -329,14 +329,14 @@ struct CachingDeviceAllocator
     cudaError_t SetMaxCachedBytes(size_t max_cached_bytes_)
     {
         // Lock
-        mutex.Lock();
+        mutex.lock();
 
         if (debug) _CubLog("Changing max_cached_bytes (%lld -> %lld)\n", (long long) this->max_cached_bytes, (long long) max_cached_bytes_);
 
         this->max_cached_bytes = max_cached_bytes_;
 
         // Unlock
-        mutex.Unlock();
+        mutex.unlock();
 
         return cudaSuccess;
     }
@@ -382,7 +382,7 @@ struct CachingDeviceAllocator
         else
         {
             // Search for a suitable cached allocation: lock
-            mutex.Lock();
+            mutex.lock();
 
             if (search_key.bin < min_bin)
             {
@@ -438,7 +438,7 @@ struct CachingDeviceAllocator
             }
 
             // Done searching: unlock
-            mutex.Unlock();
+            mutex.unlock();
         }
 
         // Allocate the block if necessary
@@ -462,7 +462,7 @@ struct CachingDeviceAllocator
                 cudaGetLastError();     // Reset CUDART's error
 
                 // Lock
-                mutex.Lock();
+                mutex.lock();
 
                 // Iterate the range of free blocks on the same device
                 BlockDescriptor free_key(device);
@@ -490,7 +490,7 @@ struct CachingDeviceAllocator
                 }
 
                 // Unlock
-                mutex.Unlock();
+                mutex.unlock();
 
                 // Return under error
                 if (error) return error;
@@ -504,10 +504,10 @@ struct CachingDeviceAllocator
                 return error;
 
             // Insert into live blocks
-            mutex.Lock();
+            mutex.lock();
             live_blocks.insert(search_key);
             cached_bytes[device].live += search_key.bytes;
-            mutex.Unlock();
+            mutex.unlock();
 
             if (debug) _CubLog("\tDevice %d allocated new device block at %p (%lld bytes associated with stream %lld).\n",
                       device, search_key.d_ptr, (long long) search_key.bytes, (long long) search_key.associated_stream);
@@ -567,7 +567,7 @@ struct CachingDeviceAllocator
         }
 
         // Lock
-        mutex.Lock();
+        mutex.lock();
 
         // Find corresponding block descriptor
         bool recached = false;
@@ -595,7 +595,7 @@ struct CachingDeviceAllocator
         }
 
         // Unlock
-        mutex.Unlock();
+        mutex.unlock();
 
         // First set to specified device (entrypoint may not be set)
         if (device != entrypoint_device)
@@ -653,7 +653,7 @@ struct CachingDeviceAllocator
         int entrypoint_device     = INVALID_DEVICE_ORDINAL;
         int current_device        = INVALID_DEVICE_ORDINAL;
 
-        mutex.Lock();
+        mutex.lock();
 
         while (!cached_blocks.empty())
         {
@@ -687,7 +687,7 @@ struct CachingDeviceAllocator
 
         }
 
-        mutex.Unlock();
+        mutex.unlock();
 
         // Attempt to revert back to entry-point device if necessary
         if (entrypoint_device != INVALID_DEVICE_ORDINAL)
