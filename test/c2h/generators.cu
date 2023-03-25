@@ -167,11 +167,11 @@ struct random_to_custom_t
 
     if (SetKeys)
     {
-      out[idx].set_key(in);
+      out->set_key(in);
     }
     else 
     {
-      out[idx].set_val(in);
+      out->set_val(in);
     }
   }
 
