@@ -51,18 +51,20 @@
     #include <cuda_bf16.h>
 #endif
 
-#include <cub/util_allocator.cuh>
-#include <cub/util_math.cuh>
 #include <cub/detail/device_synchronize.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/util_math.cuh>
 
-#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 #include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
+#include <thrust/mismatch.h>
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include "test_util.h"
 
@@ -998,6 +1000,34 @@ struct UnwrapHalfAndBfloat16<bfloat16_t> {
 };
 #endif
 
+template <class T, class NumItemsT>
+int compare_device_arrays(T* host_reference, T* d_tmp_buffer, T* d_data, NumItemsT num_items)
+{
+    CubDebugExit(cudaMemcpy(d_tmp_buffer, host_reference, sizeof(T) * num_items, cudaMemcpyHostToDevice));
+
+    auto d_reference_begin = d_tmp_buffer;
+    auto d_reference_end = d_tmp_buffer + num_items;
+    auto err = thrust::mismatch(thrust::device, d_reference_begin, d_reference_end, d_data);
+
+    if (err.first != d_reference_end)
+    {
+        const auto index = thrust::distance(d_reference_begin, err.first);
+        return CompareDeviceResults(host_reference + index, d_data + index, 1, true, g_verbose);
+    }
+
+    return 0;
+}
+
+template <class NumItemsT>
+int compare_device_arrays(
+    CUB_NS_QUALIFIER::NullType */* h_reference */,
+    CUB_NS_QUALIFIER::NullType */* d_tmp_buffer */,
+    CUB_NS_QUALIFIER::NullType */* d_data */,
+    NumItemsT /* num_items */)
+{
+    return 0;
+}
+
 /**
  * Test DeviceRadixSort
  */
@@ -1103,20 +1133,48 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     printf("Warmup done.  Checking results:\n"); fflush(stdout);
-    int compare = CompareDeviceResults(h_reference_keys, reinterpret_cast<KeyT*>(d_keys.Current()), num_items, true, g_verbose);
-    printf("\t Compare keys (selector %d): %s ", d_keys.selector, compare ? "FAIL" : "PASS"); fflush(stdout);
-    if (!KEYS_ONLY)
-    {
-        int values_compare = CompareDeviceResults(h_reference_values, d_values.Current(), num_items, true, g_verbose);
-        compare |= values_compare;
-        printf("\t Compare values (selector %d): %s ", d_values.selector, values_compare ? "FAIL" : "PASS"); fflush(stdout);
-    }
+
+    int compare = 0;
+
+    // If in/out API is used, we are not allowed to overwrite the input. 
+    // Let's check that the input buffer is not overwritten by the algorithm.
     if (BACKEND == CUB_NO_OVERWRITE)
     {
-        // Check that input isn't overwritten
-        int input_compare = CompareDeviceResults(h_keys, reinterpret_cast<KeyT*>(d_keys.d_buffers[0]), num_items, true, g_verbose);
-        compare |= input_compare;
-        printf("\t Compare input keys: %s ", input_compare ? "FAIL" : "PASS"); fflush(stdout);
+        KeyT *d_input_keys = reinterpret_cast<KeyT*>(d_keys.d_buffers[0]);
+
+        if (temp_storage_bytes < sizeof(KeyT) * num_items)
+        {
+            // For small input sizes, temporary storage is not large enough to fit keys.
+            compare = CompareDeviceResults(h_keys, d_input_keys, num_items, true, g_verbose);
+        }
+        else 
+        {
+            // If overwrite is not allowed, temporary storage is large enough to fit keys.
+            KeyT* temp_keys = reinterpret_cast<KeyT*>(d_temp_storage);
+
+            compare = compare_device_arrays(h_keys, temp_keys, d_input_keys, num_items);
+            printf("\t Compare input keys: %s ", compare ? "FAIL" : "PASS"); fflush(stdout);
+        }
+    }
+
+    // After the previous check is done, we can safely reuse alternative buffer to store 
+    // the reference results and compare current output.
+    compare |= compare_device_arrays(h_reference_keys,
+                                     reinterpret_cast<KeyT *>(d_keys.Alternate()),
+                                     reinterpret_cast<KeyT *>(d_keys.Current()),
+                                     num_items);
+
+    printf("\t Compare keys (selector %d): %s ", d_keys.selector, compare ? "FAIL" : "PASS"); fflush(stdout);
+
+    if (!KEYS_ONLY)
+    {
+        int values_compare = compare_device_arrays(h_reference_values,
+                                                   d_values.Alternate(),
+                                                   d_values.Current(),
+                                                   num_items);
+
+        compare |= values_compare;
+        printf("\t Compare values (selector %d): %s ", d_values.selector, values_compare ? "FAIL" : "PASS"); fflush(stdout);
     }
 
     // Performance
