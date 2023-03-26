@@ -38,6 +38,7 @@
 #include <cub/agent/agent_spmv_orig.cuh>
 #include <cub/agent/single_pass_scan_operators.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/cpp_compatibility.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_search.cuh>
 #include <cub/util_debug.cuh>
@@ -46,12 +47,12 @@
 #include <cub/util_math.cuh>
 #include <cub/util_type.cuh>
 
-#include <nv/target>
-
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include <cstdio>
 #include <iterator>
+
+#include <nv/target>
 
 CUB_NAMESPACE_BEGIN
 
@@ -187,6 +188,25 @@ __global__ void DeviceSpmvKernel(
 
 }
 
+template <typename ValueT,  ///< Matrix and vector value type
+          typename OffsetT, ///< Signed integer type for sequence offsets
+          bool HAS_BETA>    ///< Whether the input parameter Beta is 0
+__global__ void DeviceSpmvEmptyMatrixKernel(SpmvParams<ValueT, OffsetT> spmv_params)
+{
+    const int row = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
+
+    if (row < spmv_params.num_rows)
+    {
+        ValueT result = 0.0;
+
+        CUB_IF_CONSTEXPR(HAS_BETA) 
+        {
+            result += spmv_params.beta * spmv_params.d_vector_y[row]; 
+        }
+
+        spmv_params.d_vector_y[row] = result;
+    }
+}
 
 /**
  * Multi-block reduce-by-key sweep kernel entry point
@@ -244,7 +264,8 @@ struct DispatchSpmv
 
     enum
     {
-        INIT_KERNEL_THREADS = 128
+        INIT_KERNEL_THREADS = 128,
+        EMPTY_MATRIX_KERNEL_THREADS = 128
     };
 
     // SpmvParams bundle type
@@ -469,7 +490,8 @@ struct DispatchSpmv
         typename                Spmv1ColKernelT,                    ///< Function type of cub::DeviceSpmv1ColKernel
         typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
         typename                SpmvKernelT,                        ///< Function type of cub::AgentSpmvKernel
-        typename                SegmentFixupKernelT>                ///< Function type of cub::DeviceSegmentFixupKernelT
+        typename                SegmentFixupKernelT,                ///< Function type of cub::DeviceSegmentFixupKernelT
+        typename                SpmvEmptyMatrixKernelT>             ///< Function type of cub::DeviceSpmvEmptyMatrixKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                   d_temp_storage,                     ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -480,6 +502,7 @@ struct DispatchSpmv
         SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
         SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
         SegmentFixupKernelT     segment_fixup_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentFixupKernel
+        SpmvEmptyMatrixKernelT  spmv_empty_matrix_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceSpmvEmptyMatrixKernel
         KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
         KernelConfig            segment_fixup_config)               ///< [in] Dispatch parameters that match the policy that \p segment_fixup_kernel was compiled for
     {
@@ -496,6 +519,46 @@ struct DispatchSpmv
                 if (d_temp_storage == NULL)
                 {
                     temp_storage_bytes = 1;
+                }
+
+                break;
+            }
+
+            if (spmv_params.num_nonzeros == 0)
+            {
+                if (d_temp_storage == NULL)
+                {
+                    // Return if the caller is simply requesting the size of the storage allocation
+                    temp_storage_bytes = 1;
+                    break;
+                }
+
+                const int threads_in_block = EMPTY_MATRIX_KERNEL_THREADS;
+                const int blocks_in_grid = cub::DivideAndRoundUp(spmv_params.num_rows,
+                                                                 threads_in_block);
+
+                #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+                _CubLog("Invoking spmv_empty_matrix_kernel<<<%d, %d, 0, %lld>>>()\n",
+                        blocks_in_grid,
+                        threads_in_block,
+                        (long long)stream);
+                #endif
+                error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(blocks_in_grid,
+                                                                                threads_in_block,
+                                                                                0,
+                                                                                stream)
+                          .doit(spmv_empty_matrix_kernel, spmv_params);
+
+                if (CubDebug(error))
+                {
+                    break;
+                }
+
+                // Sync the stream if specified to flush runtime errors
+                error = detail::DebugSyncStream(stream);
+                if (CubDebug(error))
+                {
+                    break;
                 }
 
                 break;
@@ -717,7 +780,8 @@ struct DispatchSpmv
     template <typename Spmv1ColKernelT,
               typename SpmvSearchKernelT,
               typename SpmvKernelT,
-              typename SegmentFixupKernelT>
+              typename SegmentFixupKernelT,
+              typename SpmvEmptyMatrixKernelT>
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
     Dispatch(void *d_temp_storage,
@@ -729,6 +793,7 @@ struct DispatchSpmv
              SpmvSearchKernelT spmv_search_kernel,
              SpmvKernelT spmv_kernel,
              SegmentFixupKernelT segment_fixup_kernel,
+             SpmvEmptyMatrixKernelT spmv_empty_matrix_kernel,
              KernelConfig spmv_config,
              KernelConfig segment_fixup_config)
     {
@@ -737,16 +802,18 @@ struct DispatchSpmv
       return Dispatch<Spmv1ColKernelT,
                       SpmvSearchKernelT,
                       SpmvKernelT,
-                      SegmentFixupKernelT>(d_temp_storage,
-                                           temp_storage_bytes,
-                                           spmv_params,
-                                           stream,
-                                           spmv_1col_kernel,
-                                           spmv_search_kernel,
-                                           spmv_kernel,
-                                           segment_fixup_kernel,
-                                           spmv_config,
-                                           segment_fixup_config);
+                      SegmentFixupKernelT,
+                      SpmvEmptyMatrixKernelT>(d_temp_storage,
+                                              temp_storage_bytes,
+                                              spmv_params,
+                                              stream,
+                                              spmv_1col_kernel,
+                                              spmv_search_kernel,
+                                              spmv_kernel,
+                                              segment_fixup_kernel,
+                                              spmv_empty_matrix_kernel,
+                                              spmv_config,
+                                              segment_fixup_config);
     }
 
     /**
@@ -770,12 +837,16 @@ struct DispatchSpmv
             KernelConfig spmv_config, segment_fixup_config;
             InitConfigs(ptx_version, spmv_config, segment_fixup_config);
 
+            constexpr bool has_alpha = false;
+            constexpr bool has_beta = false;
+
             if (CubDebug(error = Dispatch(
                 d_temp_storage, temp_storage_bytes, spmv_params, stream, 
                 DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
                 DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
-                DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
+                DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, has_alpha, has_beta>,
                 DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                DeviceSpmvEmptyMatrixKernel<ValueT, OffsetT, has_beta>,
                 spmv_config, segment_fixup_config))) break;
 
         }
