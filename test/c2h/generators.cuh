@@ -46,6 +46,7 @@ class value_wrapper_t
 
 public:
   explicit value_wrapper_t(T val) : m_val(val) {}
+  explicit value_wrapper_t(int val) : m_val(static_cast<T>(val)) {}
   T get() const { return m_val; }
 };
 

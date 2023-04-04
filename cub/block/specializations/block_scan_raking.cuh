@@ -34,12 +34,14 @@
 
 #pragma once
 
-#include "../../config.cuh"
-#include "../../util_ptx.cuh"
-#include "../../block/block_raking_layout.cuh"
-#include "../../thread/thread_reduce.cuh"
-#include "../../thread/thread_scan.cuh"
-#include "../../warp/warp_scan.cuh"
+#include <cub/config.cuh>
+
+#include <cub/block/block_raking_layout.cuh>
+#include <cub/detail/uninitialized_copy.cuh>
+#include <cub/thread/thread_reduce.cuh>
+#include <cub/thread/thread_scan.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/warp/warp_scan.cuh>
 
 CUB_NAMESPACE_BEGIN
 
@@ -256,7 +258,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -298,7 +300,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -341,7 +343,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -393,7 +395,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -455,7 +457,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -512,7 +514,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -555,7 +557,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 
@@ -617,7 +619,7 @@ struct BlockScanRaking
         {
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
+            detail::uninitialized_copy(placement_ptr, input);
 
             CTA_SYNC();
 

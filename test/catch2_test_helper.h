@@ -129,7 +129,7 @@ namespace detail
 #define CUB_TEST(NAME, TAG, ...) \
   CUB_TEST_IMPL(__LINE__, NAME, TAG, __VA_ARGS__)
 
-#define CUB_TEST_LIST_IMPL(ID, NAME, TAG, ...)                                      \
+#define CUB_TEST_LIST_IMPL(ID, NAME, TAG, ...)                                  \
   using CUB_TEST_CONCAT(types_, ID) =                                           \
     c2h::type_list<__VA_ARGS__>;                                                \
   TEMPLATE_LIST_TEST_CASE(CUB_TEST_NAME(NAME), TAG, CUB_TEST_CONCAT(types_, ID))
