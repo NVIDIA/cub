@@ -25,6 +25,9 @@
  *
  ******************************************************************************/
 
+#undef NDEBUG
+#include <cassert>
+
 #include "catch2_test_block_radix_sort.cuh"
 #include "cub/block/radix_rank_sort_operations.cuh"
 
