@@ -53,6 +53,13 @@ struct decomposer_t
   }
 };
 
+std::bitset<64> to_binary_representation(custom_t value)
+{
+  std::uint64_t bits{};
+  memcpy(&bits, &value, sizeof(custom_t));
+  return std::bitset<64>{bits};
+}
+
 int main()
 {
   std::cout << "This example illustrates use of radix sort with custom type.\n";
@@ -85,7 +92,7 @@ int main()
   std::cout << '\n';
 
   custom_t the_answer{65535, -4.2f};
-  std::cout << '\t' << std::bitset<64>{reinterpret_cast<std::uint64_t &>(the_answer)};
+  std::cout << '\t' << to_binary_representation(the_answer);
   std::cout << "\n\t";
   print_segment(" <----  higher bits  /  lower bits  ----> ", 64, ' ');
   std::cout << "\n\n";
@@ -100,8 +107,8 @@ int main()
 
   custom_t l{42, -4.2f};
   custom_t g{42, 4.2f};
-  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
-  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+  std::cout << "l:\t" << to_binary_representation(l) << '\n';
+  std::cout << "g:\t" << to_binary_representation(g) << "\n\n";
 
   std::cout << "As you can see, `l` key happened to be larger in the bit-lexicographicl order.\n";
   std::cout << "Since there's no reflection in C++, we can't inspect the type and convert \n";
@@ -133,8 +140,8 @@ int main()
   print_segment(" `.s` ", 16);
   std::cout << '\n';
 
-  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
-  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+  std::cout << "l:\t" << to_binary_representation(l) << '\n';
+  std::cout << "g:\t" << to_binary_representation(g) << "\n\n";
 
   std::cout << '\n';
   std::cout << "As you can see, `g` is now actually larger than `l` in the bit-lexicographicl order.\n";
@@ -149,8 +156,8 @@ int main()
   print_segment(" `.s` ", 16);
   std::cout << '\n';
 
-  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
-  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+  std::cout << "l:\t" << to_binary_representation(l) << '\n';
+  std::cout << "g:\t" << to_binary_representation(g) << "\n\n";
 
   using inversion_policy = cub::detail::radix::traits_t<custom_t>::bit_ordered_inversion_policy;
   std::cout << '\n';
@@ -165,8 +172,8 @@ int main()
   print_segment(" `.s` ", 16);
   std::cout << '\n';
 
-  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
-  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+  std::cout << "l:\t" << to_binary_representation(l) << '\n';
+  std::cout << "g:\t" << to_binary_representation(g) << "\n\n";
 
   std::cout << '\n';
   std::cout << "We as well can compute the minimal and minimal / maximal keys:\n";
@@ -180,8 +187,8 @@ int main()
   print_segment(" `.s` ", 16);
   std::cout << '\n';
 
-  std::cout << "l:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(l)} << '\n';
-  std::cout << "g:\t" << std::bitset<64>{reinterpret_cast<std::uint64_t &>(g)} << "\n\n";
+  std::cout << "l:\t" << to_binary_representation(l) << '\n';
+  std::cout << "g:\t" << to_binary_representation(g) << "\n\n";
 
   std::cout << "We can even compute the number of differentiating bits:\n\n";
 
