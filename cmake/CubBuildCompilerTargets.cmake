@@ -9,6 +9,7 @@
 function(cub_build_compiler_targets)
   set(cxx_compile_definitions)
   set(cxx_compile_options)
+  set(cuda_compile_options)
 
   if ("MSVC" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
     append_option_if_available("/W4" cxx_compile_options)
@@ -38,6 +39,8 @@ function(cub_build_compiler_targets)
     # Some tests require /bigobj to fit everything into their object files:
     append_option_if_available("/bigobj" cxx_compile_options)
   else()
+    append_option_if_available("-Wreorder" cuda_compile_options)
+
     append_option_if_available("-Werror" cxx_compile_options)
     append_option_if_available("-Wall" cxx_compile_options)
     append_option_if_available("-Wextra" cxx_compile_options)
@@ -98,6 +101,12 @@ function(cub_build_compiler_targets)
   target_compile_definitions(cub.compiler_interface INTERFACE
     ${cxx_compile_definitions}
   )
+
+  foreach (cuda_option IN LISTS cuda_compile_options)
+    target_compile_options(cub.compiler_interface INTERFACE
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:${cuda_option}>
+    )
+  endforeach()
 
   # Promote warnings and display diagnostic numbers for nvcc:
   target_compile_options(cub.compiler_interface INTERFACE
