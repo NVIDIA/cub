@@ -37,7 +37,6 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
-#include <type_traits>
 
 #include <cuda.h>
 
@@ -54,6 +53,8 @@
 #include <cub/util_deprecated.cuh>
 #include <cub/util_macro.cuh>
 #include <cub/util_namespace.cuh>
+
+#include <cuda/std/type_traits>
 
 CUB_NAMESPACE_BEGIN
 
@@ -96,6 +97,24 @@ using conditional_t = typename std::conditional<Test, T1, T2>::type;
 template <typename Iterator>
 using value_t = typename std::iterator_traits<Iterator>::value_type;
 
+template <typename It,
+          typename FallbackT,
+          bool = ::cuda::std::is_same<
+            typename ::cuda::std::remove_cv<typename ::cuda::std::remove_pointer<It>::type>::type,
+            void>::value>
+struct non_void_value_impl
+{
+  using type = FallbackT;
+};
+
+template <typename It, typename FallbackT>
+struct non_void_value_impl<It, FallbackT, false>
+{
+  using type = typename ::cuda::std::conditional<
+    ::cuda::std::is_same<typename std::iterator_traits<It>::value_type, void>::value,
+    FallbackT,
+    typename std::iterator_traits<It>::value_type>::type;
+};
 
 /**
  * The output value type
@@ -103,12 +122,8 @@ using value_t = typename std::iterator_traits<Iterator>::value_type;
  * ... then the FallbackT,
  * ... else the IteratorT's value type
  */
-template <typename IteratorT, typename FallbackT>
-using non_void_value_t =
-  cub::detail::conditional_t<std::is_same<value_t<IteratorT>, void>::value,
-                             FallbackT,
-                             value_t<IteratorT>>;
-
+template <typename It, typename FallbackT>
+using non_void_value_t = typename non_void_value_impl<It, FallbackT>::type;
 } // namespace detail
 
 
