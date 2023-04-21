@@ -42,6 +42,8 @@
 #include <cub/util_ptx.cuh>
 #include <cub/util_type.cuh>
 
+#include <cuda/std/type_traits>
+
 #include <cstdint>
 
 CUB_NAMESPACE_BEGIN
@@ -287,6 +289,82 @@ VectorizedCopy(int32_t thread_rank, void *dest, ByteOffsetT num_bytes, const voi
   }
 }
 
+template <bool IsMemcpy,
+          uint32_t LOGICAL_WARP_SIZE,
+          typename InputBufferT,
+          typename OutputBufferT,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<IsMemcpy, int>::type = 0>
+__device__ __forceinline__ void copy_items(InputBufferT input_buffer,
+                                           OutputBufferT output_buffer,
+                                           OffsetT num_bytes,
+                                           OffsetT offset = 0)
+{
+  VectorizedCopy<LOGICAL_WARP_SIZE, uint4>(threadIdx.x % LOGICAL_WARP_SIZE,
+                                           &reinterpret_cast<char *>(output_buffer)[offset],
+                                           num_bytes,
+                                           &reinterpret_cast<const char *>(input_buffer)[offset]);
+}
+
+template <bool IsMemcpy,
+          uint32_t LOGICAL_WARP_SIZE,
+          typename InputBufferT,
+          typename OutputBufferT,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<!IsMemcpy, int>::type = 0>
+__device__ __forceinline__ void copy_items(InputBufferT input_buffer,
+                                           OutputBufferT output_buffer,
+                                           OffsetT num_items,
+                                           OffsetT offset = 0)
+{
+  output_buffer += offset;
+  input_buffer += offset;
+  for (OffsetT i = threadIdx.x % LOGICAL_WARP_SIZE; i < num_items; i += LOGICAL_WARP_SIZE)
+  {
+    *(output_buffer + i) = *(input_buffer + i);
+  }
+}
+
+template <bool IsMemcpy,
+          typename AliasT,
+          typename InputIt,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<IsMemcpy, int>::type = 0>
+__device__ __forceinline__ AliasT read_item(InputIt buffer_src, OffsetT offset)
+{
+  return *(reinterpret_cast<const AliasT *>(buffer_src) + offset);
+}
+
+template <bool IsMemcpy,
+          typename AliasT,
+          typename InputIt,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<!IsMemcpy, int>::type = 0>
+__device__ __forceinline__ AliasT read_item(InputIt buffer_src, OffsetT offset)
+{
+  return *(buffer_src + offset);
+}
+
+template <bool IsMemcpy,
+          typename AliasT,
+          typename OutputIt,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<IsMemcpy, int>::type = 0>
+__device__ __forceinline__ void write_item(OutputIt buffer_dst, OffsetT offset, AliasT value)
+{
+  *(reinterpret_cast<AliasT *>(buffer_dst) + offset) = value;
+}
+
+template <bool IsMemcpy,
+          typename AliasT,
+          typename OutputIt,
+          typename OffsetT,
+          typename ::cuda::std::enable_if<!IsMemcpy, int>::type = 0>
+__device__ __forceinline__ void write_item(OutputIt buffer_dst, OffsetT offset, AliasT value)
+{
+  *(buffer_dst + offset) = value;
+}
+
 /**
  * @brief A helper class that allows threads to maintain multiple counters, where the counter that
  * shall be incremented can be addressed dynamically without incurring register spillage.
@@ -431,7 +509,8 @@ template <typename AgentMemcpySmallBuffersPolicyT,
           typename BlevBufferTileOffsetsOutItT,
           typename BlockOffsetT,
           typename BLevBufferOffsetTileState,
-          typename BLevBlockOffsetTileState>
+          typename BLevBlockOffsetTileState,
+          bool IsMemcpy>
 class AgentBatchMemcpy
 {
 private:
@@ -470,7 +549,14 @@ private:
   // TYPE DECLARATIONS
   //---------------------------------------------------------------------
   /// Internal load/store type. For byte-wise memcpy, a single-byte type
-  using AliasT = char;
+  using AliasT = typename ::cuda::std::conditional<
+    IsMemcpy,
+    std::iterator_traits<char *>,
+    std::iterator_traits<cub::detail::value_t<InputBufferIt>>>::type::value_type;
+
+  /// Types of the input and output buffers
+  using InputBufferT  = cub::detail::value_t<InputBufferIt>;
+  using OutputBufferT = cub::detail::value_t<OutputBufferIt>;
 
   /// Type that has to be sufficiently large to hold any of the buffers' sizes.
   /// The BufferSizeIteratorT's value type must be convertible to this type.
@@ -775,17 +861,16 @@ private:
                                                          BlockBufferOffsetT num_wlev_buffers)
   {
     const int32_t warp_id              = threadIdx.x / CUB_PTX_WARP_THREADS;
-    const int32_t warp_lane            = threadIdx.x % CUB_PTX_WARP_THREADS;
     constexpr uint32_t WARPS_PER_BLOCK = BLOCK_THREADS / CUB_PTX_WARP_THREADS;
 
     for (BlockBufferOffsetT buffer_offset = warp_id; buffer_offset < num_wlev_buffers;
          buffer_offset += WARPS_PER_BLOCK)
     {
       const auto buffer_id = buffers_by_size_class[buffer_offset].buffer_id;
-      detail::VectorizedCopy<CUB_PTX_WARP_THREADS, uint4>(warp_lane,
-                                                          tile_buffer_dsts[buffer_id],
-                                                          tile_buffer_sizes[buffer_id],
-                                                          tile_buffer_srcs[buffer_id]);
+      copy_items<IsMemcpy, CUB_PTX_WARP_THREADS, InputBufferT, OutputBufferT, BufferSizeT>(
+        tile_buffer_srcs[buffer_id],
+        tile_buffer_dsts[buffer_id],
+        tile_buffer_sizes[buffer_id]);
     }
   }
 
@@ -875,18 +960,18 @@ private:
 #pragma unroll
         for (int32_t i = 0; i < TLEV_BYTES_PER_THREAD; i++)
         {
-          src_byte[i] = reinterpret_cast<const AliasT *>(
-            tile_buffer_srcs[zipped_byte_assignment[i].tile_buffer_id])[zipped_byte_assignment[i]
-                                                                          .buffer_byte_offset];
+          src_byte[i] = read_item<IsMemcpy, AliasT, InputBufferT>(
+            tile_buffer_srcs[zipped_byte_assignment[i].tile_buffer_id],
+            zipped_byte_assignment[i].buffer_byte_offset);
           absolute_tlev_byte_offset += BLOCK_THREADS;
         }
 #pragma unroll
         for (int32_t i = 0; i < TLEV_BYTES_PER_THREAD; i++)
         {
-          reinterpret_cast<AliasT *>(
-            tile_buffer_dsts[zipped_byte_assignment[i].tile_buffer_id])[zipped_byte_assignment[i]
-                                                                          .buffer_byte_offset] =
-            src_byte[i];
+          write_item<IsMemcpy, AliasT, OutputBufferT>(
+            tile_buffer_dsts[zipped_byte_assignment[i].tile_buffer_id],
+            zipped_byte_assignment[i].buffer_byte_offset,
+            src_byte[i]);
         }
       }
       else
@@ -897,13 +982,13 @@ private:
         {
           if (absolute_tlev_byte_offset < num_total_tlev_bytes)
           {
-            const AliasT src_byte = reinterpret_cast<const AliasT *>(
-              tile_buffer_srcs[zipped_byte_assignment[i].tile_buffer_id])[zipped_byte_assignment[i]
-                                                                            .buffer_byte_offset];
-            reinterpret_cast<AliasT *>(
-              tile_buffer_dsts[zipped_byte_assignment[i].tile_buffer_id])[zipped_byte_assignment[i]
-                                                                            .buffer_byte_offset] =
-              src_byte;
+            const AliasT src_byte = read_item<IsMemcpy, AliasT, InputBufferT>(
+              tile_buffer_srcs[zipped_byte_assignment[i].tile_buffer_id],
+              zipped_byte_assignment[i].buffer_byte_offset);
+            write_item<IsMemcpy, AliasT, OutputBufferT>(
+              tile_buffer_dsts[zipped_byte_assignment[i].tile_buffer_id],
+              zipped_byte_assignment[i].buffer_byte_offset,
+              src_byte);
           }
           absolute_tlev_byte_offset += BLOCK_THREADS;
         }
