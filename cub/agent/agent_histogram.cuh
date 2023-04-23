@@ -695,12 +695,12 @@ struct AgentHistogram
     :
         temp_storage(temp_storage.Alias()),
         d_wrapped_samples(d_samples),
+        d_native_samples(NativePointer(d_wrapped_samples)),
         num_output_bins(num_output_bins),
         num_privatized_bins(num_privatized_bins),
         d_output_histograms(d_output_histograms),
-        privatized_decode_op(privatized_decode_op),
         output_decode_op(output_decode_op),
-        d_native_samples(NativePointer(d_wrapped_samples)),
+        privatized_decode_op(privatized_decode_op),
         prefer_smem((MEM_PREFERENCE == SMEM) ?
             true :                              // prefer smem privatized histograms
             (MEM_PREFERENCE == GMEM) ?

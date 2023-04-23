@@ -1921,9 +1921,9 @@ struct DispatchSegmentedRadixSort :
         d_end_offsets(d_end_offsets),
         begin_bit(begin_bit),
         end_bit(end_bit),
-        is_overwrite_okay(is_overwrite_okay),
         stream(stream),
-        ptx_version(ptx_version)
+        ptx_version(ptx_version),
+        is_overwrite_okay(is_overwrite_okay)
     {}
 
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -1954,9 +1954,9 @@ struct DispatchSegmentedRadixSort :
         d_end_offsets(d_end_offsets),
         begin_bit(begin_bit),
         end_bit(end_bit),
-        is_overwrite_okay(is_overwrite_okay),
         stream(stream),
-        ptx_version(ptx_version)
+        ptx_version(ptx_version),
+        is_overwrite_okay(is_overwrite_okay)
     {
       CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
     }
