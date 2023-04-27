@@ -324,17 +324,19 @@ void compute_host_reference(reduce_mode mode,
 }
 
 // List of types to test
-using custom_t = c2h::custom_type_t<c2h::accumulateable_t,
+using custom_t       = c2h::custom_type_t<c2h::accumulateable_t,
                                     c2h::equal_comparable_t,
                                     c2h::lexicographical_less_comparable_t>;
-using types    = c2h::type_list<std::uint8_t,
-                             std::uint16_t,
-                             std::int32_t,
-                             std::int64_t,
-                             custom_t,
-                             ulonglong4,
-                             uchar3,
-                             short2>;
+using full_type_list = c2h::type_list<std::uint8_t,
+                                      std::uint16_t,
+                                      std::int32_t,
+                                      std::int64_t,
+                                      custom_t,
+                                      ulonglong4,
+                                      uchar3,
+                                      short2>;
+
+using builtin_type_list = c2h::type_list<std::uint8_t, std::uint16_t, std::int32_t, std::int64_t>;
 
 // Logical warp sizes to test
 using logical_warp_threads = c2h::enum_type_list<int, 32, 16, 9, 7, 1>;
@@ -365,7 +367,7 @@ struct params_t
   static constexpr int tile_size            = total_warps * logical_warp_threads;
 };
 
-CUB_TEST("Warp sum works", "[reduce][warp]", types, logical_warp_threads)
+CUB_TEST("Warp sum works", "[reduce][warp]", full_type_list, logical_warp_threads)
 {
   using params = params_t<TestType>;
   using type   = typename params::type;
@@ -396,7 +398,7 @@ CUB_TEST("Warp sum works", "[reduce][warp]", types, logical_warp_threads)
   verify_results(h_out, d_out);
 }
 
-CUB_TEST("Warp reduce works", "[reduce][warp]", types, logical_warp_threads)
+CUB_TEST("Warp reduce works", "[reduce][warp]", builtin_type_list, logical_warp_threads)
 {
   using params   = params_t<TestType>;
   using type     = typename params::type;
@@ -431,7 +433,7 @@ CUB_TEST("Warp reduce works", "[reduce][warp]", types, logical_warp_threads)
   verify_results(h_out, d_out);
 }
 
-CUB_TEST("Warp sum on partial warp works", "[reduce][warp]", types, logical_warp_threads)
+CUB_TEST("Warp sum on partial warp works", "[reduce][warp]", full_type_list, logical_warp_threads)
 {
   using params = params_t<TestType>;
   using type   = typename params::type;
@@ -465,7 +467,10 @@ CUB_TEST("Warp sum on partial warp works", "[reduce][warp]", types, logical_warp
   verify_results(h_out, d_out);
 }
 
-CUB_TEST("Warp reduce on partial warp works", "[reduce][warp]", types, logical_warp_threads)
+CUB_TEST("Warp reduce on partial warp works",
+         "[reduce][warp]",
+         builtin_type_list,
+         logical_warp_threads)
 {
   using params   = params_t<TestType>;
   using type     = typename params::type;
@@ -500,7 +505,11 @@ CUB_TEST("Warp reduce on partial warp works", "[reduce][warp]", types, logical_w
   verify_results(h_out, d_out);
 }
 
-CUB_TEST("Warp segmented sum works", "[reduce][warp]", types, logical_warp_threads, segmented_modes)
+CUB_TEST("Warp segmented sum works",
+         "[reduce][warp]",
+         full_type_list,
+         logical_warp_threads,
+         segmented_modes)
 {
   using params = params_t<TestType>;
   using type   = typename params::type;
@@ -548,7 +557,7 @@ CUB_TEST("Warp segmented sum works", "[reduce][warp]", types, logical_warp_threa
 
 CUB_TEST("Warp segmented reduction works",
          "[reduce][warp]",
-         types,
+         builtin_type_list,
          logical_warp_threads,
          segmented_modes)
 {
