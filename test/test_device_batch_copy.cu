@@ -368,9 +368,6 @@ void nontrivial_constructor_test()
 
   thrust::device_vector<iterator> b_iter{b.begin(), b.begin() + 1, b.begin() + 2};
 
-  iterator *d_a_iter = thrust::raw_pointer_cast(a_iter.data());
-  iterator *d_b_iter = thrust::raw_pointer_cast(b_iter.data());
-
   thrust::device_vector<char> sizes(num_buffers, 1);
 
   std::uint8_t *d_temp_storage{};
