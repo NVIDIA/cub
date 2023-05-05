@@ -217,7 +217,7 @@ void RunTest(RangeOffsetT num_ranges,
   // Compute the total bytes to be copied
   std::partial_sum(h_range_sizes.begin(), h_range_sizes.end(), h_offsets.begin() + 1);
   const ByteOffsetT num_total_items = h_offsets.back();
-  const ByteOffsetT num_total_bytes = num_total_items * sizeof(AtomicT);
+  const ByteOffsetT num_total_bytes = num_total_items * static_cast<ByteOffsetT>(sizeof(AtomicT));
 
   h_offsets.pop_back();
 
@@ -368,7 +368,7 @@ void nontrivial_constructor_test()
 
   thrust::device_vector<iterator> b_iter{b.begin(), b.begin() + 1, b.begin() + 2};
 
-  thrust::device_vector<char> sizes(num_buffers, 1);
+  auto sizes = thrust::make_constant_iterator(1);
 
   std::uint8_t *d_temp_storage{};
   std::size_t temp_storage_bytes{};
@@ -377,7 +377,7 @@ void nontrivial_constructor_test()
                            temp_storage_bytes,
                            a_iter.begin(),
                            b_iter.begin(),
-                           sizes.begin(),
+                           sizes,
                            num_buffers);
 
   thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
@@ -387,7 +387,7 @@ void nontrivial_constructor_test()
                            temp_storage_bytes,
                            a_iter.begin(),
                            b_iter.begin(),
-                           sizes.begin(),
+                           sizes,
                            num_buffers);
 
   for (int i = 0; i < 10; i++)
