@@ -50,6 +50,8 @@ endif()
 
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
+option(CUB_ENABLE_BENCHMARKS "Build CUB benchmarking suite." OFF)
+option(CUB_ENABLE_TUNING "Build CUB tuning suite." OFF)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
 
 # This is needed for NVCXX QA, which requires a static set of executable names.
@@ -118,4 +120,8 @@ endif()
 
 if (CUB_ENABLE_EXAMPLES)
   add_subdirectory(examples)
+endif()
+
+if (CUB_ENABLE_BENCHMARKS OR CUB_ENABLE_TUNING)
+  add_subdirectory(benchmarks)
 endif()
