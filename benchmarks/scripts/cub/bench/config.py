@@ -90,6 +90,21 @@ class Config:
             cls._instance = super().__new__(cls, *args, **kwargs)
             cls._instance.ctk, cls._instance.cub, cls._instance.benchmarks = parse_meta()
         return cls._instance
+    
+    def label_to_variant_point(self, algname, label):
+        if label == "base":
+            return BasePoint()
+
+        label_to_definition = {}
+        for param_space in self.benchmarks[algname]:
+            label_to_definition[param_space.label] = param_space.definition
+        
+        points = []
+        for point in label.split('.'):
+            label, value = point.split('_')
+            points.append(RangePoint(label_to_definition[label], label, int(value)))
+        
+        return VariantPoint(points)
 
     def variant_space(self, algname):
         variants = []
