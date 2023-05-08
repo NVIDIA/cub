@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 
+import sys
+import argparse
 import cub.bench 
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Verify tuning variant')
+    parser.add_argument('--variant', type=str, help='Variant to verify', default=None, required=True)
+
+    variant = parser.parse_known_args()[0].variant
+    sys.argv.remove('--variant={}'.format(variant))
+
+    return variant
 
 
 def workload_header(ct_workload_space, rt_workload_space):
@@ -16,12 +28,12 @@ def workload_entry(ct_workload, rt_workload):
 
 
 class VerifySeeker:
-    def __init__(self):
+    def __init__(self, variant_label):
+        self.label = variant_label
         self.estimator = cub.bench.MedianCenterEstimator()
 
     def __call__(self, algname, ct_workload_space, rt_workload_space):
-        label = 'trp_0.ld_0.ipt_20.tpb_448.l2b_485.l2w_710'
-        variant_point = cub.bench.Config().label_to_variant_point(algname, label)
+        variant_point = cub.bench.Config().label_to_variant_point(algname, self.label)
 
         print("{}, MinS, MedianS, MaxS".format(workload_header(ct_workload_space, rt_workload_space)))
         for ct_workload in ct_workload_space:
@@ -40,7 +52,7 @@ class VerifySeeker:
 
 
 def main():
-    cub.bench.search(VerifySeeker())
+    cub.bench.search(VerifySeeker(parse_arguments()))
 
 
 if __name__ == "__main__":
