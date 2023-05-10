@@ -15,18 +15,18 @@
 #if TUNE_TRANSPOSE == 0
 #define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_DIRECT
 #define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_DIRECT
-#else
+#else // TUNE_TRANSPOSE == 1
 #define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_WARP_TRANSPOSE
 #define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_WARP_TRANSPOSE
-#endif
+#endif // TUNE_TRANSPOSE 
 
 #if TUNE_LOAD == 0
 #define TUNE_LOAD_MODIFIER cub::LOAD_DEFAULT
 #elif TUNE_LOAD == 1
 #define TUNE_LOAD_MODIFIER cub::LOAD_LDG
-#else
+#else // TUNE_LOAD == 2
 #define TUNE_LOAD_MODIFIER cub::LOAD_CA
-#endif
+#endif // TUNE_LOAD
 
 template <typename KeyT>
 struct policy_hub_t
@@ -43,7 +43,7 @@ struct policy_hub_t
 
   using MaxPolicy = policy_t;
 };
-#endif
+#endif // TUNE_BASE
 
 template <typename KeyT, typename ValueT, typename OffsetT>
 void merge_sort_keys(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT>)
@@ -66,10 +66,10 @@ void merge_sort_keys(nvbench::state &state, nvbench::type_list<KeyT, ValueT, Off
                                             offset_t,
                                             compare_op_t,
                                             policy_t>;
-#else
+#else // TUNE_BASE
   using dispatch_t = cub::
     DispatchMergeSort<key_input_it_t, value_input_it_t, key_it_t, value_it_t, offset_t, compare_op_t>;
-#endif
+#endif // TUNE_BASE
 
   // Retrieve axis parameters
   const auto elements       = static_cast<std::size_t>(state.get_int64("Elements{io}"));
@@ -124,15 +124,15 @@ void merge_sort_keys(nvbench::state &state, nvbench::type_list<KeyT, ValueT, Off
 
 #ifdef TUNE_KeyT
 using key_types = nvbench::type_list<TUNE_KeyT>;
-#else
+#else // !defined(TUNE_KeyT)
 using key_types = all_types;
-#endif
+#endif // TUNE_KeyT
 
 #ifdef TUNE_ValueT
 using value_types = nvbench::type_list<TUNE_ValueT>;
-#else
+#else // !defined(TUNE_ValueT)
 using value_types = nvbench::type_list<int8_t, int16_t, int32_t, int64_t, int128_t>;
-#endif
+#endif // TUNE_ValueT
 
 NVBENCH_BENCH_TYPES(merge_sort_keys, NVBENCH_TYPE_AXES(key_types, value_types, offset_types))
   .set_name("cub::DeviceMergeSort::SortPairs")

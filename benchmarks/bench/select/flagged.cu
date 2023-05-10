@@ -15,15 +15,15 @@ constexpr bool may_alias = false;
 #if !TUNE_BASE
 #if TUNE_TRANSPOSE == 0
 #define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_DIRECT
-#else
+#else // TUNE_TRANSPOSE == 1
 #define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_WARP_TRANSPOSE
-#endif
+#endif // TUNE_TRANSPOSE 
 
 #if TUNE_LOAD == 0
 #define TUNE_LOAD_MODIFIER cub::LOAD_DEFAULT
-#else
+#else // TUNE_LOAD == 1
 #define TUNE_LOAD_MODIFIER cub::LOAD_CA
-#endif
+#endif // TUNE_LOAD
 
 template <typename InputT>
 struct policy_hub_t
@@ -45,7 +45,7 @@ struct policy_hub_t
 
   using MaxPolicy = policy_t;
 };
-#endif
+#endif // !TUNE_BASE
 
 template <typename T, typename OffsetT>
 void select(nvbench::state &state, nvbench::type_list<T, OffsetT>)
@@ -58,7 +58,7 @@ void select(nvbench::state &state, nvbench::type_list<T, OffsetT>)
   using equality_op_t = cub::NullType;
   using offset_t = OffsetT;
 
-#if !TUNE_BASE
+  #if !TUNE_BASE
   using policy_t = policy_hub_t<T>;
   using dispatch_t = cub::DispatchSelectIf<input_it_t,
                                            flag_it_t,
@@ -70,7 +70,7 @@ void select(nvbench::state &state, nvbench::type_list<T, OffsetT>)
                                            keep_rejects,
                                            may_alias,
                                            policy_t>;
-#else
+  #else // TUNE_BASE
   using dispatch_t = cub::DispatchSelectIf<input_it_t,
                                            flag_it_t,
                                            output_it_t,
@@ -80,7 +80,7 @@ void select(nvbench::state &state, nvbench::type_list<T, OffsetT>)
                                            offset_t,
                                            keep_rejects,
                                            may_alias>;
-#endif
+  #endif // !TUNE_BASE
 
   // Retrieve axis parameters
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));

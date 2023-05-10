@@ -47,13 +47,13 @@ constexpr bool fits_in_default_shared_memory()
 {
   return max_temp_storage_size<T, OffsetT>() < 48 * 1024;
 }
-#else
+#else // TUNE_BASE
 template <typename T, typename OffsetT>
 constexpr bool fits_in_default_shared_memory()
 {
   return true;
 }
-#endif
+#endif // TUNE_BASE
 
 template <typename T, typename OffsetT>
 static void basic(std::integral_constant<bool, true>,

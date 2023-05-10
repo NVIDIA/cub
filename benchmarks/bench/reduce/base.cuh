@@ -30,7 +30,7 @@ struct policy_hub_t
 
   using MaxPolicy = policy_t;
 };
-#endif
+#endif // !TUNE_BASE
 
 template <typename T, typename OffsetT>
 void reduce(nvbench::state &state, nvbench::type_list<T, OffsetT>)
@@ -45,9 +45,9 @@ void reduce(nvbench::state &state, nvbench::type_list<T, OffsetT>)
   using policy_t = policy_hub_t<accum_t, offset_t>;
   using dispatch_t =
     cub::DispatchReduce<input_it_t, output_it_t, offset_t, op_t, init_t, accum_t, policy_t>;
-#else
+#else // TUNE_BASE
   using dispatch_t = cub::DispatchReduce<input_it_t, output_it_t, offset_t, op_t, init_t, accum_t>;
-#endif
+#endif // TUNE_BASE
 
   // Retrieve axis parameters
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));

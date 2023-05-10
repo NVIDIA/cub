@@ -25,7 +25,7 @@ struct policy_hub_t
 
   using MaxPolicy = policy_t;
 };
-#endif
+#endif // !TUNE_BASE
 
 template <typename KeyT, typename ValueT, typename OffsetT>
 static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT>)
@@ -39,7 +39,7 @@ static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT
   using equality_op_t   = cub::Equality;
   using offset_t        = OffsetT;
 
-#if !TUNE_BASE
+  #if !TUNE_BASE
   using policy_t   = policy_hub_t;
   using dispatch_t = cub::DispatchScanByKey<key_input_it_t,
                                             val_input_it_t,
@@ -50,7 +50,7 @@ static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT
                                             offset_t,
                                             accum_t,
                                             policy_t>;
-#else
+  #else // TUNE_BASE
   using dispatch_t = cub::DispatchScanByKey<key_input_it_t,
                                             val_input_it_t,
                                             val_output_it_t,
@@ -59,7 +59,7 @@ static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT
                                             init_value_t,
                                             offset_t,
                                             accum_t>;
-#endif
+  #endif // TUNE_BASE
 
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
 
@@ -112,15 +112,15 @@ using some_offset_types = nvbench::type_list<nvbench::int32_t>;
 
 #ifdef TUNE_KeyT
 using key_types = nvbench::type_list<TUNE_KeyT>;
-#else
+#else // !defined(TUNE_KeyT)
 using key_types = all_types;
-#endif
+#endif // TUNE_KeyT
 
 #ifdef TUNE_ValueT
 using value_types = nvbench::type_list<TUNE_ValueT>;
-#else
+#else // !defined(TUNE_ValueT)
 using value_types = nvbench::type_list<int8_t, int16_t, int32_t, int64_t, int128_t>;
-#endif
+#endif // TUNE_ValueT
 
 NVBENCH_BENCH_TYPES(scan, NVBENCH_TYPE_AXES(key_types, value_types, some_offset_types))
   .set_name("cub::DeviceScan::ExclusiveSumByKey")

@@ -93,13 +93,13 @@ constexpr bool fits_in_default_shared_memory()
 {
   return max_temp_storage_size<KeyT, ValueT, OffsetT>() < 48 * 1024;
 }
-#else
+#else // TUNE_BASE
 template <typename, typename, typename>
 constexpr bool fits_in_default_shared_memory()
 {
   return true;
 }
-#endif
+#endif // TUNE_BASE
 
 template <typename KeyT, typename ValueT, typename OffsetT>
 void radix_sort_values(std::integral_constant<bool, true>,
@@ -113,9 +113,9 @@ void radix_sort_values(std::integral_constant<bool, true>,
 #if !TUNE_BASE
   using policy_t   = policy_hub_t<key_t, value_t, offset_t>;
   using dispatch_t = cub::DispatchRadixSort<is_descending, key_t, value_t, offset_t, policy_t>;
-#else
+#else // TUNE_BASE
   using dispatch_t = cub::DispatchRadixSort<is_descending, key_t, value_t, offset_t>;
-#endif
+#endif // TUNE_BASE
 
   const int begin_bit = 0;
   const int end_bit   = sizeof(key_t) * 8;
@@ -201,15 +201,15 @@ void radix_sort_values(nvbench::state &state, nvbench::type_list<KeyT, ValueT, O
 
 #ifdef TUNE_KeyT
 using key_types = nvbench::type_list<TUNE_KeyT>;
-#else
+#else // !defined(TUNE_KeyT) 
 using key_types = fundamental_types;
-#endif
+#endif // TUNE_KeyT
 
 #ifdef TUNE_ValueT
 using value_types = nvbench::type_list<TUNE_ValueT>;
-#else
+#else // !defined(Tune_ValueT)
 using value_types = nvbench::type_list<int8_t, int16_t, int32_t, int64_t, int128_t>;
-#endif
+#endif // TUNE_ValueT
 
 NVBENCH_BENCH_TYPES(radix_sort_values, NVBENCH_TYPE_AXES(key_types, value_types, offset_types))
   .set_name("cub::DeviceRadixSort::SortPairs")
