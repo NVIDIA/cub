@@ -13,9 +13,9 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /**
- * @file cub::DeviceReduceByKey provides device-wide, parallel operations for 
+ * @file cub::DeviceReduceByKey provides device-wide, parallel operations for
  *       reducing segments of values residing within device-accessible memory.
  */
 
@@ -42,12 +42,12 @@
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
-#include <nv/target>
-
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include <cstdio>
 #include <iterator>
+
+#include <nv/target>
 
 CUB_NAMESPACE_BEGIN
 
@@ -210,11 +210,9 @@ template <typename KeysInputIteratorT,
           typename EqualityOpT,
           typename ReductionOpT,
           typename OffsetT,
-          typename AccumT = 
-            detail::accumulator_t<
-              ReductionOpT, 
-              cub::detail::value_t<ValuesInputIteratorT>,
-              cub::detail::value_t<ValuesInputIteratorT>>>
+          typename AccumT = detail::accumulator_t<ReductionOpT,
+                                                  cub::detail::value_t<ValuesInputIteratorT>,
+                                                  cub::detail::value_t<ValuesInputIteratorT>>>
 struct DispatchReduceByKey
 {
   //-------------------------------------------------------------------------
@@ -225,19 +223,16 @@ struct DispatchReduceByKey
   using KeyInputT = cub::detail::value_t<KeysInputIteratorT>;
 
   // The output keys type
-  using KeyOutputT =
-    cub::detail::non_void_value_t<UniqueOutputIteratorT, KeyInputT>;
+  using KeyOutputT = cub::detail::non_void_value_t<UniqueOutputIteratorT, KeyInputT>;
 
   // The input values type
   using ValueInputT = cub::detail::value_t<ValuesInputIteratorT>;
 
   static constexpr int INIT_KERNEL_THREADS = 128;
 
-  static constexpr int MAX_INPUT_BYTES = CUB_MAX(sizeof(KeyOutputT),
-                                                 sizeof(AccumT));
+  static constexpr int MAX_INPUT_BYTES = CUB_MAX(sizeof(KeyOutputT), sizeof(AccumT));
 
-  static constexpr int COMBINED_INPUT_BYTES = sizeof(KeyOutputT) +
-                                              sizeof(AccumT);
+  static constexpr int COMBINED_INPUT_BYTES = sizeof(KeyOutputT) + sizeof(AccumT);
 
   // Tile status descriptor interface type
   using ScanTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
@@ -255,15 +250,11 @@ struct DispatchReduceByKey
         ? 6
         : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
                   CUB_MAX(1,
-                          ((NOMINAL_4B_ITEMS_PER_THREAD * 8) +
-                           COMBINED_INPUT_BYTES - 1) /
+                          ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) /
                             COMBINED_INPUT_BYTES));
 
-    using ReduceByKeyPolicyT = AgentReduceByKeyPolicy<128,
-                                                      ITEMS_PER_THREAD,
-                                                      BLOCK_LOAD_DIRECT,
-                                                      LOAD_LDG,
-                                                      BLOCK_SCAN_WARP_SCANS>;
+    using ReduceByKeyPolicyT =
+      AgentReduceByKeyPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, LOAD_LDG, BLOCK_SCAN_WARP_SCANS>;
   };
 
   /******************************************************************************
@@ -286,8 +277,8 @@ struct DispatchReduceByKey
    * to the PTX assembly we will use
    */
   template <typename KernelConfig>
-  CUB_RUNTIME_FUNCTION __forceinline__ static void
-  InitConfigs(int /*ptx_version*/, KernelConfig &reduce_by_key_config)
+  CUB_RUNTIME_FUNCTION __forceinline__ static void InitConfigs(int /*ptx_version*/,
+                                                               KernelConfig &reduce_by_key_config)
   {
     NV_IF_TARGET(NV_IS_DEVICE,
                  (
@@ -300,8 +291,7 @@ struct DispatchReduceByKey
                    // device's PTX version
 
                    // (There's only one policy right now)
-                   reduce_by_key_config
-                     .template Init<typename Policy350::ReduceByKeyPolicyT>();));
+                   reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();));
   }
 
   /**
@@ -417,15 +407,12 @@ struct DispatchReduceByKey
       }
 
       // Number of input tiles
-      int tile_size = reduce_by_key_config.block_threads *
-                      reduce_by_key_config.items_per_thread;
-      int num_tiles =
-        static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
+      int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
+      int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
 
       // Specify temporary storage allocation requirements
       size_t allocation_sizes[1];
-      if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles,
-                                                          allocation_sizes[0])))
+      if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles, allocation_sizes[0])))
       {
         break; // bytes needed for tile status descriptors
       }
@@ -433,10 +420,9 @@ struct DispatchReduceByKey
       // Compute allocation pointers into the single storage blob (or compute
       // the necessary size of the blob)
       void *allocations[1] = {};
-      if (CubDebug(error = AliasTemporaries(d_temp_storage,
-                                            temp_storage_bytes,
-                                            allocations,
-                                            allocation_sizes)))
+      if (CubDebug(
+            error =
+              AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes)))
       {
         break;
       }
@@ -450,30 +436,26 @@ struct DispatchReduceByKey
 
       // Construct the tile status interface
       ScanTileStateT tile_state;
-      if (CubDebug(error = tile_state.Init(num_tiles,
-                                           allocations[0],
-                                           allocation_sizes[0])))
+      if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0])))
       {
         break;
       }
 
       // Log init_kernel configuration
-      int init_grid_size =
-        CUB_MAX(1, cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS));
+      int init_grid_size = CUB_MAX(1, cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS));
 
-      #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+#ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
       _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n",
               init_grid_size,
               INIT_KERNEL_THREADS,
               (long long)stream);
-      #endif
+#endif
 
       // Invoke init_kernel to initialize tile descriptors
-      THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
-        init_grid_size,
-        INIT_KERNEL_THREADS,
-        0,
-        stream)
+      THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(init_grid_size,
+                                                              INIT_KERNEL_THREADS,
+                                                              0,
+                                                              stream)
         .doit(init_kernel, tile_state, num_tiles, d_num_runs_out);
 
       // Check for failure to launch
@@ -506,20 +488,18 @@ struct DispatchReduceByKey
 
       // Get max x-dimension of grid
       int max_dim_x;
-      if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x,
-                                                  cudaDevAttrMaxGridDimX,
-                                                  device_ordinal)))
+      if (CubDebug(
+            error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal)))
       {
         break;
       }
 
       // Run grids in epochs (in case number of tiles exceeds max x-dimension
       int scan_grid_size = CUB_MIN(num_tiles, max_dim_x);
-      for (int start_tile = 0; start_tile < num_tiles;
-           start_tile += scan_grid_size)
+      for (int start_tile = 0; start_tile < num_tiles; start_tile += scan_grid_size)
       {
-        // Log reduce_by_key_kernel configuration
-        #ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
+// Log reduce_by_key_kernel configuration
+#ifdef CUB_DETAIL_DEBUG_ENABLE_LOG
         _CubLog("Invoking %d reduce_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d "
                 "items per thread, %d SM occupancy\n",
                 start_tile,
@@ -528,14 +508,13 @@ struct DispatchReduceByKey
                 (long long)stream,
                 reduce_by_key_config.items_per_thread,
                 reduce_by_key_sm_occupancy);
-        #endif
+#endif
 
         // Invoke reduce_by_key_kernel
-        THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
-          scan_grid_size,
-          reduce_by_key_config.block_threads,
-          0,
-          stream)
+        THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(scan_grid_size,
+                                                                reduce_by_key_config.block_threads,
+                                                                0,
+                                                                stream)
           .doit(reduce_by_key_kernel,
                 d_keys_in,
                 d_unique_out,
@@ -568,23 +547,23 @@ struct DispatchReduceByKey
 
   template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           size_t &temp_storage_bytes,
-           KeysInputIteratorT d_keys_in,
-           UniqueOutputIteratorT d_unique_out,
-           ValuesInputIteratorT d_values_in,
-           AggregatesOutputIteratorT d_aggregates_out,
-           NumRunsOutputIteratorT d_num_runs_out,
-           EqualityOpT equality_op,
-           ReductionOpT reduction_op,
-           OffsetT num_items,
-           cudaStream_t stream,
-           bool debug_synchronous,
-           int ptx_version,
-           ScanInitKernelT init_kernel,
-           ReduceByKeyKernelT reduce_by_key_kernel,
-           KernelConfig reduce_by_key_config)
+    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+    Dispatch(void *d_temp_storage,
+             size_t &temp_storage_bytes,
+             KeysInputIteratorT d_keys_in,
+             UniqueOutputIteratorT d_unique_out,
+             ValuesInputIteratorT d_values_in,
+             AggregatesOutputIteratorT d_aggregates_out,
+             NumRunsOutputIteratorT d_num_runs_out,
+             EqualityOpT equality_op,
+             ReductionOpT reduction_op,
+             OffsetT num_items,
+             cudaStream_t stream,
+             bool debug_synchronous,
+             int ptx_version,
+             ScanInitKernelT init_kernel,
+             ReduceByKeyKernelT reduce_by_key_kernel,
+             KernelConfig reduce_by_key_config)
   {
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
 
@@ -673,33 +652,31 @@ struct DispatchReduceByKey
       InitConfigs(ptx_version, reduce_by_key_config);
 
       // Dispatch
-      if (CubDebug(
-            error = Dispatch(
-              d_temp_storage,
-              temp_storage_bytes,
-              d_keys_in,
-              d_unique_out,
-              d_values_in,
-              d_aggregates_out,
-              d_num_runs_out,
-              equality_op,
-              reduction_op,
-              num_items,
-              stream,
-              ptx_version,
-              DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
-              DeviceReduceByKeyKernel<PtxReduceByKeyPolicy,
-                                      KeysInputIteratorT,
-                                      UniqueOutputIteratorT,
-                                      ValuesInputIteratorT,
-                                      AggregatesOutputIteratorT,
-                                      NumRunsOutputIteratorT,
-                                      ScanTileStateT,
-                                      EqualityOpT,
-                                      ReductionOpT,
-                                      OffsetT,
-                                      AccumT>,
-              reduce_by_key_config)))
+      if (CubDebug(error = Dispatch(d_temp_storage,
+                                    temp_storage_bytes,
+                                    d_keys_in,
+                                    d_unique_out,
+                                    d_values_in,
+                                    d_aggregates_out,
+                                    d_num_runs_out,
+                                    equality_op,
+                                    reduction_op,
+                                    num_items,
+                                    stream,
+                                    ptx_version,
+                                    DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
+                                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy,
+                                                            KeysInputIteratorT,
+                                                            UniqueOutputIteratorT,
+                                                            ValuesInputIteratorT,
+                                                            AggregatesOutputIteratorT,
+                                                            NumRunsOutputIteratorT,
+                                                            ScanTileStateT,
+                                                            EqualityOpT,
+                                                            ReductionOpT,
+                                                            OffsetT,
+                                                            AccumT>,
+                                    reduce_by_key_config)))
       {
         break;
       }
@@ -740,4 +717,3 @@ struct DispatchReduceByKey
 };
 
 CUB_NAMESPACE_END
-
