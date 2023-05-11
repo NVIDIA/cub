@@ -49,6 +49,15 @@
 CUB_NAMESPACE_BEGIN
 
 
+#ifndef CUB_DETAIL_L2_BACKOFF_NS
+#define CUB_DETAIL_L2_BACKOFF_NS 350
+#endif 
+
+#ifndef CUB_DETAIL_L2_WRITE_LATENCY_NS 
+#define CUB_DETAIL_L2_WRITE_LATENCY_NS 450
+#endif 
+
+
 /******************************************************************************
  * Prefix functor type for maintaining a running prefix while scanning a
  * region independent of other thread blocks
@@ -130,7 +139,7 @@ __device__ __forceinline__ void delay()
                 }));
 }
 
-template <int Delay = 350, unsigned int GridThreshold = 500>
+template <int Delay = CUB_DETAIL_L2_BACKOFF_NS, unsigned int GridThreshold = 500>
 __device__ __forceinline__ void delay_or_prevent_hoisting()
 {
   NV_IF_TARGET(NV_PROVIDES_SM_70,
@@ -138,7 +147,7 @@ __device__ __forceinline__ void delay_or_prevent_hoisting()
                (__threadfence_block();));
 }
 
-template <int Delay = 350, unsigned int GridThreshold = 500>
+template <int Delay = CUB_DETAIL_L2_BACKOFF_NS, unsigned int GridThreshold = 500>
 __device__ __forceinline__ void delay_on_dc_gpu_or_prevent_hoisting()
 {
   NV_DISPATCH_TARGET(
@@ -815,7 +824,7 @@ struct TilePrefixCallbackOp
         T           window_aggregate;
 
         // Wait for the warp-wide window of predecessor tiles to become valid
-        detail::delay<450>();
+        detail::delay<CUB_DETAIL_L2_WRITE_LATENCY_NS>();
         ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
 
         // The exclusive tile prefix starts out as the current window aggregate
