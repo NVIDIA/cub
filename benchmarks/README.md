@@ -22,15 +22,17 @@
   - if
 - scan 
   - by key
+- histogram 
+  - even
+  - range
+  - multi even
+  - multi range
 
 ### TODO
 
 - adjacent difference 
   - left
   - right
-- histogram : needs policy
-  - even
-  - range
 - rle : needs policy
   - encode
   - non trivial runs

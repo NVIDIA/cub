@@ -258,6 +258,7 @@ struct device_histogram_policy_hub
   /// SM35
   struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
   {
+    // TODO This might be worth it to separate usual histogram and the multi one
     using AgentHistogramPolicyT =
       AgentHistogramPolicy<128, TScale<8>::VALUE, BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLEND, true>;
   };
@@ -265,6 +266,7 @@ struct device_histogram_policy_hub
   /// SM50
   struct Policy500 : ChainedPolicy<500, Policy500, Policy350>
   {
+    // TODO This might be worth it to separate usual histogram and the multi one
     using AgentHistogramPolicyT =
       AgentHistogramPolicy<384, TScale<16>::VALUE, BLOCK_LOAD_DIRECT, LOAD_LDG, true, SMEM, false>;
   };
