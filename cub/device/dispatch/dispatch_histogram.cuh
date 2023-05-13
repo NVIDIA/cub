@@ -592,6 +592,10 @@ struct dispatch_histogram
  *
  * @tparam OffsetT
  *   Signed integer type for global offsets
+ *
+ * @tparam SelectedPolicy 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <int NUM_CHANNELS,
           int NUM_ACTIVE_CHANNELS,
