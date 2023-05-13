@@ -119,7 +119,7 @@ CUB_NAMESPACE_BEGIN
  * @param num_items
  *   Total number of items to select from
  */
-template <typename AgentReduceByKeyPolicyT,
+template <typename ChainedPolicyT,
           typename KeysInputIteratorT,
           typename UniqueOutputIteratorT,
           typename ValuesInputIteratorT,
@@ -130,7 +130,7 @@ template <typename AgentReduceByKeyPolicyT,
           typename ReductionOpT,
           typename OffsetT,
           typename AccumT>
-__launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
+__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ReduceByKeyPolicyT::BLOCK_THREADS)) __global__
   void DeviceReduceByKeyKernel(KeysInputIteratorT d_keys_in,
                                UniqueOutputIteratorT d_unique_out,
                                ValuesInputIteratorT d_values_in,
@@ -142,6 +142,8 @@ __launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
                                ReductionOpT reduction_op,
                                OffsetT num_items)
 {
+  using AgentReduceByKeyPolicyT = typename ChainedPolicyT::ActivePolicy::ReduceByKeyPolicyT;
+
   // Thread block type for reducing tiles of value segments
   using AgentReduceByKeyT = AgentReduceByKey<AgentReduceByKeyPolicyT,
                                              KeysInputIteratorT,
@@ -167,6 +169,36 @@ __launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
                     equality_op,
                     reduction_op)
     .ConsumeRange(num_items, tile_state, start_tile);
+}
+
+namespace detail 
+{
+
+template <class AccumT, class KeyOutputT>
+struct device_reduce_by_key_policy_hub
+{
+  static constexpr int MAX_INPUT_BYTES = CUB_MAX(sizeof(KeyOutputT), sizeof(AccumT));
+  static constexpr int COMBINED_INPUT_BYTES = sizeof(KeyOutputT) + sizeof(AccumT);
+
+  /// SM35
+  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
+  {
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 6;
+    static constexpr int ITEMS_PER_THREAD =
+      (MAX_INPUT_BYTES <= 8)
+        ? 6
+        : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+                  CUB_MAX(1,
+                          ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) /
+                            COMBINED_INPUT_BYTES));
+
+    using ReduceByKeyPolicyT =
+      AgentReduceByKeyPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, LOAD_LDG, BLOCK_SCAN_WARP_SCANS>;
+  };
+
+  using MaxPolicy = Policy350;
+};
+
 }
 
 /******************************************************************************
@@ -201,6 +233,9 @@ __launch_bounds__(int(AgentReduceByKeyPolicyT::BLOCK_THREADS)) __global__
  * @tparam OffsetT
  *   Signed integer type for global offsets
  *
+ * @tparam SelectedPolicy 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <typename KeysInputIteratorT,
           typename UniqueOutputIteratorT,
@@ -212,190 +247,76 @@ template <typename KeysInputIteratorT,
           typename OffsetT,
           typename AccumT = detail::accumulator_t<ReductionOpT,
                                                   cub::detail::value_t<ValuesInputIteratorT>,
-                                                  cub::detail::value_t<ValuesInputIteratorT>>>
+                                                  cub::detail::value_t<ValuesInputIteratorT>>,
+          typename SelectedPolicy =                //
+          detail::device_reduce_by_key_policy_hub< //
+            AccumT,                                //
+            cub::detail::non_void_value_t<         //
+              UniqueOutputIteratorT,               //
+              cub::detail::value_t<KeysInputIteratorT>>>>
 struct DispatchReduceByKey
 {
   //-------------------------------------------------------------------------
   // Types and constants
   //-------------------------------------------------------------------------
 
-  // The input keys type
-  using KeyInputT = cub::detail::value_t<KeysInputIteratorT>;
-
-  // The output keys type
-  using KeyOutputT = cub::detail::non_void_value_t<UniqueOutputIteratorT, KeyInputT>;
-
   // The input values type
   using ValueInputT = cub::detail::value_t<ValuesInputIteratorT>;
 
   static constexpr int INIT_KERNEL_THREADS = 128;
 
-  static constexpr int MAX_INPUT_BYTES = CUB_MAX(sizeof(KeyOutputT), sizeof(AccumT));
-
-  static constexpr int COMBINED_INPUT_BYTES = sizeof(KeyOutputT) + sizeof(AccumT);
-
   // Tile status descriptor interface type
   using ScanTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
 
-  //-------------------------------------------------------------------------
-  // Tuning policies
-  //-------------------------------------------------------------------------
+  void *d_temp_storage;
+  size_t &temp_storage_bytes;
+  KeysInputIteratorT d_keys_in;
+  UniqueOutputIteratorT d_unique_out;
+  ValuesInputIteratorT d_values_in;
+  AggregatesOutputIteratorT d_aggregates_out;
+  NumRunsOutputIteratorT d_num_runs_out;
+  EqualityOpT equality_op;
+  ReductionOpT reduction_op;
+  OffsetT num_items;
+  cudaStream_t stream;
 
-  /// SM35
-  struct Policy350
-  {
-    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 6;
-    static constexpr int ITEMS_PER_THREAD =
-      (MAX_INPUT_BYTES <= 8)
-        ? 6
-        : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
-                  CUB_MAX(1,
-                          ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) /
-                            COMBINED_INPUT_BYTES));
-
-    using ReduceByKeyPolicyT =
-      AgentReduceByKeyPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, LOAD_LDG, BLOCK_SCAN_WARP_SCANS>;
-  };
-
-  /******************************************************************************
-   * Tuning policies of current PTX compiler pass
-   ******************************************************************************/
-
-  using PtxPolicy = Policy350;
-
-  // "Opaque" policies (whose parameterizations aren't reflected in the type
-  // signature)
-  struct PtxReduceByKeyPolicy : PtxPolicy::ReduceByKeyPolicyT
-  {};
-
-  /******************************************************************************
-   * Utilities
-   ******************************************************************************/
-
-  /**
-   * Initialize kernel dispatch configurations with the policies corresponding
-   * to the PTX assembly we will use
-   */
-  template <typename KernelConfig>
-  CUB_RUNTIME_FUNCTION __forceinline__ static void InitConfigs(int /*ptx_version*/,
-                                                               KernelConfig &reduce_by_key_config)
-  {
-    NV_IF_TARGET(NV_IS_DEVICE,
-                 (
-                   // We're on the device, so initialize the kernel dispatch
-                   // configurations with the current PTX policy
-                   reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();),
-                 (
-                   // We're on the host, so lookup and initialize the kernel
-                   // dispatch configurations with the policies that match the
-                   // device's PTX version
-
-                   // (There's only one policy right now)
-                   reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();));
-  }
-
-  /**
-   * Kernel kernel dispatch configuration.
-   */
-  struct KernelConfig
-  {
-    int block_threads;
-    int items_per_thread;
-    int tile_items;
-
-    template <typename PolicyT>
-    CUB_RUNTIME_FUNCTION __forceinline__ void Init()
-    {
-      block_threads    = PolicyT::BLOCK_THREADS;
-      items_per_thread = PolicyT::ITEMS_PER_THREAD;
-      tile_items       = block_threads * items_per_thread;
-    }
-  };
+  CUB_RUNTIME_FUNCTION __forceinline__
+  DispatchReduceByKey(void *d_temp_storage,
+                      size_t &temp_storage_bytes,
+                      KeysInputIteratorT d_keys_in,
+                      UniqueOutputIteratorT d_unique_out,
+                      ValuesInputIteratorT d_values_in,
+                      AggregatesOutputIteratorT d_aggregates_out,
+                      NumRunsOutputIteratorT d_num_runs_out,
+                      EqualityOpT equality_op,
+                      ReductionOpT reduction_op,
+                      OffsetT num_items,
+                      cudaStream_t stream)
+      : d_temp_storage(d_temp_storage)
+      , temp_storage_bytes(temp_storage_bytes)
+      , d_keys_in(d_keys_in)
+      , d_unique_out(d_unique_out)
+      , d_values_in(d_values_in)
+      , d_aggregates_out(d_aggregates_out)
+      , d_num_runs_out(d_num_runs_out)
+      , equality_op(equality_op)
+      , reduction_op(reduction_op)
+      , num_items(num_items)
+      , stream(stream)
+  {}
 
   //---------------------------------------------------------------------
   // Dispatch entrypoints
   //---------------------------------------------------------------------
 
-  /**
-   * @brief Internal dispatch routine for computing a device-wide
-   *        reduce-by-key using the specified kernel functions.
-   *
-   * @tparam ScanInitKernelT
-   *   Function type of cub::DeviceScanInitKernel
-   *
-   * @tparam ReduceByKeyKernelT
-   *   Function type of cub::DeviceReduceByKeyKernelT
-   *
-   * @param[in] d_temp_storage
-   *   Device-accessible allocation of temporary storage. When `nullptr`, the
-   *   required allocation size is written to `temp_storage_bytes` and no
-   *   work is done.
-   *
-   * @param[in,out] temp_storage_bytes
-   *   Reference to size in bytes of `d_temp_storage` allocation
-   *
-   * @param[in] d_keys_in
-   *   Pointer to the input sequence of keys
-   *
-   * @param[out] d_unique_out
-   *   Pointer to the output sequence of unique keys (one key per run)
-   *
-   * @param[in] d_values_in
-   *   Pointer to the input sequence of corresponding values
-   *
-   * @param[out] d_aggregates_out
-   *   Pointer to the output sequence of value aggregates
-   *   (one aggregate per run)
-   *
-   * @param[out] d_num_runs_out
-   *   Pointer to total number of runs encountered
-   *   (i.e., the length of d_unique_out)
-   *
-   * @param[in] equality_op
-   *   KeyT equality operator
-   *
-   * @param[in] reduction_op
-   *   ValueT reduction operator
-   *
-   * @param[in] num_items
-   *   Total number of items to select from
-   *
-   * @param[in] stream
-   *   CUDA stream to launch kernels within. Default is stream<sub>0</sub>.
-   *
-   * @param[in] ptx_version
-   *   PTX version of dispatch kernels
-   *
-   * @param[in] init_kernel
-   *   Kernel function pointer to parameterization of
-   *   cub::DeviceScanInitKernel
-   *
-   * @param[in] reduce_by_key_kernel
-   *   Kernel function pointer to parameterization of
-   *   cub::DeviceReduceByKeyKernel
-   *
-   * @param[in] reduce_by_key_config
-   *   Dispatch parameters that match the policy that
-   *   `reduce_by_key_kernel` was compiled for
-   */
-  template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           size_t &temp_storage_bytes,
-           KeysInputIteratorT d_keys_in,
-           UniqueOutputIteratorT d_unique_out,
-           ValuesInputIteratorT d_values_in,
-           AggregatesOutputIteratorT d_aggregates_out,
-           NumRunsOutputIteratorT d_num_runs_out,
-           EqualityOpT equality_op,
-           ReductionOpT reduction_op,
-           OffsetT num_items,
-           cudaStream_t stream,
-           int /*ptx_version*/,
-           ScanInitKernelT init_kernel,
-           ReduceByKeyKernelT reduce_by_key_kernel,
-           KernelConfig reduce_by_key_config)
+  template <typename ActivePolicyT, typename ScanInitKernelT, typename ReduceByKeyKernelT>
+  CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke(ScanInitKernelT init_kernel,
+                                                          ReduceByKeyKernelT reduce_by_key_kernel)
   {
+    using AgentReduceByKeyPolicyT = typename ActivePolicyT::ReduceByKeyPolicyT;
+    const int block_threads = AgentReduceByKeyPolicyT::BLOCK_THREADS;
+    const int items_per_thread = AgentReduceByKeyPolicyT::ITEMS_PER_THREAD;
+
     cudaError error = cudaSuccess;
     do
     {
@@ -407,7 +328,7 @@ struct DispatchReduceByKey
       }
 
       // Number of input tiles
-      int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
+      int tile_size = block_threads * items_per_thread;
       int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
 
       // Specify temporary storage allocation requirements
@@ -427,7 +348,7 @@ struct DispatchReduceByKey
         break;
       }
 
-      if (d_temp_storage == NULL)
+      if (d_temp_storage == nullptr)
       {
         // Return if the caller is simply requesting the size of the storage
         // allocation
@@ -481,7 +402,7 @@ struct DispatchReduceByKey
       int reduce_by_key_sm_occupancy;
       if (CubDebug(error = MaxSmOccupancy(reduce_by_key_sm_occupancy,
                                           reduce_by_key_kernel,
-                                          reduce_by_key_config.block_threads)))
+                                          block_threads)))
       {
         break;
       }
@@ -504,15 +425,15 @@ struct DispatchReduceByKey
                 "items per thread, %d SM occupancy\n",
                 start_tile,
                 scan_grid_size,
-                reduce_by_key_config.block_threads,
+                block_threads,
                 (long long)stream,
-                reduce_by_key_config.items_per_thread,
+                items_per_thread,
                 reduce_by_key_sm_occupancy);
 #endif
 
         // Invoke reduce_by_key_kernel
         THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(scan_grid_size,
-                                                                reduce_by_key_config.block_threads,
+                                                                block_threads,
                                                                 0,
                                                                 stream)
           .doit(reduce_by_key_kernel,
@@ -545,43 +466,22 @@ struct DispatchReduceByKey
     return error;
   }
 
-  template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
-  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
-    CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-    Dispatch(void *d_temp_storage,
-             size_t &temp_storage_bytes,
-             KeysInputIteratorT d_keys_in,
-             UniqueOutputIteratorT d_unique_out,
-             ValuesInputIteratorT d_values_in,
-             AggregatesOutputIteratorT d_aggregates_out,
-             NumRunsOutputIteratorT d_num_runs_out,
-             EqualityOpT equality_op,
-             ReductionOpT reduction_op,
-             OffsetT num_items,
-             cudaStream_t stream,
-             bool debug_synchronous,
-             int ptx_version,
-             ScanInitKernelT init_kernel,
-             ReduceByKeyKernelT reduce_by_key_kernel,
-             KernelConfig reduce_by_key_config)
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
-
-    return Dispatch<ScanInitKernelT, ReduceByKeyKernelT>(d_temp_storage,
-                                                         temp_storage_bytes,
-                                                         d_keys_in,
-                                                         d_unique_out,
-                                                         d_values_in,
-                                                         d_aggregates_out,
-                                                         d_num_runs_out,
-                                                         equality_op,
-                                                         reduction_op,
-                                                         num_items,
-                                                         stream,
-                                                         ptx_version,
-                                                         init_kernel,
-                                                         reduce_by_key_kernel,
-                                                         reduce_by_key_config);
+    using MaxPolicyT = typename SelectedPolicy::MaxPolicy;
+    return Invoke<ActivePolicyT>(DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
+                                 DeviceReduceByKeyKernel<MaxPolicyT,
+                                                         KeysInputIteratorT,
+                                                         UniqueOutputIteratorT,
+                                                         ValuesInputIteratorT,
+                                                         AggregatesOutputIteratorT,
+                                                         NumRunsOutputIteratorT,
+                                                         ScanTileStateT,
+                                                         EqualityOpT,
+                                                         ReductionOpT,
+                                                         OffsetT,
+                                                         AccumT>);
   }
 
   /**
@@ -636,6 +536,8 @@ struct DispatchReduceByKey
            OffsetT num_items,
            cudaStream_t stream)
   {
+    using MaxPolicyT = typename SelectedPolicy::MaxPolicy;
+
     cudaError error = cudaSuccess;
 
     do
@@ -647,36 +549,20 @@ struct DispatchReduceByKey
         break;
       }
 
-      // Get kernel kernel dispatch configurations
-      KernelConfig reduce_by_key_config;
-      InitConfigs(ptx_version, reduce_by_key_config);
+      DispatchReduceByKey dispatch(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_keys_in,
+                                   d_unique_out,
+                                   d_values_in,
+                                   d_aggregates_out,
+                                   d_num_runs_out,
+                                   equality_op,
+                                   reduction_op,
+                                   num_items,
+                                   stream);
 
       // Dispatch
-      if (CubDebug(error = Dispatch(d_temp_storage,
-                                    temp_storage_bytes,
-                                    d_keys_in,
-                                    d_unique_out,
-                                    d_values_in,
-                                    d_aggregates_out,
-                                    d_num_runs_out,
-                                    equality_op,
-                                    reduction_op,
-                                    num_items,
-                                    stream,
-                                    ptx_version,
-                                    DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
-                                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy,
-                                                            KeysInputIteratorT,
-                                                            UniqueOutputIteratorT,
-                                                            ValuesInputIteratorT,
-                                                            AggregatesOutputIteratorT,
-                                                            NumRunsOutputIteratorT,
-                                                            ScanTileStateT,
-                                                            EqualityOpT,
-                                                            ReductionOpT,
-                                                            OffsetT,
-                                                            AccumT>,
-                                    reduce_by_key_config)))
+      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
       {
         break;
       }
