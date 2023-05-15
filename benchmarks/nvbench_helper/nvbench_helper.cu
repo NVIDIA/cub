@@ -1,12 +1,14 @@
 #include <thrust/distance.h>
 #include <thrust/execution_policy.h>
 #include <thrust/fill.h>
+#include <thrust/count.h>
 #include <thrust/for_each.h>
 #include <thrust/tabulate.h>
 
 #include <cstdint>
 #include <random>
 
+#include "thrust/device_vector.h"
 #include <curand.h>
 #include <nvbench_helper.cuh>
 
@@ -23,10 +25,16 @@ public:
                   T min = std::numeric_limits<T>::lowest(),
                   T max = std::numeric_limits<T>::max());
 
+  template <typename T>
+  thrust::device_vector<T> power_law_segment_offsets(seed_t seed,
+                                                     std::size_t total_elements,
+                                                     std::size_t total_segments);
+
   double *distribution();
   curandGenerator_t &gen() { return m_gen; }
 
   double *prepare_random_generator(seed_t seed, std::size_t num_items);
+  double *prepare_lognormal_random_generator(seed_t seed, std::size_t num_items);
 
 private:
   curandGenerator_t m_gen;
@@ -62,6 +70,19 @@ double *generator_t::prepare_random_generator(seed_t seed, std::size_t num_items
 
   m_distribution.resize(num_items);
   curandGenerateUniformDouble(m_gen, this->distribution(), num_items);
+
+  return this->distribution();
+}
+
+double *generator_t::prepare_lognormal_random_generator(seed_t seed, std::size_t num_segments)
+{
+  curandSetPseudoRandomGeneratorSeed(m_gen, seed.get());
+
+  m_distribution.resize(num_segments);
+
+  const double mean = 3.0;
+  const double sigma = 1.2;
+  curandGenerateLogNormalDouble(m_gen, this->distribution(), num_segments, mean, sigma);
 
   return this->distribution();
 }
@@ -142,6 +163,60 @@ __global__ void set_imag_kernel(complex *d_in, complex min, complex max, double 
   {
     d_in[i].imag(random_to_item_t<double>{min.imag(), max.imag()}(d_tmp[i]));
   }
+}
+
+template <class T>
+struct lognormal_transformer_t
+{
+  std::size_t total_elements;
+  double sum;
+
+  __device__ T operator()(double val)
+  {
+    return floor(val * total_elements / sum);
+  }
+};
+
+template <class T>
+__global__ void lognormal_adjust_kernel(T *segment_sizes, std::size_t diff)
+{
+  const unsigned tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+  if (tid < diff)
+  {
+    segment_sizes[tid]++;
+  }
+}
+
+template <class T>
+thrust::device_vector<T> generator_t::power_law_segment_offsets(seed_t seed,
+                                                                std::size_t total_elements,
+                                                                std::size_t total_segments)
+{
+  thrust::device_vector<T> segment_sizes(total_segments + 1);
+  prepare_lognormal_random_generator(seed, total_segments);
+
+  if (thrust::count(m_distribution.begin(), m_distribution.end(), 0.0) == total_segments)
+  {
+    thrust::fill_n(m_distribution.begin(), total_segments, 1.0);
+  }
+
+  double sum = thrust::reduce(m_distribution.begin(), m_distribution.end());
+  thrust::transform(m_distribution.begin(),
+                    m_distribution.end(),
+                    segment_sizes.begin(),
+                    lognormal_transformer_t<T>{total_elements, sum});
+
+  const int diff = total_elements - thrust::reduce(segment_sizes.begin(), segment_sizes.end());
+  const int block_size = 256;
+  const int grid_size  = (std::abs(diff) + block_size - 1) / block_size;
+
+  T *d_segment_sizes = thrust::raw_pointer_cast(segment_sizes.data());
+  lognormal_adjust_kernel<T><<<grid_size, block_size>>>(d_segment_sizes, diff);
+
+  thrust::exclusive_scan(segment_sizes.begin(), segment_sizes.end(), segment_sizes.begin());
+
+  return segment_sizes;
 }
 
 template <class T>
@@ -332,3 +407,24 @@ INSTANTIATE(int128_t);
 INSTANTIATE(float);
 INSTANTIATE(double);
 INSTANTIATE(complex);
+
+#undef INSTANTIATE
+#undef INSTANTIATE_RND
+
+
+template <typename T>
+thrust::device_vector<T> gen_power_law_offsets(seed_t seed,
+                                               std::size_t total_elements,
+                                               std::size_t total_segments)
+{
+  return generator_t{}.power_law_segment_offsets<T>(seed, total_elements, total_segments);
+}
+
+#define INSTANTIATE_RND(TYPE)                                                                      \
+  template thrust::device_vector<TYPE> gen_power_law_offsets<TYPE>(seed_t, std::size_t, std::size_t)
+
+#define INSTANTIATE(TYPE) INSTANTIATE_RND(TYPE);
+
+
+INSTANTIATE(int32_t);
+INSTANTIATE(int64_t);

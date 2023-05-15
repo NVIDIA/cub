@@ -155,6 +155,8 @@ void gen(seed_t seed,
          T min = std::numeric_limits<T>::min(),
          T max = std::numeric_limits<T>::max());
 
+template <typename T>
+void gen_power_law_offsets(seed_t seed, std::size_t total_elements, std::size_t total_segments);
 
 // #define DBG_ENTROPY
 
