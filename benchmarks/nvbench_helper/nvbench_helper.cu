@@ -424,14 +424,12 @@ thrust::device_vector<T> gen_power_law_offsets(seed_t seed,
   return generator_t{}.power_law_segment_offsets<T>(seed, total_elements, total_segments);
 }
 
-#define INSTANTIATE_RND(TYPE)                                                                      \
+#define INSTANTIATE(TYPE)                                                                          \
   template thrust::device_vector<TYPE> gen_power_law_offsets<TYPE>(seed_t, std::size_t, std::size_t)
-
-#define INSTANTIATE(TYPE) INSTANTIATE_RND(TYPE);
-
 
 INSTANTIATE(int32_t);
 INSTANTIATE(int64_t);
+#undef INSTANTIATE
 
 
 template <class T>
@@ -449,7 +447,7 @@ struct offset_to_iterator_t
 template <class T>
 struct repeat_index_t
 {
-  __host__ __device__ __forceinline__ thrust::constant_iterator<std::size_t> operator()(std::size_t i)
+  __host__ __device__ __forceinline__ thrust::constant_iterator<T> operator()(std::size_t i)
   {
     return thrust::constant_iterator<T>(static_cast<T>(i));
   }
@@ -502,4 +500,29 @@ thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
                            d_range_sizes,
                            total_segments);
   cudaDeviceSynchronize();
+
+  return out;
 }
+
+#define INSTANTIATE(TYPE)                                                                          \
+  template thrust::device_vector<TYPE> gen_power_law_key_segments<TYPE>(seed_t,                    \
+                                                                        std::size_t,               \
+                                                                        std::size_t)
+
+INSTANTIATE(bool);
+
+INSTANTIATE(uint8_t);
+INSTANTIATE(uint16_t);
+INSTANTIATE(uint32_t);
+INSTANTIATE(uint64_t);
+INSTANTIATE(uint128_t);
+
+INSTANTIATE(int8_t);
+INSTANTIATE(int16_t);
+INSTANTIATE(int32_t);
+INSTANTIATE(int64_t);
+INSTANTIATE(int128_t);
+
+INSTANTIATE(float);
+INSTANTIATE(double);
+INSTANTIATE(complex);

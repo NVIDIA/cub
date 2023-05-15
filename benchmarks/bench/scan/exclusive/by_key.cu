@@ -62,13 +62,11 @@ static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT
   #endif // TUNE_BASE
 
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
+  const auto segments = 2 * elements / 100; // 2% of elements
 
-  thrust::device_vector<KeyT> keys(elements);
   thrust::device_vector<ValueT> in_vals(elements);
   thrust::device_vector<ValueT> out_vals(elements);
-
-  const bit_entropy entropy = str_to_entropy(state.get_string("Entropy"));
-  gen(seed_t{}, keys, entropy);
+  thrust::device_vector<KeyT> keys = gen_power_law_key_segments<KeyT>(seed_t{}, elements, segments);
 
   KeyT *d_keys       = thrust::raw_pointer_cast(keys.data());
   ValueT *d_in_vals  = thrust::raw_pointer_cast(in_vals.data());
@@ -125,5 +123,4 @@ using value_types = nvbench::type_list<int8_t, int16_t, int32_t, int64_t, int128
 NVBENCH_BENCH_TYPES(scan, NVBENCH_TYPE_AXES(key_types, value_types, some_offset_types))
   .set_name("cub::DeviceScan::ExclusiveSumByKey")
   .set_type_axes_names({"KeyT{ct}", "ValueT{ct}", "OffsetT{ct}"})
-  .add_int64_power_of_two_axis("Elements{io}", nvbench::range(16, 28, 4))
-  .add_string_axis("Entropy", {"1.000", "0.544", "0.000"});
+  .add_int64_power_of_two_axis("Elements{io}", nvbench::range(16, 28, 4));
