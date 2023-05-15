@@ -154,7 +154,7 @@ using all_t =            //
     logic_helper_t<Bs...>, //
     logic_helper_t<true_t<Bs>::value...>>;
 
-struct fundamental_decomposer_t
+struct identity_decomposer_t
 {
   template <class T>
   __host__ __device__ T& operator()(T &key) const
@@ -242,13 +242,13 @@ struct bit_ordered_conversion_policy_t
 {
   using bit_ordered_type = typename Traits<T>::UnsignedBits;
 
-  static __host__ __device__ bit_ordered_type to_bit_ordered(detail::fundamental_decomposer_t,
+  static __host__ __device__ bit_ordered_type to_bit_ordered(detail::identity_decomposer_t,
                                                              bit_ordered_type val)
   {
     return Traits<T>::TwiddleIn(val);
   }
 
-  static __host__ __device__ bit_ordered_type from_bit_ordered(detail::fundamental_decomposer_t,
+  static __host__ __device__ bit_ordered_type from_bit_ordered(detail::identity_decomposer_t,
                                                                bit_ordered_type val)
   {
     return Traits<T>::TwiddleOut(val);
@@ -260,7 +260,7 @@ struct bit_ordered_inversion_policy_t
 {
   using bit_ordered_type = typename Traits<T>::UnsignedBits;
 
-  static __host__ __device__ bit_ordered_type inverse(detail::fundamental_decomposer_t,
+  static __host__ __device__ bit_ordered_type inverse(detail::identity_decomposer_t,
                                                       bit_ordered_type val)
   {
     return ~val;
@@ -277,25 +277,25 @@ struct traits_t
   template <class FundamentalExtractorT, class /* DecomposerT */>
   using digit_extractor_t = FundamentalExtractorT;
 
-  static __host__ __device__ bit_ordered_type min_raw_binary_key(detail::fundamental_decomposer_t)
+  static __host__ __device__ bit_ordered_type min_raw_binary_key(detail::identity_decomposer_t)
   {
     return Traits<T>::LOWEST_KEY;
   }
 
-  static __host__ __device__ bit_ordered_type max_raw_binary_key(detail::fundamental_decomposer_t)
+  static __host__ __device__ bit_ordered_type max_raw_binary_key(detail::identity_decomposer_t)
   {
     return Traits<T>::MAX_KEY;
   }
 
-  static __host__ __device__ int default_end_bit(detail::fundamental_decomposer_t)
+  static __host__ __device__ int default_end_bit(detail::identity_decomposer_t)
   {
     return sizeof(T) * 8;
   }
 
   template <class FundamentalExtractorT>
   static __host__
-    __device__ digit_extractor_t<FundamentalExtractorT, detail::fundamental_decomposer_t>
-    digit_extractor(int begin_bit, int num_bits, detail::fundamental_decomposer_t)
+    __device__ digit_extractor_t<FundamentalExtractorT, detail::identity_decomposer_t>
+    digit_extractor(int begin_bit, int num_bits, detail::identity_decomposer_t)
   {
     return FundamentalExtractorT(begin_bit, num_bits);
   }
@@ -312,7 +312,7 @@ struct min_raw_binary_key_f
     using traits           = traits_t<typename ::cuda::std::remove_cv<T>::type>;
     using bit_ordered_type = typename traits::bit_ordered_type;
     reinterpret_cast<bit_ordered_type &>(field) =
-      traits::min_raw_binary_key(detail::fundamental_decomposer_t{});
+      traits::min_raw_binary_key(detail::identity_decomposer_t{});
   }
 };
 
@@ -333,7 +333,7 @@ struct max_raw_binary_key_f
     using traits           = traits_t<typename ::cuda::std::remove_cv<T>::type>;
     using bit_ordered_type = typename traits::bit_ordered_type;
     reinterpret_cast<bit_ordered_type &>(field) =
-      traits::max_raw_binary_key(detail::fundamental_decomposer_t{});
+      traits::max_raw_binary_key(detail::identity_decomposer_t{});
   }
 };
 
@@ -356,7 +356,7 @@ struct to_bit_ordered_f
     using bit_ordered_conversion = typename traits::bit_ordered_conversion_policy;
 
     auto &ordered_field = reinterpret_cast<bit_ordered_type &>(field);
-    ordered_field       = bit_ordered_conversion::to_bit_ordered(detail::fundamental_decomposer_t{},
+    ordered_field       = bit_ordered_conversion::to_bit_ordered(detail::identity_decomposer_t{},
                                                            ordered_field);
   }
 };
@@ -380,7 +380,7 @@ struct from_bit_ordered_f
     using bit_ordered_conversion = typename traits::bit_ordered_conversion_policy;
 
     auto &ordered_field = reinterpret_cast<bit_ordered_type &>(field);
-    ordered_field = bit_ordered_conversion::from_bit_ordered(detail::fundamental_decomposer_t{},
+    ordered_field = bit_ordered_conversion::from_bit_ordered(detail::identity_decomposer_t{},
                                                              ordered_field);
   }
 };
@@ -597,7 +597,7 @@ private:
   using bit_ordered_inversion_policy  = typename traits::bit_ordered_inversion_policy;
 
 public:
-  template <class DecomposerT = detail::fundamental_decomposer_t>
+  template <class DecomposerT = detail::identity_decomposer_t>
   static __host__ __device__ __forceinline__ //
     bit_ordered_type
     In(bit_ordered_type key, DecomposerT decomposer = {})
@@ -610,7 +610,7 @@ public:
     return key;
   }
 
-  template <class DecomposerT = detail::fundamental_decomposer_t>
+  template <class DecomposerT = detail::identity_decomposer_t>
   static __host__ __device__ __forceinline__ //
     bit_ordered_type
     Out(bit_ordered_type key, DecomposerT decomposer = {})
@@ -623,7 +623,7 @@ public:
     return key;
   }
 
-  template <class DecomposerT = detail::fundamental_decomposer_t>
+  template <class DecomposerT = detail::identity_decomposer_t>
   static __host__ __device__ __forceinline__ //
     bit_ordered_type
     DefaultKey(DecomposerT decomposer = {})

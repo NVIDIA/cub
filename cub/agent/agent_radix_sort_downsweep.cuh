@@ -100,7 +100,7 @@ template <
     typename KeyT,                              ///< KeyT type
     typename ValueT,                            ///< ValueT type
     typename OffsetT,                           ///< Signed integer type for global offsets
-    typename DecomposerT = detail::fundamental_decomposer_t>
+    typename DecomposerT = detail::identity_decomposer_t>
 struct AgentRadixSortDownsweep
 {
     //---------------------------------------------------------------------

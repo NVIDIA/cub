@@ -29,6 +29,7 @@
 
 #include <cub/block/block_radix_sort.cuh>
 
+#include <thrust/gather.h>
 #include <thrust/host_vector.h>
 #include <thrust/sequence.h>
 
@@ -424,12 +425,8 @@ radix_sort_reference(const thrust::device_vector<KeyT> &d_keys,
   thrust::host_vector<KeyT> h_keys(d_keys);
   thrust::host_vector<std::size_t> h_permutation =
     get_permutation(h_keys, is_descending, begin_bit, end_bit);
-
   thrust::host_vector<KeyT> result(d_keys.size());
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.begin(),
-                 [&](std::size_t i) { return h_keys[i]; });
+  thrust::gather(h_permutation.cbegin(), h_permutation.cend(), h_keys.cbegin(), result.begin());
 
   return result;
 }
@@ -447,18 +444,14 @@ radix_sort_reference(const thrust::device_vector<KeyT> &d_keys,
   result.second.resize(d_keys.size());
 
   thrust::host_vector<KeyT> h_keys(d_keys);
-  thrust::host_vector<std::size_t> h_permutation = get_permutation(h_keys, is_descending, begin_bit, end_bit);
-
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.first.begin(),
-                 [&](std::size_t i) { return h_keys[i]; });
+  thrust::host_vector<std::size_t> h_permutation =
+    get_permutation(h_keys, is_descending, begin_bit, end_bit);
 
   thrust::host_vector<ValueT> h_values(d_values);
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.second.begin(),
-                 [&](std::size_t i) { return h_values[i]; });
+  thrust::gather(h_permutation.cbegin(),
+                 h_permutation.cend(),
+                 thrust::make_zip_iterator(h_keys.cbegin(), h_values.cbegin()),
+                 thrust::make_zip_iterator(result.first.begin(), result.second.begin()));
 
   return result;
 }

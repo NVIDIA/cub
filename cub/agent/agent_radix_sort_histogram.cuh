@@ -83,7 +83,7 @@ template <
     bool IS_DESCENDING,
     typename KeyT,
     typename OffsetT,
-    typename DecomposerT = detail::fundamental_decomposer_t>
+    typename DecomposerT = detail::identity_decomposer_t>
 struct AgentRadixSortHistogram
 {
     // constants

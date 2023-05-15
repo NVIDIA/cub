@@ -370,7 +370,7 @@ private:
     {}
 
     /// Sort blocked arrangement
-    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::fundamental_decomposer_t>
+    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::identity_decomposer_t>
     __device__ __forceinline__ void SortBlocked(
         KeyT                    (&keys)[ITEMS_PER_THREAD],          ///< Keys to sort
         ValueT                  (&values)[ITEMS_PER_THREAD],        ///< Values to sort
@@ -427,7 +427,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /// Sort blocked -> striped arrangement
-    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::fundamental_decomposer_t>
+    template <int DESCENDING, int KEYS_ONLY, class DecomposerT = detail::identity_decomposer_t>
     __device__ __forceinline__ void SortBlockedToStriped(
         KeyT                    (&keys)[ITEMS_PER_THREAD],          ///< Keys to sort
         ValueT                  (&values)[ITEMS_PER_THREAD],        ///< Values to sort

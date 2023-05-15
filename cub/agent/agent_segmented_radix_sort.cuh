@@ -62,7 +62,7 @@ template <bool IS_DESCENDING,
           typename KeyT,
           typename ValueT,
           typename OffsetT,
-          typename DecomposerT = detail::fundamental_decomposer_t>
+          typename DecomposerT = detail::identity_decomposer_t>
 struct AgentSegmentedRadixSort
 {
   OffsetT num_items;

@@ -75,7 +75,7 @@ template <
     bool     IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
     typename KeyT,                           ///< Key type
     typename OffsetT,                        ///< Signed integer type for global offsets
-    typename DecomposerT = detail::fundamental_decomposer_t>                        
+    typename DecomposerT = detail::identity_decomposer_t>                        
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     int(ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS) :
     int(ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS)))
@@ -187,7 +187,7 @@ template <
     typename                KeyT,                           ///< Key type
     typename                ValueT,                         ///< Value type
     typename                OffsetT,                        ///< Signed integer type for global offsets
-    typename                DecomposerT = detail::fundamental_decomposer_t>
+    typename                DecomposerT = detail::identity_decomposer_t>
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     int(ChainedPolicyT::ActivePolicy::AltDownsweepPolicy::BLOCK_THREADS) :
     int(ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS)))
@@ -253,7 +253,7 @@ template <
     typename                KeyT,                           ///< Key type
     typename                ValueT,                         ///< Value type
     typename                OffsetT,                        ///< Signed integer type for global offsets
-    typename                DecomposerT = detail::fundamental_decomposer_t>
+    typename                DecomposerT = detail::identity_decomposer_t>
 __launch_bounds__ (int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1)
 __global__ void DeviceRadixSortSingleTileKernel(
     const KeyT              *d_keys_in,                     ///< [in] Input keys buffer
@@ -376,7 +376,7 @@ template <
     typename                BeginOffsetIteratorT,           ///< Random-access input iterator type for reading segment beginning offsets \iterator
     typename                EndOffsetIteratorT,             ///< Random-access input iterator type for reading segment ending offsets \iterator
     typename                OffsetT,                        ///< Signed integer type for global offsets
-    typename                DecomposerT = detail::fundamental_decomposer_t>
+    typename                DecomposerT = detail::identity_decomposer_t>
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     ChainedPolicyT::ActivePolicy::AltSegmentedPolicy::BLOCK_THREADS :
     ChainedPolicyT::ActivePolicy::SegmentedPolicy::BLOCK_THREADS))
@@ -551,7 +551,7 @@ template <typename ChainedPolicyT,
           bool IS_DESCENDING,
           typename KeyT,
           typename OffsetT,
-          typename DecomposerT = detail::fundamental_decomposer_t>
+          typename DecomposerT = detail::identity_decomposer_t>
 __global__ __launch_bounds__(ChainedPolicyT::ActivePolicy::HistogramPolicy::BLOCK_THREADS) 
 void DeviceRadixSortHistogramKernel(OffsetT *d_bins_out,
                                     const KeyT *d_keys_in,
@@ -575,7 +575,7 @@ template <
     typename OffsetT,
     typename PortionOffsetT,
     typename AtomicOffsetT = PortionOffsetT,
-    typename DecomposerT = detail::fundamental_decomposer_t>
+    typename DecomposerT = detail::identity_decomposer_t>
 __global__ void __launch_bounds__(ChainedPolicyT::ActivePolicy::OnesweepPolicy::BLOCK_THREADS)
 DeviceRadixSortOnesweepKernel
     (AtomicOffsetT* d_lookback, AtomicOffsetT* d_ctrs, OffsetT* d_bins_out,
@@ -1145,16 +1145,33 @@ struct DeviceRadixSortPolicy
  * Single-problem dispatch
  ******************************************************************************/
 
+// TODO State that `DecomposerT` is an implementation detail
+
 /**
  * Utility class for dispatching the appropriately-tuned kernels for device-wide radix sort
+ *
+ * @tparam IS_DESCENDING
+ *   Whether or not the sorted-order is high-to-low
+ *
+ * @tparam KeyT
+ *   Key type
+ *
+ * @tparam ValueT
+ *   Value type
+ *
+ * @tparam OffsetT
+ *   Signed integer type for global offsets
+ *
+ * @tparam DecomposerT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
-template <
-    bool     IS_DESCENDING, ///< Whether or not the sorted-order is high-to-low
-    typename KeyT,          ///< Key type
-    typename ValueT,        ///< Value type
-    typename OffsetT,       ///< Signed integer type for global offsets
-    typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>,
-    typename DecomposerT = detail::fundamental_decomposer_t>
+template <bool IS_DESCENDING,
+          typename KeyT,
+          typename ValueT,
+          typename OffsetT,
+          typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>,
+          typename DecomposerT    = detail::identity_decomposer_t>
 struct DispatchRadixSort : SelectedPolicy
 {
     //------------------------------------------------------------------------------
@@ -2055,7 +2072,7 @@ template <
     typename EndOffsetIteratorT,   ///< Random-access input iterator type for reading segment ending offsets \iterator
     typename OffsetT,           ///< Signed integer type for global offsets
     typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>,
-    typename DecomposerT = detail::fundamental_decomposer_t>
+    typename DecomposerT = detail::identity_decomposer_t>
 struct DispatchSegmentedRadixSort : SelectedPolicy
 {
     //------------------------------------------------------------------------------

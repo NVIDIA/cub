@@ -25,6 +25,7 @@
  *
  ******************************************************************************/
 
+#include <cuda/std/tuple>
 #include <cub/device/device_radix_sort.cuh>
 
 #include <bitset>

@@ -504,7 +504,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -639,7 +641,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -941,7 +945,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = false;
@@ -1082,7 +1088,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = false;
@@ -1395,7 +1403,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -1530,7 +1540,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -1827,7 +1839,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = true;
@@ -1968,7 +1982,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = true;
@@ -2232,7 +2248,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -2356,7 +2374,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -2656,7 +2676,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending = false;
@@ -2785,7 +2807,9 @@ public:
     using offset_t = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending = false;
@@ -3065,7 +3089,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -3186,7 +3212,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     // We cast away const-ness, but will *not* write to these arrays.
     // `DispatchRadixSort::Dispatch` will allocate temporary storage and
@@ -3453,7 +3481,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = true;
@@ -3582,7 +3612,9 @@ public:
     using offset_t           = typename detail::ChooseOffsetT<NumItemsT>::Type;
     using decomposer_check_t = detail::radix::decomposer_check_t<KeyT, DecomposerT>;
 
-    static_assert(decomposer_check_t::value, "DecomposerT must be a functor");
+    static_assert(decomposer_check_t::value,
+                  "DecomposerT must be a callable object returning a tuple of references to "
+                  "arithmetic types");
 
     constexpr bool is_overwrite_okay = true;
     constexpr bool is_descending     = true;

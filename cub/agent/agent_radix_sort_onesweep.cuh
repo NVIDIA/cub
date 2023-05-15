@@ -94,7 +94,7 @@ template <
     typename ValueT,
     typename OffsetT,
     typename PortionOffsetT,
-    typename DecomposerT = detail::fundamental_decomposer_t>
+    typename DecomposerT = detail::identity_decomposer_t>
 struct AgentRadixSortOnesweep
 {
     // constants

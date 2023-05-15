@@ -1955,7 +1955,7 @@ void TestUnspecifiedRanges()
 #if TEST_KEY_BYTES == 4
 // Following tests check that new decomposer API doesn't break old API. 
 // It's disabled because some compilers don't like implicit conversions, which
-// is required for the test. Once we figure out how to temporarely enable conversion, we can
+// is required for the test. Once we figure out how to temporarily enable conversion, we can
 // re-enable the test.
 #define ENABLING_CONVERSION_IS_FIGURED_OUT 0
 #if ENABLING_CONVERSION_IS_FIGURED_OUT 

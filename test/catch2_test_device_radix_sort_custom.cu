@@ -29,6 +29,7 @@
 
 #include <thrust/detail/raw_pointer_cast.h>
 #include <thrust/device_vector.h>
+#include <thrust/gather.h>
 #include <thrust/host_vector.h>
 #include <thrust/reverse.h>
 #include <thrust/sequence.h>
@@ -153,11 +154,8 @@ static thrust::device_vector<key> reference_sort_keys(const thrust::device_vecto
   thrust::host_vector<key> h_keys(d_keys);
   thrust::host_vector<std::size_t> h_permutation =
     get_permutation(h_keys, is_descending, begin_bit, end_bit);
-
   thrust::host_vector<key> result(d_keys.size());
-  std::transform(h_permutation.begin(), h_permutation.end(), result.begin(), [&](std::size_t i) {
-    return h_keys[i];
-  });
+  thrust::gather(h_permutation.cbegin(), h_permutation.cend(), h_keys.cbegin(), result.begin());
   return result;
 }
 
@@ -174,16 +172,11 @@ reference_sort_pairs(const thrust::device_vector<key> &d_keys,
     get_permutation(h_keys, is_descending, begin_bit, end_bit);
 
   thrust::host_vector<key> result_keys(d_keys.size());
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result_keys.begin(),
-                 [&](std::size_t i) { return h_keys[i]; });
-
   thrust::host_vector<value> result_values(d_values.size());
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result_values.begin(),
-                 [&](std::size_t i) { return h_values[i]; });
+  thrust::gather(h_permutation.cbegin(),
+                 h_permutation.cend(),
+                 thrust::make_zip_iterator(h_keys.cbegin(), h_values.cbegin()),
+                 thrust::make_zip_iterator(result_keys.begin(), result_values.begin()));
 
   return std::make_pair(result_keys, result_values);
 }
@@ -272,6 +265,7 @@ CUB_TEST("Device radix sort can sort pairs with custom i128_t keys", "[radix][so
   }
 
   REQUIRE(reference.first == out_keys);
+  REQUIRE(reference.second == out_values);
 }
 
 struct double_buffer_sort_t
@@ -470,6 +464,7 @@ CUB_TEST("Device radix sort can sort pairs with bits of custom i128_t keys",
   }
 
   REQUIRE(reference.first == out_keys);
+  REQUIRE(reference.second == out_values);
 }
 
 CUB_TEST("Device radix sort works with bits of custom i128_t (db)", "[radix][sort][device]")

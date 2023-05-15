@@ -81,7 +81,7 @@ template <
     typename AgentRadixSortUpsweepPolicy,   ///< Parameterized AgentRadixSortUpsweepPolicy tuning policy type
     typename KeyT,                          ///< KeyT type
     typename OffsetT,
-    typename DecomposerT = detail::fundamental_decomposer_t>                       ///< Signed integer type for global offsets
+    typename DecomposerT = detail::identity_decomposer_t>                       ///< Signed integer type for global offsets
 struct AgentRadixSortUpsweep
 {
 

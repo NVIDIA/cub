@@ -174,8 +174,8 @@ class AgentSubWarpSort
 
     // Segmented sort doesn't support custom types at the moment.
     bit_ordered_type default_key_bits = IS_DESCENDING 
-                                      ? traits::min_raw_binary_key(detail::fundamental_decomposer_t{})
-                                      : traits::max_raw_binary_key(detail::fundamental_decomposer_t{});
+                                      ? traits::min_raw_binary_key(detail::identity_decomposer_t{})
+                                      : traits::max_raw_binary_key(detail::identity_decomposer_t{});
     return reinterpret_cast<KeyT &>(default_key_bits);
   }
 
