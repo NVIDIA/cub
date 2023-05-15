@@ -1,14 +1,18 @@
 #include <thrust/distance.h>
+#include <thrust/iterator/transform_output_iterator.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/constant_iterator.h>
 #include <thrust/execution_policy.h>
 #include <thrust/fill.h>
 #include <thrust/count.h>
 #include <thrust/for_each.h>
 #include <thrust/tabulate.h>
 
+#include <cub/device/device_copy.cuh>
+
 #include <cstdint>
 #include <random>
 
-#include "thrust/device_vector.h"
 #include <curand.h>
 #include <nvbench_helper.cuh>
 
@@ -428,3 +432,74 @@ thrust::device_vector<T> gen_power_law_offsets(seed_t seed,
 
 INSTANTIATE(int32_t);
 INSTANTIATE(int64_t);
+
+
+template <class T>
+struct offset_to_iterator_t
+{
+  T *base_it;
+
+  __host__ __device__ __forceinline__ T*
+  operator()(std::size_t offset) const
+  {
+    return base_it + offset;
+  }
+};
+
+template <class T>
+struct repeat_index_t
+{
+  __host__ __device__ __forceinline__ thrust::constant_iterator<std::size_t> operator()(std::size_t i)
+  {
+    return thrust::constant_iterator<T>(static_cast<T>(i));
+  }
+};
+
+struct offset_to_size_t
+{
+  std::size_t *offsets = nullptr;
+
+  __host__ __device__ __forceinline__ std::size_t operator()(std::size_t i)
+  {
+    return offsets[i + 1] - offsets[i];
+  }
+};
+
+template <typename T>
+thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
+                                                    std::size_t total_elements,
+                                                    std::size_t total_segments)
+{
+  thrust::device_vector<std::size_t> segment_offsets =
+    gen_power_law_offsets<std::size_t>(seed, total_elements, total_segments);
+  thrust::device_vector<T> out(total_elements);
+  std::size_t *d_offsets = thrust::raw_pointer_cast(segment_offsets.data());
+  T *d_out = thrust::raw_pointer_cast(out.data());
+
+  thrust::counting_iterator<int> iota(0);
+  offset_to_iterator_t<T> dst_transform_op{d_out};
+
+  auto d_range_srcs = thrust::make_transform_iterator(iota, repeat_index_t<T>{});
+  auto d_range_dsts = thrust::make_transform_iterator(d_offsets, dst_transform_op);
+  auto d_range_sizes = thrust::make_transform_iterator(iota, offset_to_size_t{d_offsets});
+
+  std::uint8_t *d_temp_storage = nullptr;
+  std::size_t temp_storage_bytes = 0;
+  cub::DeviceCopy::Batched(d_temp_storage,
+                           temp_storage_bytes,
+                           d_range_srcs,
+                           d_range_dsts,
+                           d_range_sizes,
+                           total_segments);
+ 
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+  d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+  cub::DeviceCopy::Batched(d_temp_storage,
+                           temp_storage_bytes,
+                           d_range_srcs,
+                           d_range_dsts,
+                           d_range_sizes,
+                           total_segments);
+  cudaDeviceSynchronize();
+}

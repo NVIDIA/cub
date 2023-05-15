@@ -156,7 +156,14 @@ void gen(seed_t seed,
          T max = std::numeric_limits<T>::max());
 
 template <typename T>
-void gen_power_law_offsets(seed_t seed, std::size_t total_elements, std::size_t total_segments);
+thrust::device_vector<T> gen_power_law_offsets(seed_t seed,
+                                               std::size_t total_elements,
+                                               std::size_t total_segments);
+
+template <typename T>
+thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
+                                                    std::size_t total_elements,
+                                                    std::size_t total_segments);
 
 // #define DBG_ENTROPY
 
