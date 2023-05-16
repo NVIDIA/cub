@@ -165,6 +165,13 @@ thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
                                                     std::size_t total_elements,
                                                     std::size_t total_segments);
 
+
+template <typename T>
+thrust::device_vector<T> gen_uniform_key_segments(seed_t seed,
+                                                  std::size_t total_elements,
+                                                  std::size_t min_segment_size,
+                                                  std::size_t max_segment_size);
+
 // #define DBG_ENTROPY
 
 // This is very slow to compile, do not enable by default

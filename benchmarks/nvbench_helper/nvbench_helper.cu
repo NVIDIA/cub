@@ -1,4 +1,5 @@
 #include <thrust/distance.h>
+#include <thrust/binary_search.h>
 #include <thrust/iterator/transform_output_iterator.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/constant_iterator.h>
@@ -13,6 +14,7 @@
 #include <cstdint>
 #include <random>
 
+#include "thrust/scan.h"
 #include <curand.h>
 #include <nvbench_helper.cuh>
 
@@ -466,10 +468,9 @@ struct offset_to_size_t
 template <typename T>
 thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
                                                     std::size_t total_elements,
-                                                    std::size_t total_segments)
+                                                    thrust::device_vector<std::size_t> &segment_offsets)
 {
-  thrust::device_vector<std::size_t> segment_offsets =
-    gen_power_law_offsets<std::size_t>(seed, total_elements, total_segments);
+  std::size_t total_segments = segment_offsets.size() - 1;
   thrust::device_vector<T> out(total_elements);
   std::size_t *d_offsets = thrust::raw_pointer_cast(segment_offsets.data());
   T *d_out = thrust::raw_pointer_cast(out.data());
@@ -504,6 +505,16 @@ thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
   return out;
 }
 
+template <typename T>
+thrust::device_vector<T> gen_power_law_key_segments(seed_t seed,
+                                                    std::size_t total_elements,
+                                                    std::size_t total_segments)
+{
+  thrust::device_vector<std::size_t> segment_offsets =
+    gen_power_law_offsets<std::size_t>(seed, total_elements, total_segments);
+  return gen_power_law_key_segments<T>(seed, total_elements, segment_offsets);
+}
+
 #define INSTANTIATE(TYPE)                                                                          \
   template thrust::device_vector<TYPE> gen_power_law_key_segments<TYPE>(seed_t,                    \
                                                                         std::size_t,               \
@@ -526,3 +537,55 @@ INSTANTIATE(int128_t);
 INSTANTIATE(float);
 INSTANTIATE(double);
 INSTANTIATE(complex);
+#undef INSTANTIATE
+
+/**
+ * @brief Generates a vector of random key segments.
+ *
+ * Not all parameter combinations can be satisfied. For instance, if the total
+ * elements is less than the minimal segment size, the function will return a
+ * vector with a single element that is outside of the requested range. 
+ * At most one segment can be out of the requested range.
+ */
+template <typename T>
+thrust::device_vector<T> gen_uniform_key_segments(seed_t seed,
+                                                  std::size_t total_elements,
+                                                  std::size_t min_segment_size,
+                                                  std::size_t max_segment_size)
+{
+  thrust::device_vector<std::size_t> segment_offsets(total_elements + 2);
+  gen(seed, segment_offsets, bit_entropy::_1_000, min_segment_size, max_segment_size);
+  segment_offsets[total_elements] = total_elements + 1;
+  thrust::exclusive_scan(segment_offsets.begin(), segment_offsets.end(), segment_offsets.begin());
+  thrust::device_vector<std::size_t>::iterator iter =
+    thrust::upper_bound(segment_offsets.begin(), segment_offsets.end(), total_elements);
+  *iter = total_elements;
+  segment_offsets.erase(iter + 1, segment_offsets.end());
+
+  return gen_power_law_key_segments<T>(seed, total_elements, segment_offsets);
+}
+
+#define INSTANTIATE(TYPE)                                                                          \
+  template thrust::device_vector<TYPE> gen_uniform_key_segments<TYPE>(seed_t,                      \
+                                                                      std::size_t,                 \
+                                                                      std::size_t,                 \
+                                                                      std::size_t)
+
+INSTANTIATE(bool);
+
+INSTANTIATE(uint8_t);
+INSTANTIATE(uint16_t);
+INSTANTIATE(uint32_t);
+INSTANTIATE(uint64_t);
+INSTANTIATE(uint128_t);
+
+INSTANTIATE(int8_t);
+INSTANTIATE(int16_t);
+INSTANTIATE(int32_t);
+INSTANTIATE(int64_t);
+INSTANTIATE(int128_t);
+
+INSTANTIATE(float);
+INSTANTIATE(double);
+INSTANTIATE(complex);
+#undef INSTANTIATE

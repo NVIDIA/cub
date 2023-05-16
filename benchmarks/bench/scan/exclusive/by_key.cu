@@ -62,11 +62,10 @@ static void scan(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT
   #endif // TUNE_BASE
 
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
-  const auto segments = 2 * elements / 100; // 2% of elements
 
   thrust::device_vector<ValueT> in_vals(elements);
   thrust::device_vector<ValueT> out_vals(elements);
-  thrust::device_vector<KeyT> keys = gen_power_law_key_segments<KeyT>(seed_t{}, elements, segments);
+  thrust::device_vector<KeyT> keys = gen_uniform_key_segments<KeyT>(seed_t{}, elements, 0, 5200);
 
   KeyT *d_keys       = thrust::raw_pointer_cast(keys.data());
   ValueT *d_in_vals  = thrust::raw_pointer_cast(in_vals.data());
