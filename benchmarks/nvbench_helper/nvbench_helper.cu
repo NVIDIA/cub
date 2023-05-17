@@ -429,8 +429,8 @@ thrust::device_vector<T> gen_power_law_offsets(seed_t seed,
 #define INSTANTIATE(TYPE)                                                                          \
   template thrust::device_vector<TYPE> gen_power_law_offsets<TYPE>(seed_t, std::size_t, std::size_t)
 
-INSTANTIATE(int32_t);
-INSTANTIATE(int64_t);
+INSTANTIATE(uint32_t);
+INSTANTIATE(uint64_t);
 #undef INSTANTIATE
 
 
@@ -539,6 +539,42 @@ INSTANTIATE(double);
 INSTANTIATE(complex);
 #undef INSTANTIATE
 
+template <class T>
+struct gt_t
+{
+  T val;
+
+  __device__ bool operator()(T x)
+  {
+    return x > val;
+  }
+};
+
+template <typename T>
+thrust::device_vector<T> gen_uniform_offsets(seed_t seed,
+                                             T total_elements,
+                                             T min_segment_size,
+                                             T max_segment_size)
+{
+  thrust::device_vector<T> segment_offsets(total_elements + 2);
+  gen(seed, segment_offsets, bit_entropy::_1_000, min_segment_size, max_segment_size);
+  segment_offsets[total_elements] = total_elements + 1;
+  thrust::exclusive_scan(segment_offsets.begin(), segment_offsets.end(), segment_offsets.begin());
+  typename thrust::device_vector<T>::iterator iter =
+    thrust::find_if(segment_offsets.begin(), segment_offsets.end(), gt_t<T>{total_elements});
+  *iter = total_elements;
+  segment_offsets.erase(iter + 1, segment_offsets.end());
+  return segment_offsets;
+}
+
+#define INSTANTIATE(TYPE)                                                                          \
+  template thrust::device_vector<TYPE> gen_uniform_offsets<TYPE>(seed_t, TYPE, TYPE, TYPE)
+
+INSTANTIATE(uint32_t);
+INSTANTIATE(uint64_t);
+
+#undef INSTANTIATE
+
 /**
  * @brief Generates a vector of random key segments.
  *
@@ -553,15 +589,8 @@ thrust::device_vector<T> gen_uniform_key_segments(seed_t seed,
                                                   std::size_t min_segment_size,
                                                   std::size_t max_segment_size)
 {
-  thrust::device_vector<std::size_t> segment_offsets(total_elements + 2);
-  gen(seed, segment_offsets, bit_entropy::_1_000, min_segment_size, max_segment_size);
-  segment_offsets[total_elements] = total_elements + 1;
-  thrust::exclusive_scan(segment_offsets.begin(), segment_offsets.end(), segment_offsets.begin());
-  thrust::device_vector<std::size_t>::iterator iter =
-    thrust::upper_bound(segment_offsets.begin(), segment_offsets.end(), total_elements);
-  *iter = total_elements;
-  segment_offsets.erase(iter + 1, segment_offsets.end());
-
+  thrust::device_vector<std::size_t> segment_offsets =
+    gen_uniform_offsets(seed, total_elements, min_segment_size, max_segment_size);
   return gen_power_law_key_segments<T>(seed, total_elements, segment_offsets);
 }
 
