@@ -121,9 +121,7 @@ void merge_sort_keys(nvbench::state &state, nvbench::type_list<T, OffsetT>)
   });
 }
 
-using key_types = push_back_t<complex, all_types>;
-
-NVBENCH_BENCH_TYPES(merge_sort_keys, NVBENCH_TYPE_AXES(key_types, offset_types))
+NVBENCH_BENCH_TYPES(merge_sort_keys, NVBENCH_TYPE_AXES(all_types, offset_types))
   .set_name("cub::DeviceMergeSort::SortKeys")
   .set_type_axes_names({"T{ct}", "OffsetT{ct}"})
   .add_int64_power_of_two_axis("Elements{io}", nvbench::range(16, 28, 4))
