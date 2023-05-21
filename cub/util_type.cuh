@@ -86,6 +86,7 @@ CUB_NAMESPACE_BEGIN
  ******************************************************************************/
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS // Do not document
 namespace detail
 {
 
@@ -250,6 +251,7 @@ struct CUB_DEPRECATED RemoveQualifiers
 {
   using Type = typename std::remove_cv<Tp>::type;
 };
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /******************************************************************************

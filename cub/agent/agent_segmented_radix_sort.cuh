@@ -61,7 +61,8 @@ template <bool IS_DESCENDING,
           typename SegmentedPolicyT,
           typename KeyT,
           typename ValueT,
-          typename OffsetT>
+          typename OffsetT,
+          typename DecomposerT = detail::identity_decomposer_t>
 struct AgentSegmentedRadixSort
 {
   OffsetT num_items;
@@ -72,11 +73,14 @@ struct AgentSegmentedRadixSort
   static constexpr int RADIX_DIGITS     = 1 << RADIX_BITS;
   static constexpr int KEYS_ONLY        = std::is_same<ValueT, NullType>::value;
 
+  using traits = detail::radix::traits_t<KeyT>;
+  using bit_ordered_type = typename traits::bit_ordered_type;
+
   // Huge segment handlers
-  using BlockUpsweepT = AgentRadixSortUpsweep<SegmentedPolicyT, KeyT, OffsetT>;
+  using BlockUpsweepT = AgentRadixSortUpsweep<SegmentedPolicyT, KeyT, OffsetT, DecomposerT>;
   using DigitScanT    = BlockScan<OffsetT, BLOCK_THREADS>;
   using BlockDownsweepT =
-    AgentRadixSortDownsweep<SegmentedPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>;
+    AgentRadixSortDownsweep<SegmentedPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, DecomposerT>;
 
   /// Number of bin-starting offsets tracked per thread
   static constexpr int BINS_TRACKED_PER_THREAD = BlockDownsweepT::BINS_TRACKED_PER_THREAD;
@@ -123,11 +127,15 @@ struct AgentSegmentedRadixSort
   using TempStorage = Uninitialized<_TempStorage>;
   _TempStorage &temp_storage;
 
+  DecomposerT decomposer;
+
   __device__ __forceinline__
   AgentSegmentedRadixSort(OffsetT num_items,
-                          TempStorage &temp_storage)
+                          TempStorage &temp_storage,
+                          DecomposerT decomposer = {})
       : num_items(num_items)
       , temp_storage(temp_storage.Alias())
+      , decomposer(decomposer)
   {}
 
   __device__ __forceinline__ void ProcessSinglePass(int begin_bit,
@@ -144,9 +152,9 @@ struct AgentSegmentedRadixSort
     // Lowest() -> -1.79769e+308 = 00...00b -> TwiddleIn -> -0 = 10...00b
     // LOWEST   -> -nan          = 11...11b -> TwiddleIn ->  0 = 00...00b
 
-    using UnsignedBitsT = typename Traits<KeyT>::UnsignedBits;
-    UnsignedBitsT default_key_bits = IS_DESCENDING ? Traits<KeyT>::LOWEST_KEY
-                                                   : Traits<KeyT>::MAX_KEY;
+    bit_ordered_type default_key_bits = IS_DESCENDING 
+                                      ? traits::min_raw_binary_key(decomposer)
+                                      : traits::max_raw_binary_key(decomposer);
     KeyT oob_default = reinterpret_cast<KeyT &>(default_key_bits);
 
     if (!KEYS_ONLY)
@@ -170,7 +178,8 @@ struct AgentSegmentedRadixSort
       begin_bit,
       end_bit,
       Int2Type<IS_DESCENDING>(),
-      Int2Type<KEYS_ONLY>());
+      Int2Type<KEYS_ONLY>(),
+      decomposer);
 
     cub::StoreDirectStriped<BLOCK_THREADS>(
       threadIdx.x, d_keys_out, thread_keys, num_items);
@@ -193,7 +202,8 @@ struct AgentSegmentedRadixSort
     BlockUpsweepT upsweep(temp_storage.upsweep,
                           d_keys_in,
                           current_bit,
-                          pass_bits);
+                          pass_bits,
+                          decomposer);
     upsweep.ProcessRegion(OffsetT{}, num_items);
 
     CTA_SYNC();
@@ -277,7 +287,8 @@ struct AgentSegmentedRadixSort
                               d_values_in,
                               d_values_out,
                               current_bit,
-                              pass_bits);
+                              pass_bits,
+                              decomposer);
     downsweep.ProcessRegion(OffsetT{}, num_items);
   }
 };

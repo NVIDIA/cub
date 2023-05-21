@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,343 +25,15 @@
  *
  ******************************************************************************/
 
-#include <cub/block/block_radix_sort.cuh>
+#include "catch2_test_block_radix_sort.cuh"
 
 #include <algorithm>
 #include <type_traits>
 #include <utility>
 
-#include <thrust/host_vector.h>
-#include <thrust/sequence.h>
-
 // Has to go after all cub headers. Otherwise, this test won't catch unused
 // variables in cub kernels.
 #include "catch2_test_helper.h"
-
-template <typename InputIteratorT,
-          typename OutputIteratorT,
-          typename ActionT,
-          int ItemsPerThread,
-          int ThreadsInBlock,
-          int RadixBits,
-          bool Memoize,
-          cub::BlockScanAlgorithm Algorithm,
-          cudaSharedMemConfig ShmemConfig>
-__global__ void kernel(
-    ActionT action, 
-    InputIteratorT input, 
-    OutputIteratorT output,
-    int begin_bit,
-    int end_bit,
-    bool striped)
-{
-  using key_t = cub::detail::value_t<InputIteratorT>;
-  using block_radix_sort_t = cub::BlockRadixSort<key_t,
-                                                 ThreadsInBlock,
-                                                 ItemsPerThread,
-                                                 cub::NullType,
-                                                 RadixBits,
-                                                 Memoize,
-                                                 Algorithm,
-                                                 ShmemConfig>;
-
-  using storage_t = typename block_radix_sort_t::TempStorage;
-
-  __shared__ storage_t storage;
-
-  key_t keys[ItemsPerThread];
-
-  for (int i = 0; i < ItemsPerThread; i++)
-  {
-    keys[i] = input[threadIdx.x * ItemsPerThread + i];
-  }
-
-  block_radix_sort_t block_radix_sort(storage);
-
-  if (striped)
-  {
-    action(block_radix_sort,
-           keys,
-           begin_bit,
-           end_bit,
-           cub::Int2Type<1>{});
-
-    for (int i = 0; i < ItemsPerThread; i++)
-    {
-      output[threadIdx.x + ThreadsInBlock * i] = keys[i];
-    }
-  }
-  else
-  {
-    action(block_radix_sort,
-           keys,
-           begin_bit,
-           end_bit,
-           cub::Int2Type<0>{});
-
-    for (int i = 0; i < ItemsPerThread; i++)
-    {
-      output[threadIdx.x * ItemsPerThread + i] = keys[i];
-    }
-  }
-}
-
-template <int ItemsPerThread,
-          int ThreadsInBlock,
-          int RadixBits,
-          bool Memoize,
-          cub::BlockScanAlgorithm Algorithm,
-          cudaSharedMemConfig ShmemConfig,
-          typename InputIteratorT,
-          typename OutputIteratorT,
-          typename ActionT>
-void block_radix_sort(
-    ActionT action,
-    InputIteratorT input,
-    OutputIteratorT output,
-    int begin_bit,
-    int end_bit,
-    bool striped)
-{
-  cudaDeviceSetSharedMemConfig(ShmemConfig);
-
-  kernel<InputIteratorT,
-         OutputIteratorT,
-         ActionT,
-         ItemsPerThread,
-         ThreadsInBlock,
-         RadixBits,
-         Memoize,
-         Algorithm,
-         ShmemConfig>
-    <<<1, ThreadsInBlock>>>(action, input, output, begin_bit, end_bit, striped);
-
-  REQUIRE( cudaSuccess == cudaPeekAtLastError() );
-  REQUIRE( cudaSuccess == cudaDeviceSynchronize() );
-}
-
-template <typename InputKeyIteratorT,
-          typename InputValueIteratorT,
-          typename OutputKeyIteratorT,
-          typename OutputValueIteratorT,
-          typename ActionT,
-          int ItemsPerThread,
-          int ThreadsInBlock,
-          int RadixBits,
-          bool Memoize,
-          cub::BlockScanAlgorithm Algorithm,
-          cudaSharedMemConfig ShmemConfig>
-__global__ void kernel(
-    ActionT action, 
-    InputKeyIteratorT input_keys, 
-    InputValueIteratorT input_values,
-    OutputKeyIteratorT output_keys, 
-    OutputValueIteratorT output_values,
-    int begin_bit,
-    int end_bit,
-    bool striped)
-{
-  using key_t = cub::detail::value_t<InputKeyIteratorT>;
-  using value_t = cub::detail::value_t<InputValueIteratorT>;
-  using block_radix_sort_t = cub::BlockRadixSort<key_t,
-                                                 ThreadsInBlock,
-                                                 ItemsPerThread,
-                                                 value_t,
-                                                 RadixBits,
-                                                 Memoize,
-                                                 Algorithm,
-                                                 ShmemConfig>;
-
-  using storage_t = typename block_radix_sort_t::TempStorage;
-  __shared__ storage_t storage;
-
-  key_t keys[ItemsPerThread];
-  value_t values[ItemsPerThread];
-
-  for (int i = 0; i < ItemsPerThread; i++)
-  {
-    keys[i] = input_keys[threadIdx.x * ItemsPerThread + i];
-    values[i] = input_values[threadIdx.x * ItemsPerThread + i];
-  }
-
-  block_radix_sort_t block_radix_sort(storage);
-
-  if (striped)
-  {
-    action(block_radix_sort,
-           keys,
-           values,
-           begin_bit,
-           end_bit,
-           cub::Int2Type<1>{});
-
-    for (int i = 0; i < ItemsPerThread; i++)
-    {
-      output_keys[threadIdx.x + ThreadsInBlock * i] = keys[i];
-      output_values[threadIdx.x + ThreadsInBlock * i] = values[i];
-    }
-  }
-  else 
-  {
-    action(block_radix_sort,
-           keys,
-           values,
-           begin_bit,
-           end_bit,
-           cub::Int2Type<0>{});
-
-    for (int i = 0; i < ItemsPerThread; i++)
-    {
-      output_keys[threadIdx.x * ItemsPerThread + i] = keys[i];
-      output_values[threadIdx.x * ItemsPerThread + i] = values[i];
-    }
-  }
-}
-
-template <int ItemsPerThread,
-          int ThreadsInBlock,
-          int RadixBits,
-          bool Memoize,
-          cub::BlockScanAlgorithm Algorithm,
-          cudaSharedMemConfig ShmemConfig,
-          typename InputKeyIteratorT,
-          typename InputValueIteratorT,
-          typename OutputKeyIteratorT,
-          typename OutputValueIteratorT,
-          typename ActionT>
-void block_radix_sort(
-    ActionT action,
-    InputKeyIteratorT input_keys,
-    InputValueIteratorT input_values,
-    OutputKeyIteratorT output_keys,
-    OutputValueIteratorT output_values,
-    int begin_bit,
-    int end_bit,
-    bool striped)
-{
-  cudaDeviceSetSharedMemConfig(ShmemConfig);
-
-  kernel<InputKeyIteratorT,
-         InputValueIteratorT,
-         OutputKeyIteratorT,
-         OutputValueIteratorT,
-         ActionT,
-         ItemsPerThread,
-         ThreadsInBlock,
-         RadixBits,
-         Memoize,
-         Algorithm,
-         ShmemConfig><<<1, ThreadsInBlock>>>(action,
-                                             input_keys,
-                                             input_values,
-                                             output_keys,
-                                             output_values,
-                                             begin_bit,
-                                             end_bit,
-                                             striped);
-
-  REQUIRE( cudaSuccess == cudaPeekAtLastError() );
-  REQUIRE( cudaSuccess == cudaDeviceSynchronize() );
-}
-
-struct sort_op_t
-{
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<0> /* striped */)
-  {
-    block_radix_sort.Sort(keys, begin_bit, end_bit);
-  }
-
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<1> /* striped */)
-  {
-    block_radix_sort.SortBlockedToStriped(keys, begin_bit, end_bit);
-  }
-};
-
-struct descending_sort_op_t
-{
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<0> /* striped */)
-  {
-    block_radix_sort.SortDescending(keys, begin_bit, end_bit);
-  }
-
-  template <class BlockRadixSortT, class KeysT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<1> /* striped */)
-  {
-    block_radix_sort.SortDescendingBlockedToStriped(keys, begin_bit, end_bit);
-  }
-};
-
-struct sort_pairs_op_t
-{
-  template <class BlockRadixSortT, class KeysT, class ValuesT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             ValuesT &values,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<0> /* striped */)
-  {
-    block_radix_sort.Sort(keys, values, begin_bit, end_bit);
-  }
-
-  template <class BlockRadixSortT, class KeysT, class ValuesT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             ValuesT &values,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<1> /* striped */)
-  {
-    block_radix_sort.SortBlockedToStriped(keys, values, begin_bit, end_bit);
-  }
-};
-
-struct descending_sort_pairs_op_t
-{
-  template <class BlockRadixSortT, class KeysT, class ValuesT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             ValuesT &values,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<0> /* striped */)
-  {
-    block_radix_sort.SortDescending(keys, values, begin_bit, end_bit);
-  }
-
-  template <class BlockRadixSortT, class KeysT, class ValuesT>
-  __device__ void operator()(BlockRadixSortT &block_radix_sort,
-                             KeysT &keys,
-                             ValuesT &values,
-                             int begin_bit,
-                             int end_bit,
-                             cub::Int2Type<1> /* striped */)
-  {
-    block_radix_sort.SortDescendingBlockedToStriped(keys,
-                                                    values,
-                                                    begin_bit,
-                                                    end_bit);
-  }
-};
 
 // %PARAM% TEST_MEMOIZE mem 0:1
 // %PARAM% TEST_ALGORITHM alg 0:1
@@ -411,107 +83,6 @@ struct params_t
     c2h::get<7, TestType>::value;
 };
 
-template <class KeyT>
-thrust::host_vector<KeyT>
-get_striped_keys(const thrust::host_vector<KeyT> &h_keys,
-                 int begin_bit,
-                 int end_bit)
-{
-  thrust::host_vector<KeyT> h_striped_keys(h_keys);
-  KeyT *h_striped_keys_data = thrust::raw_pointer_cast(h_striped_keys.data());
-
-  if ((begin_bit > 0) || (end_bit < static_cast<int>(sizeof(KeyT) * 8)))
-  {
-    const int num_bits = end_bit - begin_bit;
-
-    for (std::size_t i = 0; i < h_keys.size(); i++)
-    {
-      unsigned long long base = 0;
-      memcpy(&base, h_striped_keys_data + i, sizeof(KeyT));
-      base &= ((1ULL << num_bits) - 1) << begin_bit;
-      memcpy(h_striped_keys_data + i, &base, sizeof(KeyT));
-    }
-  }
-
-  return h_striped_keys;
-}
-
-template <class KeyT>
-thrust::host_vector<std::size_t>
-get_permutation(const thrust::host_vector<KeyT> &h_keys,
-                bool is_descending,
-                int begin_bit,
-                int end_bit)
-{
-  thrust::host_vector<KeyT> h_striped_keys =
-    get_striped_keys(h_keys, begin_bit, end_bit);
-
-  thrust::host_vector<std::size_t> h_permutation(h_keys.size());
-  thrust::sequence(h_permutation.begin(), h_permutation.end());
-
-  std::stable_sort(h_permutation.begin(),
-                   h_permutation.end(),
-                   [&](std::size_t a, std::size_t b) {
-                     if (is_descending)
-                     {
-                       return h_striped_keys[a] > h_striped_keys[b];
-                     }
-
-                     return h_striped_keys[a] < h_striped_keys[b];
-                   });
-
-  return h_permutation;
-}
-
-template <class KeyT>
-thrust::host_vector<KeyT>
-compute_reference(const thrust::device_vector<KeyT> &d_keys,
-                  bool is_descending,
-                  int begin_bit,
-                  int end_bit)
-{
-  thrust::host_vector<KeyT> h_keys(d_keys);
-  thrust::host_vector<std::size_t> h_permutation =
-    get_permutation(h_keys, is_descending, begin_bit, end_bit);
-
-  thrust::host_vector<KeyT> result(d_keys.size());
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.begin(),
-                 [&](std::size_t i) { return h_keys[i]; });
-
-  return result;
-}
-
-template <class KeyT, class ValueT>
-std::pair<thrust::host_vector<KeyT>, thrust::host_vector<ValueT>>
-compute_reference(const thrust::device_vector<KeyT> &d_keys,
-                  const thrust::device_vector<ValueT> &d_values,
-                  bool is_descending,
-                  int begin_bit,
-                  int end_bit)
-{
-  std::pair<thrust::host_vector<KeyT>, thrust::host_vector<ValueT>> result;
-  result.first.resize(d_keys.size());
-  result.second.resize(d_keys.size());
-
-  thrust::host_vector<KeyT> h_keys(d_keys);
-  thrust::host_vector<std::size_t> h_permutation = get_permutation(h_keys, is_descending, begin_bit, end_bit);
-
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.first.begin(),
-                 [&](std::size_t i) { return h_keys[i]; });
-
-  thrust::host_vector<ValueT> h_values(d_values);
-  std::transform(h_permutation.begin(),
-                 h_permutation.end(),
-                 result.second.begin(),
-                 [&](std::size_t i) { return h_values[i]; });
-
-  return result;
-}
-
 CUB_TEST("Block radix sort can sort keys",
          "[radix][sort][block]",
          types,
@@ -551,7 +122,7 @@ CUB_TEST("Block radix sort can sort keys",
     striped);
 
   thrust::host_vector<type> h_reference =
-    compute_reference(d_input, is_descending, begin_bit, end_bit);
+    radix_sort_reference(d_input, is_descending, begin_bit, end_bit);
 
   INFO( "striped = " << striped );
   REQUIRE( h_reference == d_output );
@@ -596,7 +167,7 @@ CUB_TEST("Block radix sort can sort keys in descending order",
     striped);
 
   thrust::host_vector<type> h_reference =
-    compute_reference(d_input, is_descending, begin_bit, end_bit);
+    radix_sort_reference(d_input, is_descending, begin_bit, end_bit);
 
   REQUIRE( h_reference == d_output );
 }
@@ -646,11 +217,11 @@ CUB_TEST("Block radix sort can sort pairs",
     striped);
 
   std::pair<thrust::host_vector<key_type>, thrust::host_vector<value_type>>
-    h_reference = compute_reference(d_input_keys,
-                                    d_input_values,
-                                    is_descending,
-                                    begin_bit,
-                                    end_bit);
+    h_reference = radix_sort_reference(d_input_keys,
+                                       d_input_values,
+                                       is_descending,
+                                       begin_bit,
+                                       end_bit);
 
   REQUIRE( h_reference.first == d_output_keys );
   REQUIRE( h_reference.second == d_output_values );
@@ -701,11 +272,11 @@ CUB_TEST("Block radix sort can sort pairs in descending order",
     striped);
 
   std::pair<thrust::host_vector<key_type>, thrust::host_vector<value_type>>
-    h_reference = compute_reference(d_input_keys,
-                                    d_input_values,
-                                    is_descending,
-                                    begin_bit,
-                                    end_bit);
+    h_reference = radix_sort_reference(d_input_keys,
+                                       d_input_values,
+                                       is_descending,
+                                       begin_bit,
+                                       end_bit);
 
   REQUIRE( h_reference.first == d_output_keys );
   REQUIRE( h_reference.second == d_output_values );
@@ -756,11 +327,11 @@ CUB_TEST("Block radix sort can sort mixed pairs",
     striped);
 
   std::pair<thrust::host_vector<key_type>, thrust::host_vector<value_type>>
-    h_reference = compute_reference(d_input_keys,
-                                    d_input_values,
-                                    is_descending,
-                                    begin_bit,
-                                    end_bit);
+    h_reference = radix_sort_reference(d_input_keys,
+                                       d_input_values,
+                                       is_descending,
+                                       begin_bit,
+                                       end_bit);
 
   REQUIRE( h_reference.first == d_output_keys );
   REQUIRE( h_reference.second == d_output_values );
@@ -811,11 +382,11 @@ CUB_TEST("Block radix sort can sort mixed pairs in descending order",
     striped);
 
   std::pair<thrust::host_vector<key_type>, thrust::host_vector<value_type>>
-    h_reference = compute_reference(d_input_keys,
-                                    d_input_values,
-                                    is_descending,
-                                    begin_bit,
-                                    end_bit);
+    h_reference = radix_sort_reference(d_input_keys,
+                                       d_input_values,
+                                       is_descending,
+                                       begin_bit,
+                                       end_bit);
 
   REQUIRE( h_reference.first == d_output_keys );
   REQUIRE( h_reference.second == d_output_values );

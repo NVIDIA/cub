@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <cub/block/radix_rank_sort_operations.cuh>
 #include <cub/config.cuh>
 #include <cub/util_type.cuh>
 #include <cub/warp/warp_load.cuh>
@@ -106,6 +107,9 @@ template <bool IS_DESCENDING,
           typename OffsetT>
 class AgentSubWarpSort
 {
+  using traits = detail::radix::traits_t<KeyT>;
+  using bit_ordered_type = typename traits::bit_ordered_type;
+
   struct BinaryOpT
   {
     template <typename T>
@@ -168,9 +172,10 @@ class AgentSubWarpSort
     // Lowest() -> -1.79769e+308 = 00...00b -> TwiddleIn -> -0 = 10...00b
     // LOWEST   -> -nan          = 11...11b -> TwiddleIn ->  0 = 00...00b
 
-    using UnsignedBitsT = typename Traits<KeyT>::UnsignedBits;
-    UnsignedBitsT default_key_bits = IS_DESCENDING ? Traits<KeyT>::LOWEST_KEY
-                                                   : Traits<KeyT>::MAX_KEY;
+    // Segmented sort doesn't support custom types at the moment.
+    bit_ordered_type default_key_bits = IS_DESCENDING 
+                                      ? traits::min_raw_binary_key(detail::identity_decomposer_t{})
+                                      : traits::max_raw_binary_key(detail::identity_decomposer_t{});
     return reinterpret_cast<KeyT &>(default_key_bits);
   }
 

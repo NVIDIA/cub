@@ -36,16 +36,10 @@
 namespace c2h
 {
 
-class custom_type_state_t
+struct custom_type_state_t
 {
-  std::size_t m_key{};
-  std::size_t m_val{};
-
-public:
-  __host__ __device__ void set_key(std::size_t key) { m_key = key; }
-  __host__ __device__ std::size_t get_key() const { return m_key; }
-  __host__ __device__ void set_val(std::size_t val) { m_val = val; }
-  __host__ __device__ std::size_t get_val() const { return m_val; }
+  std::size_t key{};
+  std::size_t val{};
 };
 
 template <template<typename> class... Policies>
@@ -57,7 +51,7 @@ public:
   friend __host__ std::ostream &operator<<(std::ostream &os, 
                                            const custom_type_t &self) 
   { 
-    return os << "{ " << self.get_key() << ", " << self.get_val() << " }";
+    return os << "{ " << self.key << ", " << self.val << " }";
   }
 
 };
@@ -72,8 +66,21 @@ class less_comparable_t
 public:
   __host__ __device__ bool operator<(const CustomType& other) const
   {
-    return static_cast<const CustomType&>(*this).get_key() 
-         < other.get_key();
+    return static_cast<const CustomType&>(*this).key < other.key;
+  }
+};
+
+template <class CustomType>
+class greater_comparable_t
+{
+  // The CUDA compiler follows the IA64 ABI for class layout, while the 
+  // Microsoft host compiler does not.
+  char workaround_msvc;
+
+public:
+  __host__ __device__ bool operator>(const CustomType& other) const
+  {
+    return static_cast<const CustomType&>(*this).key > other.key;
   }
 };
 
@@ -85,11 +92,25 @@ class lexicographical_less_comparable_t
   char workaround_msvc;
 
 public:
-  __host__ __device__ bool operator<(const CustomType& other) const
+  __host__ __device__ bool operator<(const CustomType &other) const
   {
-    return static_cast<const CustomType &>(*this).get_key() < other.get_key() ||
-           (static_cast<const CustomType &>(*this).get_key() == other.get_key() &&
-            static_cast<const CustomType &>(*this).get_val() < other.get_val());
+    const CustomType &self = static_cast<const CustomType &>(*this);
+    return self.key == other.key ? self.val < other.val : self.key < other.key;
+  }
+};
+
+template <class CustomType>
+class lexicographical_greater_comparable_t
+{
+  // The CUDA compiler follows the IA64 ABI for class layout, while the 
+  // Microsoft host compiler does not.
+  char workaround_msvc;
+
+public:
+  __host__ __device__ bool operator>(const CustomType &other) const
+  {
+    const CustomType &self = static_cast<const CustomType &>(*this);
+    return self.key == other.key ? self.val > other.val : self.key > other.key;
   }
 };
 
@@ -105,8 +126,8 @@ public:
   {
     const CustomType& self = static_cast<const CustomType&>(*this);
     
-    return self.get_key() == other.get_key() &&
-           self.get_val() == other.get_val();
+    return self.key == other.key &&
+           self.val == other.val;
   }
 };
 
@@ -124,8 +145,8 @@ public:
 
     const CustomType& self = static_cast<const CustomType&>(*this);
 
-    result.set_key(self.get_key() - other.get_key());
-    result.set_val(self.get_val() - other.get_val());
+    result.key = self.key - other.key;
+    result.val = self.val - other.val;
     
     return result;
   }
@@ -145,8 +166,8 @@ public:
 
     const CustomType& self = static_cast<const CustomType&>(*this);
 
-    result.set_key(self.get_key() + other.get_key());
-    result.set_val(self.get_val() + other.get_val());
+    result.key = self.key + other.key;
+    result.val = self.val + other.val;
     
     return result;
   }
@@ -162,16 +183,16 @@ namespace std {
      static c2h::custom_type_t<Policies...> max() 
      {
        c2h::custom_type_t<Policies...> val;
-       val.set_key(std::numeric_limits<std::size_t>::max());
-       val.set_val(std::numeric_limits<std::size_t>::max());
+       val.key = std::numeric_limits<std::size_t>::max();
+       val.val = std::numeric_limits<std::size_t>::max();
        return val;
      }
 
      static c2h::custom_type_t<Policies...> lowest() 
      {
        c2h::custom_type_t<Policies...> val;
-       val.set_key(std::numeric_limits<std::size_t>::lowest());
-       val.set_val(std::numeric_limits<std::size_t>::lowest());
+       val.key = std::numeric_limits<std::size_t>::lowest();
+       val.val = std::numeric_limits<std::size_t>::lowest();
        return val;
      }
   };

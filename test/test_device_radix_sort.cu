@@ -1952,6 +1952,182 @@ void TestUnspecifiedRanges()
 }
 #endif
 
+#if TEST_KEY_BYTES == 4
+// Following tests check that new decomposer API doesn't break old API. 
+// It's disabled because some compilers don't like implicit conversions, which
+// is required for the test. Once we figure out how to temporarily enable conversion, we can
+// re-enable the test.
+#define ENABLING_CONVERSION_IS_FIGURED_OUT 0
+#if ENABLING_CONVERSION_IS_FIGURED_OUT 
+struct bit_selector
+{
+  int bit;
+
+  operator int() const
+  {
+    return bit;
+  }
+};
+
+template <class BeginBitT, class EndBitT, class... Ts>
+void device_radix_sort_keys_allows_implicit_conversions_for_bits_helper(BeginBitT begin_bit, EndBitT end_bit, Ts... args)
+{
+  const int num_items = 0;
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortKeys(d_temp_storage,
+                                   temp_storage_bytes,
+                                   args...,
+                                   num_items,
+                                   begin_bit,
+                                   end_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortKeys(d_temp_storage,
+                                   temp_storage_bytes,
+                                   args...,
+                                   num_items,
+                                   begin_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortKeysDescending(d_temp_storage,
+                                             temp_storage_bytes,
+                                             args...,
+                                             num_items,
+                                             begin_bit,
+                                             end_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortKeysDescending(d_temp_storage,
+                                             temp_storage_bytes,
+                                             args...,
+                                             num_items,
+                                             begin_bit);
+  }
+}
+
+template <class BeginBitT, class EndBitT, class... Ts>
+void device_radix_sort_pairs_allows_implicit_conversions_for_bits_helper(BeginBitT begin_bit,
+                                                                         EndBitT end_bit,
+                                                                         Ts... args)
+{
+  const int num_items = 0;
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortPairs(d_temp_storage,
+                                    temp_storage_bytes,
+                                    args...,
+                                    num_items,
+                                    begin_bit,
+                                    end_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortPairs(d_temp_storage,
+                                    temp_storage_bytes,
+                                    args...,
+                                    num_items,
+                                    begin_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortPairsDescending(d_temp_storage,
+                                              temp_storage_bytes,
+                                              args...,
+                                              num_items,
+                                              begin_bit,
+                                              end_bit);
+  }
+
+  {
+    std::size_t temp_storage_bytes = 0;
+    std::uint8_t *d_temp_storage   = nullptr;
+
+    cub::DeviceRadixSort::SortPairsDescending(d_temp_storage,
+                                              temp_storage_bytes,
+                                              args...,
+                                              num_items,
+                                              begin_bit);
+  }
+}
+
+template <class BeginBitT, class EndBitT>
+void device_radix_sort_allows_implicit_conversions_for_bits(BeginBitT begin_bit, EndBitT end_bit)
+{
+  int *d_i_ptr = nullptr;
+
+  device_radix_sort_keys_allows_implicit_conversions_for_bits_helper(begin_bit,
+                                                                     end_bit,
+                                                                     d_i_ptr,
+                                                                     d_i_ptr);
+
+  cub::DoubleBuffer<int> keys(d_i_ptr, d_i_ptr);
+  device_radix_sort_keys_allows_implicit_conversions_for_bits_helper(begin_bit, end_bit, keys);
+
+  #if TEST_VALUE_TYPE == 2
+  unsigned int *d_u_ptr = nullptr;
+
+  device_radix_sort_pairs_allows_implicit_conversions_for_bits_helper(begin_bit,
+                                                                      end_bit,
+                                                                      d_i_ptr,
+                                                                      d_i_ptr,
+                                                                      d_u_ptr,
+                                                                      d_u_ptr);
+
+  cub::DoubleBuffer<unsigned int> pairs(d_u_ptr, d_u_ptr);
+  device_radix_sort_pairs_allows_implicit_conversions_for_bits_helper(begin_bit,
+                                                                      end_bit,
+                                                                      keys,
+                                                                      pairs);
+  #endif
+}
+
+void device_radix_sort_allows_implicit_conversions_for_bits()
+{
+  int begin_i = 0;
+  long long int begin_lli = 0;
+  bit_selector begin_bs{0};
+
+  int end_i = 2;
+  long long int end_lli = 2;
+  bit_selector end_bs{2};
+
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_i, end_i);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_i, end_lli);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_i, end_bs);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_lli, end_i);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_lli, end_lli);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_lli, end_bs);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_bs, end_i);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_bs, end_lli);
+  device_radix_sort_allows_implicit_conversions_for_bits(begin_bs, end_bs);
+}
+#endif // ENABLING_CONVERSION_IS_FIGURED_OUT 
+#endif // TEST_KEY_BYTES == 4
 
 //---------------------------------------------------------------------
 // Main
@@ -2039,6 +2215,10 @@ int main(int argc, char** argv)
 
 #if TEST_VALUE_TYPE == 0
     TestUnspecifiedRanges();
+#endif
+
+#if ENABLING_CONVERSION_IS_FIGURED_OUT 
+    device_radix_sort_allows_implicit_conversions_for_bits();
 #endif
 
 #ifdef TEST_EXTENDED_KEY_TYPES
