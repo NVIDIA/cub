@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import cub
 import math
@@ -174,33 +175,64 @@ def remove_matching_distributions(alpha, df):
     return df[df.apply(closure, axis=1)]
 
 
+def get_filenames_map(arr):
+    if not arr:
+        return []
+        
+    prefix = arr[0]
+    for string in arr:
+        while not string.startswith(prefix):
+            prefix = prefix[:-1]
+        if not prefix:
+            break
+
+    return {string: string[len(prefix):] for string in arr}
+
+
 def iterate_case_dfs(args, callable):
-    storage = cub.bench.Storage()
+    storages = {}
+    algnames = set()
+    filenames_map = get_filenames_map(args.files)
+    for file in args.files:
+        storage = cub.bench.StorageBase(file)
+        algnames.update(storage.algnames())
+        storages[filenames_map[file]] = storage
+
     pattern = re.compile(args.R)
 
-    for algname in storage.algnames():
+    for algname in algnames:
         if not pattern.match(algname):
             continue
 
-        df = storage.alg_to_df(algname)
-        with pd.option_context('mode.use_inf_as_na', True):
-            df = df.dropna(subset=['center'], how='all')
+        case_dfs = {}
+        for file in storages:
+            storage = storages[file]
+            df = storage.alg_to_df(algname)
+            with pd.option_context('mode.use_inf_as_na', True):
+                df = df.dropna(subset=['center'], how='all')
 
-        for _, row in df[['ctk', 'cub']].drop_duplicates().iterrows():
-            ctk_version = row['ctk']
-            cub_version = row['cub']
-            ctk_cub_df = df[(df['ctk'] == ctk_version) &
-                            (df['cub'] == cub_version)]
+            for _, row in df[['ctk', 'cub']].drop_duplicates().iterrows():
+                ctk_version = row['ctk']
+                cub_version = row['cub']
+                ctk_cub_df = df[(df['ctk'] == ctk_version) &
+                                (df['cub'] == cub_version)]
 
-            for gpu in ctk_cub_df['gpu'].unique():
-                target_df = ctk_cub_df[ctk_cub_df['gpu'] == gpu]
-                target_df.drop(columns=['ctk', 'cub', 'gpu'], inplace=True)
-                target_df = compute_speedup(target_df)
+                for gpu in ctk_cub_df['gpu'].unique():
+                    target_df = ctk_cub_df[ctk_cub_df['gpu'] == gpu]
+                    target_df.drop(columns=['ctk', 'cub', 'gpu'], inplace=True)
+                    target_df = compute_speedup(target_df)
 
-                for ct_point in ct_space(target_df):
-                    point_str = ", ".join(["{}={}".format(k, ct_point[k]) for k in ct_point])
-                    case_df = extract_complete_variants(extract_case(target_df, ct_point))
-                    callable(algname, point_str, case_df)
+                    for ct_point in ct_space(target_df):
+                        point_str = ", ".join(["{}={}".format(k, ct_point[k]) for k in ct_point])
+                        case_df = extract_complete_variants(extract_case(target_df, ct_point))
+                        case_df['variant'] = case_df['variant'].astype(str) + " ({})".format(file)
+                        if point_str not in case_dfs:
+                            case_dfs[point_str] = case_df
+                        else:
+                            case_dfs[point_str] = pd.concat([case_dfs[point_str], case_df])
+        
+        for point_str in case_dfs:
+            callable(algname, point_str, case_dfs[point_str])
 
 
 def case_top(alpha, N, algname, ct_point_name, case_df):
@@ -495,17 +527,24 @@ def variants(args, mode):
     iterate_case_dfs(args, functools.partial(case_variants, pattern, mode))
 
 
+def file_exists(value):
+    if not os.path.isfile(value):
+        raise argparse.ArgumentTypeError(f"The file '{value}' does not exist.")
+    return value
+
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Analyze benchmark results.")
-    parser.add_argument('-R', type=str, default='.*',
-                        help="Regex for benchmarks selection.")
+    parser = argparse.ArgumentParser(description="Analyze benchmark results.")
+    parser.add_argument(
+        '-R', type=str, default='.*', help="Regex for benchmarks selection.")
     parser.add_argument(
         '--list-benches', action=argparse.BooleanOptionalAction, help="Show available benchmarks.")
     parser.add_argument(
         '--coverage', action=argparse.BooleanOptionalAction, help="Show variant space coverage.")
     parser.add_argument(
         '--top', default=7, type=int, action='store', nargs='?', help="Show top N variants with highest score.")
+    parser.add_argument(
+        'files', type=file_exists, nargs='+', help='At least one file is required.')
     parser.add_argument(
         '--alpha', default=1.0, type=float)
     parser.add_argument(
@@ -517,9 +556,6 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-
-    if not cub.bench.Storage().exists():
-        raise Exception("Storage does not exist")
 
     if args.list_benches:
         cub.bench.list_benches()

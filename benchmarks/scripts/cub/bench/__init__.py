@@ -1,5 +1,5 @@
 from .config import *
-from .storage import Storage
+from .storage import *
 from .bench import Bench
 from .cmake import CMake
 from .score import *
