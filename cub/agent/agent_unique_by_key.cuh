@@ -50,12 +50,17 @@ CUB_NAMESPACE_BEGIN
 
 /**
  * Parameterizable tuning policy type for AgentUniqueByKey
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <int                     _BLOCK_THREADS,
           int                     _ITEMS_PER_THREAD = 1,
           cub::BlockLoadAlgorithm _LOAD_ALGORITHM   = cub::BLOCK_LOAD_DIRECT,
           cub::CacheLoadModifier  _LOAD_MODIFIER    = cub::LOAD_LDG,
-          cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
+          cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS,
+          typename                DelayConstructorT = detail::fixed_delay_constructor_t<350, 450>>
 struct AgentUniqueByKeyPolicy
 {
     enum
@@ -66,6 +71,11 @@ struct AgentUniqueByKeyPolicy
     static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
     static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
     static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+
+    struct detail 
+    {
+        using delay_constructor_t = DelayConstructorT;
+    };
 };
 
 
@@ -139,7 +149,9 @@ struct AgentUniqueByKey
     using BlockScanT = cub::BlockScan<OffsetT, BLOCK_THREADS, AgentUniqueByKeyPolicyT::SCAN_ALGORITHM>;
 
     // Parameterized BlockDiscontinuity type for items
-    using TilePrefixCallback = cub::TilePrefixCallbackOp<OffsetT, cub::Sum, ScanTileStateT>;
+    using DelayConstructorT = typename AgentUniqueByKeyPolicyT::detail::delay_constructor_t;
+    using TilePrefixCallback =
+      cub::TilePrefixCallbackOp<OffsetT, cub::Sum, ScanTileStateT, 0, DelayConstructorT>;
 
     // Key exchange type
     using KeyExchangeT = KeyT[ITEMS_PER_TILE];

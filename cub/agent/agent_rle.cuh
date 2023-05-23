@@ -55,14 +55,38 @@ CUB_NAMESPACE_BEGIN
 
 /**
  * Parameterizable tuning policy type for AgentRle
+ *
+ * @tparam _BLOCK_THREADS 
+ *   Threads per thread block
+ *
+ * @tparam _ITEMS_PER_THREAD 
+ *   Items per thread (per tile of input)
+ *
+ * @tparam _LOAD_ALGORITHM 
+ *   The BlockLoad algorithm to use
+ *
+ * @tparam _LOAD_MODIFIER 
+ *   Cache load modifier for reading input elements
+ *
+ * @tparam _STORE_WARP_TIME_SLICING 
+ *   Whether or not only one warp's worth of shared memory should be allocated and time-sliced among 
+ *   block-warps during any store-related data transpositions 
+ *   (versus each warp having its own storage)
+ *
+ * @tparam _SCAN_ALGORITHM 
+ *   The BlockScan algorithm to use
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
-template <
-    int                         _BLOCK_THREADS,                 ///< Threads per thread block
-    int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
-    BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
-    CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
-    bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
-    BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
+template <int _BLOCK_THREADS,
+          int _ITEMS_PER_THREAD,
+          BlockLoadAlgorithm _LOAD_ALGORITHM,
+          CacheLoadModifier _LOAD_MODIFIER,
+          bool _STORE_WARP_TIME_SLICING,
+          BlockScanAlgorithm _SCAN_ALGORITHM,
+          typename DelayConstructorT = detail::fixed_delay_constructor_t<350, 450>>
 struct AgentRlePolicy
 {
     enum
@@ -75,6 +99,11 @@ struct AgentRlePolicy
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;      ///< The BlockLoad algorithm to use
     static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;       ///< Cache load modifier for reading input elements
     static const BlockScanAlgorithm     SCAN_ALGORITHM          = _SCAN_ALGORITHM;      ///< The BlockScan algorithm to use
+
+    struct detail 
+    {
+        using delay_constructor_t = DelayConstructorT;
+    };
 };
 
 
@@ -187,8 +216,9 @@ struct AgentRle
     using ReduceBySegmentOpT = ReduceBySegmentOp<cub::Sum>;
 
     // Callback type for obtaining tile prefix during block scan
+    using DelayConstructorT = typename AgentRlePolicyT::detail::delay_constructor_t;
     using TilePrefixCallbackOpT =
-      TilePrefixCallbackOp<LengthOffsetPair, ReduceBySegmentOpT, ScanTileStateT>;
+      TilePrefixCallbackOp<LengthOffsetPair, ReduceBySegmentOpT, ScanTileStateT, 0, DelayConstructorT>;
 
     // Warp exchange types
     using WarpExchangePairs = WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD>;

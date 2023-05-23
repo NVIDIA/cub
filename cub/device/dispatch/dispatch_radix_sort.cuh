@@ -1147,8 +1147,6 @@ struct DeviceRadixSortPolicy
  * Single-problem dispatch
  ******************************************************************************/
 
-// TODO State that `DecomposerT` is an implementation detail
-
 /**
  * Utility class for dispatching the appropriately-tuned kernels for device-wide radix sort
  *

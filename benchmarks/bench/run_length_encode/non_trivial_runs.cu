@@ -25,17 +25,18 @@
  *
  ******************************************************************************/
 
-#include <cub/device/device_run_length_encode.cuh>
-
 #include <nvbench_helper.cuh>
+#include <look_back_helper.cuh>
+#include <cub/device/device_run_length_encode.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
 // %RANGE% TUNE_THREADS tpb 128:1024:32
 // %RANGE% TUNE_TRANSPOSE trp 0:1:1
 // %RANGE% TUNE_TIME_SLICING ts 0:1:1
 // %RANGE% TUNE_LOAD ld 0:1:1
-// %RANGE% CUB_DETAIL_L2_BACKOFF_NS l2b 0:1200:5
-// %RANGE% CUB_DETAIL_L2_WRITE_LATENCY_NS l2w 0:1200:5
+// %RANGE% TUNE_MAGIC_NS ns 0:2048:4
+// %RANGE% TUNE_DELAY_CONSTRUCTOR_ID dcid 0:7:1
+// %RANGE% TUNE_L2_WRITE_LATENCY_NS l2w 0:1200:5
 
 #if !TUNE_BASE
 #if TUNE_TRANSPOSE == 0
@@ -59,7 +60,8 @@ struct device_rle_policy_hub
                                                 TUNE_LOAD_ALGORITHM,
                                                 TUNE_LOAD_MODIFIER,
                                                 TUNE_TIME_SLICING,
-                                                cub::BLOCK_SCAN_WARP_SCANS>;
+                                                cub::BLOCK_SCAN_WARP_SCANS,
+                                                delay_constructor_t>;
   };
 
   using MaxPolicy = Policy350;

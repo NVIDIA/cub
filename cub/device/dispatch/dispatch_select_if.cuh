@@ -182,7 +182,8 @@ struct device_select_policy_hub
                                                   ITEMS_PER_THREAD,
                                                   BLOCK_LOAD_DIRECT,
                                                   MayAlias ? LOAD_CA : LOAD_LDG,
-                                                  BLOCK_SCAN_WARP_SCANS>;
+                                                  BLOCK_SCAN_WARP_SCANS,
+                                                  detail::fixed_delay_constructor_t<350, 450>>;
     };
 
     using MaxPolicy = Policy350;

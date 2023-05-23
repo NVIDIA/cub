@@ -25,67 +25,62 @@
  *
  ******************************************************************************/
 
+#include <look_back_helper.cuh>
 #include <cub/device/device_scan.cuh>
 
-#include <type_traits>
-
 #if !TUNE_BASE
+#if TUNE_TRANSPOSE == 0
+#define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_DIRECT
+#define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_DIRECT
+#else // TUNE_TRANSPOSE == 1
+#define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_WARP_TRANSPOSE
+#define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_WARP_TRANSPOSE
+#endif // TUNE_TRANSPOSE
+
+#if TUNE_LOAD == 0
+#define TUNE_LOAD_MODIFIER cub::LOAD_DEFAULT
+#else // TUNE_LOAD == 1
+#define TUNE_LOAD_MODIFIER cub::LOAD_CA
+#endif // TUNE_LOAD
+
 template <typename AccumT>
 struct policy_hub_t
 {
+  template <int NOMINAL_BLOCK_THREADS_4B,
+            int NOMINAL_ITEMS_PER_THREAD_4B,
+            typename ComputeT,
+            cub::BlockLoadAlgorithm LOAD_ALGORITHM,
+            cub::CacheLoadModifier LOAD_MODIFIER,
+            cub::BlockStoreAlgorithm STORE_ALGORITHM,
+            cub::BlockScanAlgorithm SCAN_ALGORITHM>
+  using agent_policy_t = cub::AgentScanPolicy<
+    NOMINAL_BLOCK_THREADS_4B,
+    NOMINAL_ITEMS_PER_THREAD_4B,
+    ComputeT,
+    LOAD_ALGORITHM,
+    LOAD_MODIFIER,
+    STORE_ALGORITHM,
+    SCAN_ALGORITHM,
+    cub::MemBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT>,
+    delay_constructor_t>;
+
   struct policy_t : cub::ChainedPolicy<300, policy_t, policy_t>
   {
-    using ScanPolicyT = cub::AgentScanPolicy<TUNE_THREADS,
-                                             TUNE_ITEMS,
-                                             AccumT,
-                                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                                             cub::LOAD_DEFAULT,
-                                             cub::BLOCK_STORE_WARP_TRANSPOSE,
-                                             cub::BLOCK_SCAN_WARP_SCANS>;
+    using ScanPolicyT = agent_policy_t<TUNE_THREADS,
+                                       TUNE_ITEMS,
+                                       AccumT,
+                                       TUNE_LOAD_ALGORITHM,
+                                       TUNE_LOAD_MODIFIER,
+                                       TUNE_STORE_ALGORITHM,
+                                       cub::BLOCK_SCAN_WARP_SCANS>;
   };
 
   using MaxPolicy = policy_t;
 };
-
-template <typename T, typename OffsetT>
-constexpr std::size_t max_temp_storage_size()
-{
-  using accum_t     = T;
-  using input_it_t  = const T *;
-  using output_it_t = T *;
-  using offset_t    = OffsetT;
-  using init_t      = cub::detail::InputValue<T>;
-  using policy_t    = typename policy_hub_t<accum_t>::policy_t;
-  using real_init_t = typename init_t::value_type;
-
-  using agent_scan_t = cub::AgentScan<typename policy_t::ScanPolicyT,
-                                      input_it_t,
-                                      output_it_t,
-                                      op_t,
-                                      real_init_t,
-                                      offset_t,
-                                      accum_t>;
-
-  return sizeof(typename agent_scan_t::TempStorage);
-}
-
-template <typename T, typename OffsetT>
-constexpr bool fits_in_default_shared_memory()
-{
-  return max_temp_storage_size<T, OffsetT>() < 48 * 1024;
-}
-#else // TUNE_BASE
-template <typename T, typename OffsetT>
-constexpr bool fits_in_default_shared_memory()
-{
-  return true;
-}
 #endif // TUNE_BASE
 
 template <typename T, typename OffsetT>
-static void basic(std::integral_constant<bool, true>,
-                  nvbench::state &state,
-                  nvbench::type_list<T, OffsetT>)
+static void basic(nvbench::state &state, nvbench::type_list<T, OffsetT>)
 {
   using init_t      = cub::detail::InputValue<T>;
   using accum_t     = cub::detail::accumulator_t<op_t, T, T>;
@@ -138,23 +133,6 @@ static void basic(std::integral_constant<bool, true>,
                          static_cast<int>(input.size()),
                          launch.get_stream());
   });
-}
-
-template <typename T, typename OffsetT>
-static void basic(std::integral_constant<bool, false>,
-                  nvbench::state &,
-                  nvbench::type_list<T, OffsetT>)
-{
-  // TODO Support
-}
-
-template <typename T, typename OffsetT>
-static void basic(nvbench::state &state, nvbench::type_list<T, OffsetT> tl)
-{
-  basic(std::integral_constant < bool,
-        (sizeof(OffsetT) == 4) && fits_in_default_shared_memory<T, OffsetT>() > {},
-        state,
-        tl);
 }
 
 using some_offset_types = nvbench::type_list<nvbench::int32_t>;

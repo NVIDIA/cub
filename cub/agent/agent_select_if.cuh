@@ -54,13 +54,32 @@ CUB_NAMESPACE_BEGIN
 
 /**
  * Parameterizable tuning policy type for AgentSelectIf
+ *
+ * @tparam _BLOCK_THREADS 
+ *   Threads per thread block
+ *
+ * @tparam _ITEMS_PER_THREAD 
+ *   Items per thread (per tile of input)
+ *
+ * @tparam _LOAD_ALGORITHM 
+ *   The BlockLoad algorithm to use
+ *
+ * @tparam _LOAD_MODIFIER 
+ *   Cache load modifier for reading input elements
+ *
+ * @tparam _SCAN_ALGORITHM 
+ *   The BlockScan algorithm to use
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
-template <
-    int                         _BLOCK_THREADS,                 ///< Threads per thread block
-    int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
-    BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
-    CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
-    BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
+template <int _BLOCK_THREADS,
+          int _ITEMS_PER_THREAD,
+          BlockLoadAlgorithm _LOAD_ALGORITHM,
+          CacheLoadModifier _LOAD_MODIFIER,
+          BlockScanAlgorithm _SCAN_ALGORITHM,
+          typename DelayConstructorT = detail::fixed_delay_constructor_t<350, 450>>
 struct AgentSelectIfPolicy
 {
     enum
@@ -72,6 +91,11 @@ struct AgentSelectIfPolicy
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;      ///< The BlockLoad algorithm to use
     static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;       ///< Cache load modifier for reading input elements
     static const BlockScanAlgorithm     SCAN_ALGORITHM          = _SCAN_ALGORITHM;      ///< The BlockScan algorithm to use
+
+    struct detail 
+    {
+        using delay_constructor_t = DelayConstructorT;
+    };
 };
 
 
@@ -170,9 +194,11 @@ struct AgentSelectIf
     using BlockScanT =
       BlockScan<OffsetT, BLOCK_THREADS, AgentSelectIfPolicyT::SCAN_ALGORITHM>;
 
+
     // Callback type for obtaining tile prefix during block scan
+    using DelayConstructorT = typename AgentSelectIfPolicyT::detail::delay_constructor_t;
     using TilePrefixCallbackOpT =
-      TilePrefixCallbackOp<OffsetT, cub::Sum, ScanTileStateT>;
+      TilePrefixCallbackOp<OffsetT, cub::Sum, ScanTileStateT, 0, DelayConstructorT>;
 
     // Item exchange type
     typedef InputT ItemExchangeT[TILE_ITEMS];

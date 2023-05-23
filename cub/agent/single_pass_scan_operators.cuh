@@ -48,17 +48,6 @@
 
 CUB_NAMESPACE_BEGIN
 
-#define CUB_DETAIL_DEFAULT_L2_BACKOFF_NS 350
-#define CUB_DETAIL_DEFAULT_L2_WRITE_LATENCY_NS 450
-
-#ifndef CUB_DETAIL_L2_BACKOFF_NS
-#define CUB_DETAIL_L2_BACKOFF_NS CUB_DETAIL_DEFAULT_L2_BACKOFF_NS 
-#endif 
-
-#ifndef CUB_DETAIL_L2_WRITE_LATENCY_NS 
-#define CUB_DETAIL_L2_WRITE_LATENCY_NS CUB_DETAIL_DEFAULT_L2_WRITE_LATENCY_NS 
-#endif 
-
 
 /******************************************************************************
  * Prefix functor type for maintaining a running prefix while scanning a
@@ -141,7 +130,35 @@ __device__ __forceinline__ void delay()
                 }));
 }
 
-template <int Delay = CUB_DETAIL_L2_BACKOFF_NS, unsigned int GridThreshold = 500>
+template <unsigned int GridThreshold = 500>
+__device__ __forceinline__ void delay(int ns)
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (if (ns > 0) 
+                {
+                  if (gridDim.x < GridThreshold) 
+                  {
+                    __threadfence_block();
+                  }
+                  else 
+                  {
+                    __nanosleep(ns); 
+                  }
+                }));
+}
+
+template <int Delay>
+__device__ __forceinline__ void always_delay()
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70, (__nanosleep(Delay);));
+}
+
+__device__ __forceinline__ void always_delay(int ns)
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70, (__nanosleep(ns);), ((void)ns;));
+}
+
+template <unsigned int Delay = 350, unsigned int GridThreshold = 500>
 __device__ __forceinline__ void delay_or_prevent_hoisting()
 {
   NV_IF_TARGET(NV_PROVIDES_SM_70,
@@ -149,21 +166,300 @@ __device__ __forceinline__ void delay_or_prevent_hoisting()
                (__threadfence_block();));
 }
 
-template <int Delay = CUB_DETAIL_L2_BACKOFF_NS, unsigned int GridThreshold = 500>
-__device__ __forceinline__ void delay_on_dc_gpu_or_prevent_hoisting()
+template <unsigned int GridThreshold = 500>
+__device__ __forceinline__ void delay_or_prevent_hoisting(int ns)
 {
-#if CUB_DETAIL_L2_BACKOFF_NS == CUB_DETAIL_DEFAULT_L2_BACKOFF_NS 
-  NV_DISPATCH_TARGET(
-    NV_IS_EXACTLY_SM_80, (delay<Delay, GridThreshold>();),
-    NV_PROVIDES_SM_70,   (delay<    0, GridThreshold>();),
-    NV_IS_DEVICE,        (__threadfence_block();));
-#else
-  NV_DISPATCH_TARGET(
-    NV_PROVIDES_SM_70,   (delay<Delay, GridThreshold>();),
-    NV_IS_DEVICE,        (__threadfence_block();));
-#endif
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (delay<GridThreshold>(ns);),
+               ((void)ns; __threadfence_block();));
 }
 
+template <unsigned int Delay = 350>
+__device__ __forceinline__ void always_delay_or_prevent_hoisting()
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (always_delay(Delay);),
+               (__threadfence_block();));
+}
+
+__device__ __forceinline__ void always_delay_or_prevent_hoisting(int ns)
+{
+  NV_IF_TARGET(NV_PROVIDES_SM_70,
+               (always_delay(ns);),
+               ((void)ns; __threadfence_block();));
+}
+
+template <unsigned int L2WriteLatency>
+struct no_delay_constructor_t
+{
+  struct delay_t
+  {
+    __device__ __forceinline__ void operator()() {}
+  };
+
+  __device__ __forceinline__ no_delay_constructor_t(unsigned int /* seed */)
+  {
+    delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {}; }
+};
+
+template <unsigned int Delay, unsigned int L2WriteLatency, unsigned int GridThreshold = 500>
+struct reduce_by_key_delay_constructor_t
+{
+  struct delay_t
+  {
+    __device__ __forceinline__ void operator()() 
+    {
+      NV_DISPATCH_TARGET(
+        NV_IS_EXACTLY_SM_80, (delay<Delay, GridThreshold>();),
+        NV_PROVIDES_SM_70,   (delay<    0, GridThreshold>();),
+        NV_IS_DEVICE,        (__threadfence_block();));
+    }
+  };
+
+  __device__ __forceinline__ reduce_by_key_delay_constructor_t(unsigned int /* seed */)
+  {
+    delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {}; }
+};
+
+template <unsigned int Delay, unsigned int L2WriteLatency>
+struct fixed_delay_constructor_t
+{
+  struct delay_t
+  {
+    __device__ __forceinline__ void operator()() { delay_or_prevent_hoisting<Delay>(); }
+  };
+
+  __device__ __forceinline__ fixed_delay_constructor_t(unsigned int /* seed */)
+  {
+    delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {}; }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backoff_constructor_t
+{
+  struct delay_t
+  {
+    int delay;
+
+    __device__ __forceinline__ void operator()()
+    {
+      always_delay_or_prevent_hoisting(delay);
+      delay <<= 1;
+    }
+  };
+
+  __device__ __forceinline__ exponential_backoff_constructor_t(unsigned int /* seed */) 
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {InitialDelay}; }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backoff_jitter_constructor_t
+{
+  struct delay_t
+  {
+    static constexpr unsigned int a = 16807;
+    static constexpr unsigned int c = 0;
+    static constexpr unsigned int m = 1u << 31;
+
+    unsigned int max_delay;
+    unsigned int &seed;
+
+    __device__ __forceinline__ unsigned int next(unsigned int min, unsigned int max)
+    {
+      return (seed = (a * seed + c) % m) % (max + 1 - min) + min;
+    }
+
+    __device__ __forceinline__ void operator()()
+    {
+      always_delay_or_prevent_hoisting(next(0, max_delay));
+      max_delay <<= 1;
+    }
+  };
+
+  unsigned int seed;
+
+  __device__ __forceinline__ exponential_backoff_jitter_constructor_t(unsigned int seed)
+      : seed(seed)
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {InitialDelay, seed}; }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backoff_jitter_window_constructor_t
+{
+  struct delay_t
+  {
+    static constexpr unsigned int a = 16807;
+    static constexpr unsigned int c = 0;
+    static constexpr unsigned int m = 1u << 31;
+
+    unsigned int max_delay;
+    unsigned int &seed;
+
+    __device__ __forceinline__ unsigned int next(unsigned int min, unsigned int max)
+    {
+      return (seed = (a * seed + c) % m) % (max + 1 - min) + min;
+    }
+
+    __device__ __forceinline__ void operator()()
+    {
+      unsigned int next_max_delay = max_delay << 1;
+      always_delay_or_prevent_hoisting(next(max_delay, next_max_delay));
+      max_delay = next_max_delay;
+    }
+  };
+
+  unsigned int seed;
+  __device__ __forceinline__ exponential_backoff_jitter_window_constructor_t(unsigned int seed)
+      : seed(seed)
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()() { return {InitialDelay, seed}; }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backon_jitter_window_constructor_t
+{
+  struct delay_t
+  {
+    static constexpr unsigned int a = 16807;
+    static constexpr unsigned int c = 0;
+    static constexpr unsigned int m = 1u << 31;
+
+    unsigned int max_delay;
+    unsigned int &seed;
+
+    __device__ __forceinline__ unsigned int next(unsigned int min, unsigned int max)
+    {
+      return (seed = (a * seed + c) % m) % (max + 1 - min) + min;
+    }
+
+    __device__ __forceinline__ void operator()()
+    {
+      int prev_delay = max_delay >> 1;
+      always_delay_or_prevent_hoisting(next(prev_delay, max_delay));
+      max_delay = prev_delay;
+    }
+  };
+
+  unsigned int seed;
+  unsigned int max_delay = InitialDelay;
+
+  __device__ __forceinline__ exponential_backon_jitter_window_constructor_t(unsigned int seed)
+      : seed(seed)
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()()
+  {
+    max_delay >>= 1;
+    return {max_delay, seed};
+  }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backon_jitter_constructor_t
+{
+  struct delay_t
+  {
+    static constexpr unsigned int a = 16807;
+    static constexpr unsigned int c = 0;
+    static constexpr unsigned int m = 1u << 31;
+
+    unsigned int max_delay;
+    unsigned int &seed;
+
+    __device__ __forceinline__ unsigned int next(unsigned int min, unsigned int max)
+    {
+      return (seed = (a * seed + c) % m) % (max + 1 - min) + min;
+    }
+
+    __device__ __forceinline__ void operator()()
+    {
+      always_delay_or_prevent_hoisting(next(0, max_delay));
+      max_delay >>= 1;
+    }
+  };
+
+  unsigned int seed;
+  unsigned int max_delay = InitialDelay;
+
+  __device__ __forceinline__ exponential_backon_jitter_constructor_t(unsigned int seed)
+      : seed(seed)
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()()
+  {
+    max_delay >>= 1;
+    return {max_delay, seed};
+  }
+};
+
+template <unsigned int InitialDelay, unsigned int L2WriteLatency>
+struct exponential_backon_constructor_t
+{
+  struct delay_t
+  {
+    unsigned int delay;
+
+    __device__ __forceinline__ void operator()()
+    {
+      always_delay_or_prevent_hoisting(delay);
+      delay >>= 1;
+    }
+  };
+
+  unsigned int max_delay = InitialDelay;
+
+  __device__ __forceinline__ exponential_backon_constructor_t(unsigned int /* seed */) 
+  {
+    always_delay<L2WriteLatency>();
+  }
+
+  __device__ __forceinline__ delay_t operator()()
+  {
+    max_delay >>= 1;
+    return {max_delay};
+  }
+};
+
+using default_no_delay_constructor_t = no_delay_constructor_t<450>;
+using default_no_delay_t             = default_no_delay_constructor_t::delay_t;
+
+template <class T>
+using default_delay_constructor_t = cub::detail::conditional_t<Traits<T>::PRIMITIVE,
+                                                               fixed_delay_constructor_t<350, 450>,
+                                                               default_no_delay_constructor_t>;
+
+template <class T>
+using default_delay_t = typename default_delay_constructor_t<T>::delay_t;
+
+template <class KeyT, class ValueT>
+using default_reduce_by_key_delay_constructor_t =
+  detail::conditional_t<(Traits<ValueT>::PRIMITIVE) && (sizeof(ValueT) + sizeof(KeyT) < 16),
+                        reduce_by_key_delay_constructor_t<350, 450>,
+                        default_delay_constructor_t<KeyValuePair<KeyT, ValueT>>>;
 }
 
 /**
@@ -312,10 +608,12 @@ struct ScanTileState<T, true>
     /**
      * Wait for the corresponding tile to become non-invalid
      */
+    template <class DelayT = detail::default_delay_t<T>> 
     __device__ __forceinline__ void WaitForValid(
         int             tile_idx,
         StatusWord      &status,
-        T               &value)
+        T               &value,
+        DelayT          delay_or_prevent_hoisting = {})
     {
         TileDescriptor tile_descriptor;
 
@@ -326,7 +624,7 @@ struct ScanTileState<T, true>
 
         while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff))
         {   
-          detail::delay_or_prevent_hoisting();
+          delay_or_prevent_hoisting();
           TxnWord alias = detail::load_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
           tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
         }
@@ -475,16 +773,18 @@ struct ScanTileState<T, false>
     /**
      * Wait for the corresponding tile to become non-invalid
      */
+    template <class DelayT = detail::default_no_delay_t> 
     __device__ __forceinline__ void WaitForValid(
         int             tile_idx,
         StatusWord      &status,
-        T               &value)
+        T               &value,
+        DelayT          delay = {})
     {
         do
         {
+          delay();
           status = detail::load_relaxed(d_tile_status + TILE_STATUS_PADDING + tile_idx);
           __threadfence();
-
         } while (WARP_ANY((status == SCAN_TILE_INVALID), 0xffffffff));
 
         if (status == StatusWord(SCAN_TILE_PARTIAL)) 
@@ -697,10 +997,12 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     /**
      * Wait for the corresponding tile to become non-invalid
      */
+    template <class DelayT = detail::fixed_delay_constructor_t<350, 450>> 
     __device__ __forceinline__ void WaitForValid(
         int                     tile_idx,
         StatusWord              &status,
-        KeyValuePairT           &value)
+        KeyValuePairT           &value,
+        DelayT                  delay_or_prevent_hoisting = {})
     {
 //        TxnWord         alias           = ThreadLoad<LOAD_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
 //        TileDescriptor  tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
@@ -721,7 +1023,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 
         do
         {
-          detail::delay_on_dc_gpu_or_prevent_hoisting();
+          delay_or_prevent_hoisting();
           TxnWord alias = detail::load_relaxed(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
           tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
@@ -744,12 +1046,17 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
  * Stateful block-scan prefix functor.  Provides the the running prefix for
  * the current tile by using the call-back warp to wait on on
  * aggregates/prefixes from predecessor tiles to become available.
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <
     typename    T,
     typename    ScanOpT,
     typename    ScanTileStateT,
-    int         LEGACY_PTX_ARCH = 0>
+    int         LEGACY_PTX_ARCH = 0,
+    typename    DelayConstructorT = detail::default_delay_constructor_t<T>>
 struct TilePrefixCallbackOp
 {
     // Parameterized warp reduce
@@ -799,14 +1106,16 @@ struct TilePrefixCallbackOp
     {}
 
     // Block until all predecessors within the warp-wide window have non-invalid status
+    template <class DelayT = detail::default_delay_t<T>> 
     __device__ __forceinline__
     void ProcessWindow(
         int         predecessor_idx,        ///< Preceding tile index to inspect
         StatusWord  &predecessor_status,    ///< [out] Preceding tile status
-        T           &window_aggregate)      ///< [out] Relevant partial reduction from this window of preceding tiles
+        T           &window_aggregate,      ///< [out] Relevant partial reduction from this window of preceding tiles
+        DelayT      delay = {})
     {
         T value;
-        tile_status.WaitForValid(predecessor_idx, predecessor_status, value);
+        tile_status.WaitForValid(predecessor_idx, predecessor_status, value, delay);
 
         // Perform a segmented reduction to get the prefix for the current window.
         // Use the swizzled scan operator because we are now scanning *down* towards thread0.
@@ -823,7 +1132,6 @@ struct TilePrefixCallbackOp
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
-
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
@@ -838,8 +1146,8 @@ struct TilePrefixCallbackOp
         T           window_aggregate;
 
         // Wait for the warp-wide window of predecessor tiles to become valid
-        detail::delay<CUB_DETAIL_L2_WRITE_LATENCY_NS>();
-        ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
+        DelayConstructorT construct_delay(tile_idx);
+        ProcessWindow(predecessor_idx, predecessor_status, window_aggregate, construct_delay());
 
         // The exclusive tile prefix starts out as the current window aggregate
         exclusive_prefix = window_aggregate;
@@ -850,7 +1158,7 @@ struct TilePrefixCallbackOp
             predecessor_idx -= CUB_PTX_WARP_THREADS;
 
             // Update exclusive tile prefix with the window prefix
-            ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
+            ProcessWindow(predecessor_idx, predecessor_status, window_aggregate, construct_delay());
             exclusive_prefix = scan_op(window_aggregate, exclusive_prefix);
         }
 

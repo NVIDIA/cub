@@ -26,13 +26,16 @@
  ******************************************************************************/
 
 #include <nvbench_helper.cuh>
+#include <look_back_helper.cuh>
+#include <cub/device/device_reduce.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
 // %RANGE% TUNE_THREADS tpb 128:1024:32
 // %RANGE% TUNE_TRANSPOSE trp 0:1:1
 // %RANGE% TUNE_LOAD ld 0:1:1
-// %RANGE% CUB_DETAIL_L2_BACKOFF_NS l2b 0:1200:5
-// %RANGE% CUB_DETAIL_L2_WRITE_LATENCY_NS l2w 0:1200:5
+// %RANGE% TUNE_MAGIC_NS ns 0:2048:4
+// %RANGE% TUNE_DELAY_CONSTRUCTOR_ID dcid 0:7:1
+// %RANGE% TUNE_L2_WRITE_LATENCY_NS l2w 0:1200:5
 
 #if !TUNE_BASE
 #if TUNE_TRANSPOSE == 0
@@ -55,14 +58,13 @@ struct device_reduce_by_key_policy_hub
                                                            TUNE_ITEMS,
                                                            TUNE_LOAD_ALGORITHM,
                                                            TUNE_LOAD_MODIFIER,
-                                                           cub::BLOCK_SCAN_WARP_SCANS>;
+                                                           cub::BLOCK_SCAN_WARP_SCANS,
+                                                           delay_constructor_t>;
   };
 
   using MaxPolicy = Policy350;
 };
 #endif // !TUNE_BASE
-
-#include <cub/device/device_reduce.cuh>
 
 template <class KeyT, class ValueT, class OffsetT>
 static void reduce(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT>)

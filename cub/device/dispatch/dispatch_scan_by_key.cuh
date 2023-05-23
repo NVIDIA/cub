@@ -209,12 +209,14 @@ struct DeviceScanByKeyPolicy
          : Nominal4BItemsToItemsCombined(NOMINAL_4B_ITEMS_PER_THREAD,
                                          CombinedInputBytes));
 
-    using ScanByKeyPolicyT = AgentScanByKeyPolicy<128,
-                                                  ITEMS_PER_THREAD,
-                                                  BLOCK_LOAD_WARP_TRANSPOSE,
-                                                  LOAD_CA,
-                                                  BLOCK_SCAN_WARP_SCANS,
-                                                  BLOCK_STORE_WARP_TRANSPOSE>;
+    using ScanByKeyPolicyT =
+      AgentScanByKeyPolicy<128,
+                           ITEMS_PER_THREAD,
+                           BLOCK_LOAD_WARP_TRANSPOSE,
+                           LOAD_CA,
+                           BLOCK_SCAN_WARP_SCANS,
+                           BLOCK_STORE_WARP_TRANSPOSE,
+                           detail::default_reduce_by_key_delay_constructor_t<AccumT, int>>;
   };
 
   // SM520
@@ -227,12 +229,14 @@ struct DeviceScanByKeyPolicy
          : Nominal4BItemsToItemsCombined(NOMINAL_4B_ITEMS_PER_THREAD,
                                          CombinedInputBytes));
 
-    using ScanByKeyPolicyT = AgentScanByKeyPolicy<256,
-                                                  ITEMS_PER_THREAD,
-                                                  BLOCK_LOAD_WARP_TRANSPOSE,
-                                                  LOAD_CA,
-                                                  BLOCK_SCAN_WARP_SCANS,
-                                                  BLOCK_STORE_WARP_TRANSPOSE>;
+    using ScanByKeyPolicyT =
+      AgentScanByKeyPolicy<256,
+                           ITEMS_PER_THREAD,
+                           BLOCK_LOAD_WARP_TRANSPOSE,
+                           LOAD_CA,
+                           BLOCK_SCAN_WARP_SCANS,
+                           BLOCK_STORE_WARP_TRANSPOSE,
+                           detail::default_reduce_by_key_delay_constructor_t<AccumT, int>>;
   };
 
   using MaxPolicy = Policy520;

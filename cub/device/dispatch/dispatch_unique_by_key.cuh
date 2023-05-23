@@ -110,10 +110,11 @@ struct DeviceUniqueByKeyPolicy
         };
 
         using UniqueByKeyPolicyT = AgentUniqueByKeyPolicy<128,
-                          ITEMS_PER_THREAD,
-                          cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                          cub::LOAD_LDG,
-                          cub::BLOCK_SCAN_WARP_SCANS>;
+                                                          ITEMS_PER_THREAD,
+                                                          cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                                                          cub::LOAD_LDG,
+                                                          cub::BLOCK_SCAN_WARP_SCANS,
+                                                          detail::default_delay_constructor_t>;
     };
 
     // SM520
@@ -126,11 +127,12 @@ struct DeviceUniqueByKeyPolicy
             ITEMS_PER_THREAD = Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD),
         };
 
-        using UniqueByKeyPolicyT =  AgentUniqueByKeyPolicy<64,
-                            ITEMS_PER_THREAD,
-                            cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                            cub::LOAD_LDG,
-                            cub::BLOCK_SCAN_WARP_SCANS>;
+        using UniqueByKeyPolicyT = AgentUniqueByKeyPolicy<64,
+                                                          ITEMS_PER_THREAD,
+                                                          cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                                                          cub::LOAD_LDG,
+                                                          cub::BLOCK_SCAN_WARP_SCANS,
+                                                          detail::default_delay_constructor_t>;
     };
 
     /// MaxPolicy

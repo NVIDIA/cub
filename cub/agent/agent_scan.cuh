@@ -73,6 +73,9 @@ CUB_NAMESPACE_BEGIN
  * @tparam _SCAN_ALGORITHM
  *   The BlockScan algorithm to use
  *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <int NOMINAL_BLOCK_THREADS_4B,
           int NOMINAL_ITEMS_PER_THREAD_4B,
@@ -83,13 +86,19 @@ template <int NOMINAL_BLOCK_THREADS_4B,
           BlockScanAlgorithm _SCAN_ALGORITHM,
           typename ScalingType = MemBoundScaling<NOMINAL_BLOCK_THREADS_4B,
                                                  NOMINAL_ITEMS_PER_THREAD_4B,
-                                                 ComputeT>>
+                                                 ComputeT>,
+          typename DelayConstructorT = detail::default_delay_constructor_t<ComputeT>>
 struct AgentScanPolicy : ScalingType
 {
   static const BlockLoadAlgorithm LOAD_ALGORITHM   = _LOAD_ALGORITHM;
   static const CacheLoadModifier LOAD_MODIFIER     = _LOAD_MODIFIER;
   static const BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
   static const BlockScanAlgorithm SCAN_ALGORITHM   = _SCAN_ALGORITHM;
+
+  struct detail 
+  {
+    using delay_constructor_t = DelayConstructorT;
+  };
 };
 
 /******************************************************************************
@@ -176,8 +185,9 @@ struct AgentScan
     BlockScanT;
 
   // Callback type for obtaining tile prefix during block scan
-  typedef TilePrefixCallbackOp<AccumT, ScanOpT, ScanTileStateT>
-    TilePrefixCallbackOpT;
+  using DelayConstructorT = typename AgentScanPolicyT::detail::delay_constructor_t;
+  using TilePrefixCallbackOpT =
+    TilePrefixCallbackOp<AccumT, ScanOpT, ScanTileStateT, 0 /* PTX */, DelayConstructorT>;
 
   // Stateful BlockScan prefix callback type for managing a running total while
   // scanning consecutive tiles

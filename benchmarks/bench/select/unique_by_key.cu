@@ -27,7 +27,7 @@
 
 #include <nvbench_helper.cuh>
 #include <look_back_helper.cuh>
-#include <cub/device/device_run_length_encode.cuh>
+#include <cub/device/device_select.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
 // %RANGE% TUNE_THREADS tpb 128:1024:32
@@ -50,11 +50,11 @@
 #define TUNE_LOAD_MODIFIER cub::LOAD_CA
 #endif // TUNE_LOAD
 
-struct device_reduce_by_key_policy_hub
+struct policy_hub
 {
   struct Policy350 : cub::ChainedPolicy<350, Policy350, Policy350>
   {
-    using ReduceByKeyPolicyT = cub::AgentReduceByKeyPolicy<TUNE_THREADS,
+    using UniqueByKeyPolicyT = cub::AgentUniqueByKeyPolicy<TUNE_THREADS,
                                                            TUNE_ITEMS,
                                                            TUNE_LOAD_ALGORITHM,
                                                            TUNE_LOAD_MODIFIER,
@@ -66,57 +66,52 @@ struct device_reduce_by_key_policy_hub
 };
 #endif // !TUNE_BASE
 
-template <class T, class OffsetT>
-static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
+template <class KeyT, class ValueT, class OffsetT>
+static void select(nvbench::state &state, nvbench::type_list<KeyT, ValueT, OffsetT>)
 {
-  using offset_t = OffsetT;
-  using keys_input_it_t = const T*;
-  using unique_output_it_t = T*;
-  using vals_input_it_t = cub::ConstantInputIterator<offset_t, OffsetT>;
-  using aggregate_output_it_t = offset_t*;
-  using num_runs_output_iterator_t = offset_t*;
+  using keys_input_it_t = const KeyT*;
+  using keys_output_it_t = KeyT*;
+  using vals_input_it_t = const ValueT*;
+  using vals_output_it_t = ValueT*;
+  using num_runs_output_iterator_t = OffsetT*;
   using equality_op_t = cub::Equality;
-  using reduction_op_t = cub::Sum;
-  using accum_t = offset_t;
+  using offset_t = OffsetT;
 
   #if !TUNE_BASE
-  using dispatch_t = cub::DispatchReduceByKey<keys_input_it_t,
-                                              unique_output_it_t,
+  using dispatch_t = cub::DispatchUniqueByKey<keys_input_it_t,
                                               vals_input_it_t,
-                                              aggregate_output_it_t,
+                                              keys_output_it_t,
+                                              vals_output_it_t,
                                               num_runs_output_iterator_t,
                                               equality_op_t,
-                                              reduction_op_t,
                                               offset_t,
-                                              accum_t,
-                                              device_reduce_by_key_policy_hub>;
+                                              policy_hub>;
   #else
-  using dispatch_t = cub::DispatchReduceByKey<keys_input_it_t,
-                                              unique_output_it_t,
+  using dispatch_t = cub::DispatchUniqueByKey<keys_input_it_t,
                                               vals_input_it_t,
-                                              aggregate_output_it_t,
+                                              keys_output_it_t,
+                                              vals_output_it_t,
                                               num_runs_output_iterator_t,
                                               equality_op_t,
-                                              reduction_op_t,
-                                              offset_t,
-                                              accum_t>;
+                                              offset_t>;
   #endif
 
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
   const std::size_t min_segment_size = 1;
   const std::size_t max_segment_size = static_cast<std::size_t>(state.get_int64("MaxSegSize"));
 
-  thrust::device_vector<offset_t> num_runs_out(1);
-  thrust::device_vector<offset_t> out_vals(elements);
-  thrust::device_vector<T> out_keys(elements);
-  thrust::device_vector<T> in_keys =
-    gen_uniform_key_segments<T>(seed_t{}, elements, min_segment_size, max_segment_size);
+  thrust::device_vector<OffsetT> num_runs_out(1);
+  thrust::device_vector<ValueT> in_vals(elements);
+  thrust::device_vector<ValueT> out_vals(elements);
+  thrust::device_vector<KeyT> out_keys(elements);
+  thrust::device_vector<KeyT> in_keys =
+    gen_uniform_key_segments<KeyT>(seed_t{}, elements, min_segment_size, max_segment_size);
 
-  T *d_in_keys             = thrust::raw_pointer_cast(in_keys.data());
-  T *d_out_keys            = thrust::raw_pointer_cast(out_keys.data());
-  offset_t *d_out_vals     = thrust::raw_pointer_cast(out_vals.data());
-  offset_t *d_num_runs_out = thrust::raw_pointer_cast(num_runs_out.data());
-  vals_input_it_t d_in_vals(offset_t{1});
+  KeyT *d_in_keys         = thrust::raw_pointer_cast(in_keys.data());
+  KeyT *d_out_keys        = thrust::raw_pointer_cast(out_keys.data());
+  ValueT *d_in_vals       = thrust::raw_pointer_cast(in_vals.data());
+  ValueT *d_out_vals      = thrust::raw_pointer_cast(out_vals.data());
+  OffsetT *d_num_runs_out = thrust::raw_pointer_cast(num_runs_out.data());
 
   std::uint8_t *d_temp_storage{};
   std::size_t temp_storage_bytes{};
@@ -124,12 +119,11 @@ static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
   dispatch_t::Dispatch(d_temp_storage,
                        temp_storage_bytes,
                        d_in_keys,
-                       d_out_keys,
                        d_in_vals,
+                       d_out_keys,
                        d_out_vals,
                        d_num_runs_out,
                        equality_op_t{},
-                       reduction_op_t{},
                        elements,
                        0);
 
@@ -139,33 +133,32 @@ static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
   dispatch_t::Dispatch(d_temp_storage,
                        temp_storage_bytes,
                        d_in_keys,
-                       d_out_keys,
                        d_in_vals,
+                       d_out_keys,
                        d_out_vals,
                        d_num_runs_out,
                        equality_op_t{},
-                       reduction_op_t{},
                        elements,
                        0);
   cudaDeviceSynchronize();
   const OffsetT num_runs = num_runs_out[0];
 
   state.add_element_count(elements);
-  state.add_global_memory_reads<T>(elements);
-  state.add_global_memory_writes<T>(num_runs);
-  state.add_global_memory_writes<OffsetT>(num_runs);
+  state.add_global_memory_reads<KeyT>(elements);
+  state.add_global_memory_reads<ValueT>(elements);
+  state.add_global_memory_writes<ValueT>(num_runs);
+  state.add_global_memory_writes<KeyT>(num_runs);
   state.add_global_memory_writes<OffsetT>(1);
 
   state.exec([&](nvbench::launch &launch) {
     dispatch_t::Dispatch(d_temp_storage,
                          temp_storage_bytes,
                          d_in_keys,
-                         d_out_keys,
                          d_in_vals,
+                         d_out_keys,
                          d_out_vals,
                          d_num_runs_out,
                          equality_op_t{},
-                         reduction_op_t{},
                          elements,
                          launch.get_stream());
   });
@@ -173,8 +166,20 @@ static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
 
 using some_offset_types = nvbench::type_list<nvbench::int32_t>;
 
-NVBENCH_BENCH_TYPES(rle, NVBENCH_TYPE_AXES(all_types, some_offset_types))
-  .set_name("cub::DeviceRunLengthEncode::Encode")
-  .set_type_axes_names({"T{ct}", "OffsetT{ct}"})
+#ifdef TUNE_KeyT
+using key_types = nvbench::type_list<TUNE_KeyT>;
+#else // !defined(TUNE_KeyT)
+using key_types = nvbench::type_list<int8_t, int16_t, int32_t, int64_t, int128_t>;
+#endif // TUNE_KeyT
+
+#ifdef TUNE_ValueT
+using value_types = nvbench::type_list<TUNE_ValueT>;
+#else // !defined(TUNE_ValueT)
+using value_types = all_types;
+#endif // TUNE_ValueT
+
+NVBENCH_BENCH_TYPES(select, NVBENCH_TYPE_AXES(key_types, value_types, some_offset_types))
+  .set_name("cub::DeviceSelect::UniqueByKey")
+  .set_type_axes_names({"KeyT{ct}", "ValueT{ct}", "OffsetT{ct}"})
   .add_int64_power_of_two_axis("Elements{io}", nvbench::range(16, 28, 4))
   .add_int64_power_of_two_axis("MaxSegSize", {1, 4, 8});

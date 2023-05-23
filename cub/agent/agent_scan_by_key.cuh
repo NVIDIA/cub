@@ -51,13 +51,18 @@ CUB_NAMESPACE_BEGIN
 
 /**
  * Parameterizable tuning policy type for AgentScanByKey
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <int _BLOCK_THREADS,
           int _ITEMS_PER_THREAD                = 1,
           BlockLoadAlgorithm _LOAD_ALGORITHM   = BLOCK_LOAD_DIRECT,
           CacheLoadModifier _LOAD_MODIFIER     = LOAD_DEFAULT,
           BlockScanAlgorithm _SCAN_ALGORITHM   = BLOCK_SCAN_WARP_SCANS,
-          BlockStoreAlgorithm _STORE_ALGORITHM = BLOCK_STORE_DIRECT>
+          BlockStoreAlgorithm _STORE_ALGORITHM = BLOCK_STORE_DIRECT,
+          typename DelayConstructorT           = detail::fixed_delay_constructor_t<350, 450>>
 struct AgentScanByKeyPolicy
 {
   static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
@@ -67,6 +72,11 @@ struct AgentScanByKeyPolicy
   static constexpr CacheLoadModifier LOAD_MODIFIER     = _LOAD_MODIFIER;
   static constexpr BlockScanAlgorithm SCAN_ALGORITHM   = _SCAN_ALGORITHM;
   static constexpr BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+
+  struct detail 
+  {
+    using delay_constructor_t = DelayConstructorT;
+  };
 };
 
 /******************************************************************************
@@ -162,8 +172,9 @@ struct AgentScanByKey
 
   using BlockDiscontinuityKeysT = BlockDiscontinuity<KeyT, BLOCK_THREADS, 1, 1>;
 
+  using DelayConstructorT = typename AgentScanByKeyPolicyT::detail::delay_constructor_t;
   using TilePrefixCallbackT =
-    TilePrefixCallbackOp<SizeValuePairT, ReduceBySegmentOpT, ScanTileStateT>;
+    TilePrefixCallbackOp<SizeValuePairT, ReduceBySegmentOpT, ScanTileStateT, 0, DelayConstructorT>;
 
   using BlockScanT = BlockScan<SizeValuePairT,
                                BLOCK_THREADS,
