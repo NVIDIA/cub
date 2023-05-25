@@ -12,14 +12,9 @@ def blob_to_samples(blob):
     return np.squeeze(fpzip.decompress(blob))
 
 
-class Storage:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-            cls._instance.conn = sqlite3.connect(db_name)
-        return cls._instance
+class StorageBase:
+    def __init__(self, db_path):
+        self.conn = sqlite3.connect(db_path)
 
     def connection(self):
         return self.conn
@@ -42,3 +37,29 @@ class Storage:
             df['samples'] = df['samples'].apply(blob_to_samples)
 
         return df
+    
+    def store_df(self, algname, df):
+        df['samples'] = df['samples'].apply(fpzip.compress)
+        df.to_sql(algname, self.conn, if_exists='replace', index=False)
+
+
+class Storage:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+            cls._instance.base = StorageBase(db_name)
+        return cls._instance
+
+    def connection(self):
+        return self.base.connection()
+
+    def exists(self):
+        return self.base.exists()
+
+    def algnames(self):
+        return self.base.algnames()
+
+    def alg_to_df(self, algname):
+        return self.base.alg_to_df(algname)
