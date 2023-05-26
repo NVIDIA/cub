@@ -141,7 +141,8 @@ struct AgentRadixSortDownsweep
 
     // Digit extractor type
     using fundamental_digit_extractor_t = BFEDigitExtractor<KeyT>;
-    using digit_extractor_t = typename traits::digit_extractor_t<fundamental_digit_extractor_t, DecomposerT>;
+    using digit_extractor_t =
+      typename traits::template digit_extractor_t<fundamental_digit_extractor_t, DecomposerT>;
 
     enum
     {

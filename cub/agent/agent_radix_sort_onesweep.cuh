@@ -123,7 +123,8 @@ struct AgentRadixSortOnesweep
     using bit_ordered_conversion = typename traits::bit_ordered_conversion_policy;
 
     using fundamental_digit_extractor_t = ShiftDigitExtractor<KeyT>;
-    using digit_extractor_t = typename traits::digit_extractor_t<fundamental_digit_extractor_t, DecomposerT>;
+    using digit_extractor_t =
+      typename traits::template digit_extractor_t<fundamental_digit_extractor_t, DecomposerT>;
 
     typedef PortionOffsetT AtomicOffsetT;
   
