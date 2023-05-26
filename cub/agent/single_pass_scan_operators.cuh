@@ -770,19 +770,25 @@ struct TilePrefixCallbackOp
     T                           exclusive_prefix;   ///< Exclusive prefix for the tile
     T                           inclusive_prefix;   ///< Inclusive prefix for the tile
 
-    // Constructor
-    __device__ __forceinline__
-    TilePrefixCallbackOp(
-        ScanTileStateT       &tile_status,
-        TempStorage         &temp_storage,
-        ScanOpT              scan_op,
-        int                 tile_idx)
-    :
-        temp_storage(temp_storage.Alias()),
-        tile_status(tile_status),
-        scan_op(scan_op),
-        tile_idx(tile_idx) {}
+    // Constructs prefix functor for a given tile index. 
+    // Precondition: thread blocks processing all of the predecessor tiles were scheduled.
+    __device__ __forceinline__ TilePrefixCallbackOp(ScanTileStateT &tile_status,
+                                                    TempStorage &temp_storage,
+                                                    ScanOpT scan_op,
+                                                    int tile_idx)
+        : temp_storage(temp_storage.Alias())
+        , tile_status(tile_status)
+        , scan_op(scan_op)
+        , tile_idx(tile_idx)
+    {}
 
+    // Computes the tile index and constructs prefix functor with it.
+    // Precondition: thread block per tile assignment.
+    __device__ __forceinline__ TilePrefixCallbackOp(ScanTileStateT &tile_status,
+                                                    TempStorage &temp_storage,
+                                                    ScanOpT scan_op)
+        : TilePrefixCallbackOp(tile_status, temp_storage, scan_op, blockIdx.x)
+    {}
 
     // Block until all predecessors within the warp-wide window have non-invalid status
     __device__ __forceinline__
@@ -878,6 +884,11 @@ struct TilePrefixCallbackOp
         return temp_storage.block_aggregate;
     }
 
+    __device__ __forceinline__
+    int GetTileIdx() const
+    {
+        return tile_idx;
+    }
 };
 
 
