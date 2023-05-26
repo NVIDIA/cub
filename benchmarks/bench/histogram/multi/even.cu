@@ -1,3 +1,5 @@
+#include <cub/device/device_histogram.cuh>
+
 #include <nvbench_helper.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
@@ -6,8 +8,6 @@
 // %RANGE% TUNE_WORK_STEALING ws 0:1:1
 // %RANGE% TUNE_MEM_PREFERENCE mem 0:2:1
 // %RANGE% TUNE_LOAD ld 0:2:1
-
-#include <cub/device/device_histogram.cuh>
 
 #if !TUNE_BASE
 

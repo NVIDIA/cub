@@ -1,3 +1,5 @@
+#include <cub/device/device_run_length_encode.cuh>
+
 #include <nvbench_helper.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
@@ -34,8 +36,6 @@ struct device_reduce_by_key_policy_hub
   using MaxPolicy = Policy350;
 };
 #endif // !TUNE_BASE
-
-#include <cub/device/device_run_length_encode.cuh>
 
 template <class T, class OffsetT>
 static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)

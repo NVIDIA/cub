@@ -1,3 +1,5 @@
+#include <cub/device/device_segmented_sort.cuh>
+
 #include <nvbench_helper.cuh>
 
 // %RANGE% TUNE_L_ITEMS ipt 7:24:1
@@ -15,8 +17,6 @@
 // %RANGE% TUNE_S_TRANSPOSE strp 0:1:1
 // %RANGE% TUNE_M_LOAD mld 0:2:1
 // %RANGE% TUNE_M_TRANSPOSE mtrp 0:1:1
-
-#include <cub/device/device_segmented_sort.cuh>
 
 #if !TUNE_BASE
 
