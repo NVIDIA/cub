@@ -11,29 +11,28 @@
 - reduce
   - sum
   - max
+  - by_key
 - scan
   - sum
   - max
+  - by key
 - select
   - flagged
   - if
 - partition
   - flagged
   - if
-- scan 
-  - by key
+- histogram 
+  - even
+  - range
+  - multi even
+  - multi range
+- rle 
+  - encode
+  - non trivial runs
+- adjacent difference 
+  - left
 
 ### TODO
 
-- adjacent difference 
-  - left
-  - right
-- histogram : needs policy
-  - even
-  - range
-- rle : needs policy
-  - encode
-  - non trivial runs
-- reduce : needs policy
-  - by key
 - segmented

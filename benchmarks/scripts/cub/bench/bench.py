@@ -170,20 +170,17 @@ class BenchCache:
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls, *args, **kwargs)
+            cls._instance.existing_tables = set()
 
-            config = Config()
-            bench_axes = {}
-
-            for algorithm_name in config.benchmarks:
-                bench = BaseBench(algorithm_name)
-
-                if not bench.build():
-                    raise Exception("Unable to build base benchmark: " + bench)
-
-                bench_axes[algorithm_name] = bench.axes_names()
-
-            create_benches_tables(Storage().connection(), bench_axes)
         return cls._instance
+    
+
+    def create_table_if_not_exists(self, conn, bench):
+        bench_base = bench.get_base()
+        if bench_base.algorithm_name() not in self.existing_tables:
+            create_benches_tables(conn, {bench_base.algorithm_name(): bench_base.axes_names()})
+            self.existing_tables.add(bench_base.algorithm_name())
+
 
     def push_bench(self, bench, workload_point, elapsed, distribution_samples, distribution_center):
         config = Config()
@@ -191,6 +188,8 @@ class BenchCache:
         cub = config.cub
         gpu = get_device_name(device_json(bench.algname))
         conn = Storage().connection()
+
+        self.create_table_if_not_exists(conn, bench)
 
         columns = ""
         placeholders = ""
@@ -222,6 +221,8 @@ class BenchCache:
         cub = config.cub
         gpu = get_device_name(device_json(bench.algname))
         conn = Storage().connection()
+
+        self.create_table_if_not_exists(conn, bench)
 
         with conn:
             point_checks = ""

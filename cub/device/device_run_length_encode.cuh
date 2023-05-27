@@ -205,8 +205,6 @@ struct DeviceRunLengthEncode
          cudaStream_t stream = 0)
   {
     using OffsetT      = int;        // Signed integer type for global offsets
-    using FlagIterator = NullType *; // FlagT iterator type (not used)
-    using SelectOp     = NullType;   // Selection op (not used)
     using EqualityOp   = Equality;   // Default == operator
     using ReductionOp  = cub::Sum;   // Value reduction operator
 

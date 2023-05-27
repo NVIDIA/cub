@@ -25,99 +25,97 @@
  *
  ******************************************************************************/
 
-#include <cub/device/device_reduce.cuh>
+#include <cub/device/device_adjacent_difference.cuh>
 
-#ifndef TUNE_BASE
-#define TUNE_ITEMS_PER_VEC_LOAD (1 << TUNE_ITEMS_PER_VEC_LOAD_POW2)
-#endif
+#include <nvbench_helper.cuh>
+
+// %RANGE% TUNE_ITEMS_PER_THREAD ipt 7:24:1
+// %RANGE% TUNE_THREADS_PER_BLOCK tpb 128:1024:32
 
 #if !TUNE_BASE
-template <typename AccumT, typename OffsetT>
 struct policy_hub_t
 {
-  struct policy_t : cub::ChainedPolicy<300, policy_t, policy_t>
+  struct Policy350 : cub::ChainedPolicy<350, Policy350, Policy350>
   {
-    static constexpr int threads_per_block  = TUNE_THREADS_PER_BLOCK;
-    static constexpr int items_per_thread   = TUNE_ITEMS_PER_THREAD;
-    static constexpr int items_per_vec_load = TUNE_ITEMS_PER_VEC_LOAD;
-
-    using ReducePolicy = cub::AgentReducePolicy<threads_per_block,
-                                                items_per_thread,
-                                                AccumT,
-                                                items_per_vec_load,
-                                                cub::BLOCK_REDUCE_WARP_REDUCTIONS,
-                                                cub::LOAD_DEFAULT>;
-
-    // SingleTilePolicy
-    using SingleTilePolicy = ReducePolicy;
-
-    // SegmentedReducePolicy
-    using SegmentedReducePolicy = ReducePolicy;
+    using AdjacentDifferencePolicy =
+      cub::AgentAdjacentDifferencePolicy<TUNE_THREADS_PER_BLOCK,
+                                         TUNE_ITEMS_PER_THREAD,
+                                         cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                                         cub::LOAD_CA,
+                                         cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
-  using MaxPolicy = policy_t;
+  using MaxPolicy = Policy350;
 };
 #endif // !TUNE_BASE
 
-template <typename T, typename OffsetT>
-void reduce(nvbench::state &state, nvbench::type_list<T, OffsetT>)
+template <class T, class OffsetT>
+void adjacent_difference(nvbench::state& state, nvbench::type_list<T, OffsetT>)
 {
-  using accum_t     = T;
-  using input_it_t  = const T *;
-  using output_it_t = T *;
-  using offset_t    = typename cub::detail::ChooseOffsetT<OffsetT>::Type;
-  using output_t    = T;
-  using init_t      = T;
+  constexpr bool may_alias = false;
+  constexpr bool read_left = true;
+
+  using input_it_t = const T*;
+  using output_it_t = T*;
+  using difference_op_t = cub::Difference;
+  using offset_t = typename cub::detail::ChooseOffsetT<OffsetT>::Type;
+
 #if !TUNE_BASE
-  using policy_t = policy_hub_t<accum_t, offset_t>;
-  using dispatch_t =
-    cub::DispatchReduce<input_it_t, output_it_t, offset_t, op_t, init_t, accum_t, policy_t>;
-#else // TUNE_BASE
-  using dispatch_t = cub::DispatchReduce<input_it_t, output_it_t, offset_t, op_t, init_t, accum_t>;
+  using dispatch_t = cub::DispatchAdjacentDifference<input_it_t,
+                                                     output_it_t,
+                                                     difference_op_t,
+                                                     offset_t,
+                                                     may_alias,
+                                                     read_left,
+                                                     policy_hub_t>;
+#else
+  using dispatch_t = cub::DispatchAdjacentDifference<input_it_t,
+                                                     output_it_t,
+                                                     difference_op_t,
+                                                     offset_t,
+                                                     may_alias,
+                                                     read_left>;
 #endif // TUNE_BASE
 
-  // Retrieve axis parameters
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
   thrust::device_vector<T> in(elements);
-  thrust::device_vector<T> out(1);
-
+  thrust::device_vector<T> out(elements);
   gen(seed_t{}, in);
 
   input_it_t d_in   = thrust::raw_pointer_cast(in.data());
   output_it_t d_out = thrust::raw_pointer_cast(out.data());
 
-  // Enable throughput calculations and add "Size" column to results.
   state.add_element_count(elements);
-  state.add_global_memory_reads<T>(elements, "Size");
-  state.add_global_memory_writes<T>(1);
+  state.add_global_memory_reads<T>(elements);
+  state.add_global_memory_writes<T>(elements);
 
-  // Allocate temporary storage:
-  std::size_t temp_size;
+  std::size_t temp_storage_bytes{};
   dispatch_t::Dispatch(nullptr,
-                       temp_size,
+                       temp_storage_bytes,
                        d_in,
                        d_out,
                        static_cast<offset_t>(elements),
-                       op_t{},
-                       init_t{},
-                       0 /* stream */);
+                       difference_op_t{},
+                       0);
 
-  thrust::device_vector<nvbench::uint8_t> temp(temp_size);
-  auto *temp_storage = thrust::raw_pointer_cast(temp.data());
+  thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+  std::uint8_t* d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
 
   state.exec([&](nvbench::launch &launch) {
-    dispatch_t::Dispatch(temp_storage,
-                         temp_size,
+    dispatch_t::Dispatch(d_temp_storage,
+                         temp_storage_bytes,
                          d_in,
                          d_out,
                          static_cast<offset_t>(elements),
-                         op_t{},
-                         init_t{},
+                         difference_op_t{},
                          launch.get_stream());
   });
 }
 
-NVBENCH_BENCH_TYPES(reduce, NVBENCH_TYPE_AXES(all_types, offset_types))
-  .set_name("cub::DeviceReduce::Reduce")
+
+using types = nvbench::type_list<int32_t>;
+
+NVBENCH_BENCH_TYPES(adjacent_difference, NVBENCH_TYPE_AXES(types, offset_types))
+  .set_name("cub::DeviceAdjacentDifference::SubtractLeftCopy")
   .set_type_axes_names({"T{ct}", "OffsetT{ct}"})
   .add_int64_power_of_two_axis("Elements{io}", nvbench::range(16, 28, 4));
