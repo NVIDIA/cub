@@ -222,20 +222,9 @@ struct is_tuple_of_references_to_fundamental_types_t< //
     : ::cuda::std::true_type
 {};
 
-template <class KeyT, class DecomposerT, class = void>
-struct decomposer_check_t : ::cuda::std::false_type
-{};
-
 template <class KeyT, class DecomposerT>
-struct decomposer_check_t<KeyT,
-                          DecomposerT,
-                          typename ::cuda::std::enable_if<                 //
-                            is_tuple_of_references_to_fundamental_types_t< //
-                              invoke_result_t<DecomposerT, KeyT &>>::value //
-                            >::type                                        //
-                          >                                                //
-    : ::cuda::std::true_type
-{};
+using decomposer_check_t =
+  is_tuple_of_references_to_fundamental_types_t<invoke_result_t<DecomposerT, KeyT &>>;
 
 template <class T>
 struct bit_ordered_conversion_policy_t
