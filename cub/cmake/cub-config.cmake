@@ -9,7 +9,7 @@ if (TARGET CUB::CUB)
 endif()
 
 # Minimum supported libcudacxx version:
-set(cub_libcudacxx_version 1.8.0)
+set(cub_libcudacxx_version "${CUB_VERSION}")
 
 function(_cub_declare_interface_alias alias_name ugly_name)
   # 1) Only IMPORTED and ALIAS targets can be placed in a namespace.
