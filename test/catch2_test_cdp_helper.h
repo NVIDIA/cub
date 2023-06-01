@@ -63,21 +63,6 @@
 #error Test file should contain %PARAM% TEST_CDP cdp 0:1
 #endif
 
-#define DECLARE_CDP_INVOCABLE(API, WRAPPED_API_NAME)                                               \
-  namespace                                                                                        \
-  {                                                                                                \
-  struct WRAPPED_API_NAME##_invocable_t                                                            \
-  {                                                                                                \
-    template <class... Ts>                                                                         \
-    CUB_RUNTIME_FUNCTION cudaError_t operator()(std::uint8_t *d_temp_storage,                      \
-                                                std::size_t &temp_storage_bytes,                   \
-                                                Ts... args)                                        \
-    {                                                                                              \
-      return API(d_temp_storage, temp_storage_bytes, args...);                                     \
-    }                                                                                              \
-  };                                                                                               \
-  }
-
 #if TEST_CDP == 1
 template <class ActionT, class... Args>
 __global__ void device_side_api_launch_kernel(std::uint8_t *d_temp_storage,
@@ -119,6 +104,26 @@ void device_side_api_launch(ActionT action, Args... args)
 
 #define cdp_launch device_side_api_launch
 
+#define DECLARE_CDP_INVOCABLE(API, WRAPPED_API_NAME)                                               \
+  struct WRAPPED_API_NAME##_device_invocable_t                                                     \
+  {                                                                                                \
+    template <class... Ts>                                                                         \
+    CUB_RUNTIME_FUNCTION cudaError_t operator()(std::uint8_t *d_temp_storage,                      \
+                                                std::size_t &temp_storage_bytes,                   \
+                                                Ts... args)                                        \
+    {                                                                                              \
+      return API(d_temp_storage, temp_storage_bytes, args...);                                     \
+    }                                                                                              \
+  };                                                                                               
+
+#define DECLARE_CDP_WRAPPER(API, WRAPPED_API_NAME)                                                 \
+  DECLARE_CDP_INVOCABLE(API, WRAPPED_API_NAME);                                                    \
+  template <class... As>                                                                           \
+  static void WRAPPED_API_NAME(As... args)                                                         \
+  {                                                                                                \
+    cdp_launch(WRAPPED_API_NAME##_device_invocable_t{}, args...);                                  \
+  }                                                                                                
+
 #else
 
 template <class ActionT, class... Args>
@@ -142,15 +147,24 @@ void host_side_api_launch(ActionT action, Args... args)
 
 #define cdp_launch host_side_api_launch
 
-#endif
+#define DECLARE_CDP_INVOCABLE(API, WRAPPED_API_NAME)                                               \
+  struct WRAPPED_API_NAME##_host_invocable_t                                                       \
+  {                                                                                                \
+    template <class... Ts>                                                                         \
+    CUB_RUNTIME_FUNCTION cudaError_t operator()(std::uint8_t *d_temp_storage,                      \
+                                                std::size_t &temp_storage_bytes,                   \
+                                                Ts... args)                                        \
+    {                                                                                              \
+      return API(d_temp_storage, temp_storage_bytes, args...);                                     \
+    }                                                                                              \
+  };                                                                                               
 
 #define DECLARE_CDP_WRAPPER(API, WRAPPED_API_NAME)                                                 \
   DECLARE_CDP_INVOCABLE(API, WRAPPED_API_NAME);                                                    \
-  namespace                                                                                        \
-  {                                                                                                \
   template <class... As>                                                                           \
-  void WRAPPED_API_NAME(As... args)                                                                \
+  static void WRAPPED_API_NAME(As... args)                                                         \
   {                                                                                                \
-    cdp_launch(WRAPPED_API_NAME##_invocable_t{}, args...);                                         \
-  }                                                                                                \
-  }
+    cdp_launch(WRAPPED_API_NAME##_host_invocable_t{}, args...);                                    \
+  }                                                                                                
+
+#endif
