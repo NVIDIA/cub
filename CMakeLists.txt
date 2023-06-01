@@ -7,15 +7,10 @@ project(CUB NONE)
 
 # Determine whether CUB is the top-level project or included into
 # another project via add_subdirectory().
-if(DEFINED CCCL_TOPLEVEL_PROJECT)
-  set(CUB_TOPLEVEL_PROJECT ${CCCL_TOPLEVEL_PROJECT})
-else()
-  if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
-    set(CUB_TOPLEVEL_PROJECT ON)
-  else()
-    set(CUB_TOPLEVEL_PROJECT OFF)
-  endif()
-endif()
+if (CCCL_TOPLEVEL_PROJECT OR
+    "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
+  set(CUB_TOPLEVEL_PROJECT ON)
+endif ()
 
 # This must be done before any languages are enabled:
 if (CUB_TOPLEVEL_PROJECT)
