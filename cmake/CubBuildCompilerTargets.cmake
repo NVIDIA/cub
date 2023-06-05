@@ -94,7 +94,7 @@ function(cub_build_compiler_targets)
   foreach (cxx_option IN LISTS cxx_compile_options)
     target_compile_options(cub.compiler_interface INTERFACE
       $<$<COMPILE_LANGUAGE:CXX>:${cxx_option}>
-      $<$<COMPILE_LANG_AND_ID:CUDA,NVCXX>:${cxx_option}> # TODO check that this works with the new nvc++ CMake recipe
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVHPC>:${cxx_option}>
       # Only use -Xcompiler with NVCC, not NVC++.
       #
       # CMake can't split genexs, so this can't be formatted better :(
