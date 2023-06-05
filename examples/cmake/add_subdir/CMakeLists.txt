@@ -8,7 +8,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
   cmake_policy(SET CMP0104 OLD)
 endif()
 
-project(CubAddSubDirExample CUDA)
+project(CubAddSubDirExample LANGUAGES CUDA)
 
 # Use your project's checkout of CUB here, for most cases
 # `add_subdirectory(cub)` will be sufficient.

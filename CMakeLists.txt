@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 # CXX is only needed for AppendOptionIfAvailable.
-project(CUB NONE)
+project(CUB LANGUAGES NONE)
 
 # Determine whether CUB is the top-level project or included into
 # another project via add_subdirectory().
