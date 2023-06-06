@@ -83,7 +83,7 @@ function(cub_build_compiler_targets)
     endif()
   endif()
 
-  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+  if ("NVHPC" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
     list(APPEND cxx_compile_options -Mnodaz)
     # TODO: Managed memory is currently not supported on windows with WSL
     list(APPEND cxx_compile_options -gpu=nomanaged)

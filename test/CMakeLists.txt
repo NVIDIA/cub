@@ -1,4 +1,4 @@
-if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+if ("NVHPC" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
   # NVBugs 200770766
   set(CUB_SEPARATE_CATCH2 ON)
 else()
@@ -152,7 +152,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
         PROPERTY POSITION_INDEPENDENT_CODE ON
       )
 
-      if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+      if ("NVHPC" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
         target_link_options(${config_c2h_target} PRIVATE "-cuda")
         target_compile_options(${config_c2h_target} PRIVATE "-fPIC")
       endif()
@@ -195,7 +195,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
         target_include_directories(${config_c2run_target} PRIVATE
           "${CUB_SOURCE_DIR}/test"
         )
-        if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+        if ("NVHPC" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
           target_link_options(${config_c2run_target} PRIVATE "-cuda")
         endif()
 
