@@ -215,6 +215,33 @@ struct ArgMin
   }
 };
 
+namespace detail
+{
+template <class OpT>
+struct basic_binary_op_t
+{
+  static constexpr bool value = false;
+};
+
+template <>
+struct basic_binary_op_t<Sum>
+{
+  static constexpr bool value = true;
+};
+
+template <>
+struct basic_binary_op_t<Min>
+{
+  static constexpr bool value = true;
+};
+
+template <>
+struct basic_binary_op_t<Max>
+{
+  static constexpr bool value = true;
+};
+} // namespace detail
+
 /// @brief Default cast functor
 template <typename B>
 struct CastOp
