@@ -25,15 +25,25 @@
  *
  ******************************************************************************/
 
-// %RANGE% TUNE_ITEMS ipt 7:24:1
-// %RANGE% TUNE_THREADS tpb 128:1024:32
-// %RANGE% TUNE_MAGIC_NS ns 0:2048:4
-// %RANGE% TUNE_DELAY_CONSTRUCTOR_ID dcid 0:7:1
-// %RANGE% TUNE_L2_WRITE_LATENCY_NS l2w 0:1200:5
-// %RANGE% TUNE_TRANSPOSE trp 0:1:1
-// %RANGE% TUNE_LOAD ld 0:2:1
+#pragma once
 
+#if !TUNE_BASE
 #include <nvbench_helper.cuh>
+#include <cub/agent/single_pass_scan_operators.cuh>
 
-using op_t = max_t;
-#include "base.cuh"
+#if !defined(TUNE_MAGIC_NS) || !defined(TUNE_L2_WRITE_LATENCY_NS) || !defined(TUNE_DELAY_CONSTRUCTOR_ID)
+#error "TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS, and TUNE_DELAY_CONSTRUCTOR_ID must be defined"
+#endif
+
+using delay_constructors = nvbench::type_list<
+  cub::detail::no_delay_constructor_t<TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::fixed_delay_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backoff_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backoff_jitter_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backoff_jitter_window_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backon_jitter_window_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backon_jitter_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>,
+  cub::detail::exponential_backon_constructor_t<TUNE_MAGIC_NS, TUNE_L2_WRITE_LATENCY_NS>>;
+
+using delay_constructor_t = nvbench::tl::get<TUNE_DELAY_CONSTRUCTOR_ID, delay_constructors>;
+#endif // !TUNE_BASE

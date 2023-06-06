@@ -193,7 +193,12 @@ struct device_reduce_by_key_policy_hub
                             COMBINED_INPUT_BYTES));
 
     using ReduceByKeyPolicyT =
-      AgentReduceByKeyPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, LOAD_LDG, BLOCK_SCAN_WARP_SCANS>;
+      AgentReduceByKeyPolicy<128,
+                             ITEMS_PER_THREAD,
+                             BLOCK_LOAD_DIRECT,
+                             LOAD_LDG,
+                             BLOCK_SCAN_WARP_SCANS,
+                             detail::default_reduce_by_key_delay_constructor_t<AccumT, int>>;
   };
 
   using MaxPolicy = Policy350;

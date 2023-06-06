@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import mannwhitneyu
 from scipy.stats.mstats import hdquantiles
 
+pd.options.display.max_colwidth = 100
+
 default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 color_cycle = itertools.cycle(default_colors)
 color_map = {}

@@ -168,7 +168,13 @@ struct device_rle_policy_hub
     };
 
     using RleSweepPolicyT =
-      AgentRlePolicy<96, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_WARP_SCANS>;
+      AgentRlePolicy<96,
+                     ITEMS_PER_THREAD,
+                     BLOCK_LOAD_DIRECT,
+                     LOAD_LDG,
+                     true,
+                     BLOCK_SCAN_WARP_SCANS,
+                     detail::default_reduce_by_key_delay_constructor_t<int, int>>;
   };
 
   using MaxPolicy = Policy350;

@@ -26,14 +26,16 @@
  ******************************************************************************/
 
 #include <nvbench_helper.cuh>
+#include <look_back_helper.cuh>
 #include <cub/device/device_partition.cuh>
 
 // %RANGE% TUNE_TRANSPOSE trp 0:1:1
 // %RANGE% TUNE_LOAD ld 0:1:1
 // %RANGE% TUNE_ITEMS_PER_THREAD ipt 7:24:1
 // %RANGE% TUNE_THREADS_PER_BLOCK tpb 128:1024:32
-// %RANGE% CUB_DETAIL_L2_BACKOFF_NS l2b 0:1200:5
-// %RANGE% CUB_DETAIL_L2_WRITE_LATENCY_NS l2w 0:1200:5
+// %RANGE% TUNE_MAGIC_NS ns 0:2048:4
+// %RANGE% TUNE_DELAY_CONSTRUCTOR_ID dcid 0:7:1
+// %RANGE% TUNE_L2_WRITE_LATENCY_NS l2w 0:1200:5
 
 constexpr bool keep_rejects = true;
 constexpr bool may_alias = false;
@@ -66,7 +68,8 @@ struct policy_hub_t
                                                      ITEMS_PER_THREAD,
                                                      TUNE_LOAD_ALGORITHM,
                                                      TUNE_LOAD_MODIFIER,
-                                                     cub::BLOCK_SCAN_WARP_SCANS>;
+                                                     cub::BLOCK_SCAN_WARP_SCANS,
+                                                     delay_constructor_t>;
   };
 
   using MaxPolicy = policy_t;

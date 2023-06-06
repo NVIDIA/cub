@@ -211,49 +211,67 @@ struct DeviceScanPolicy
     LargeValues ? BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED
                 : BLOCK_STORE_WARP_TRANSPOSE;
 
+  template <int NOMINAL_BLOCK_THREADS_4B,
+            int NOMINAL_ITEMS_PER_THREAD_4B,
+            typename ComputeT,
+            BlockLoadAlgorithm LOAD_ALGORITHM,
+            CacheLoadModifier LOAD_MODIFIER,
+            BlockStoreAlgorithm STORE_ALGORITHM,
+            BlockScanAlgorithm SCAN_ALGORITHM,
+            typename DelayConstructorT>
+  using policy_t =
+    AgentScanPolicy<NOMINAL_BLOCK_THREADS_4B,
+                    NOMINAL_ITEMS_PER_THREAD_4B,
+                    ComputeT,
+                    LOAD_ALGORITHM,
+                    LOAD_MODIFIER,
+                    STORE_ALGORITHM,
+                    SCAN_ALGORITHM,
+                    MemBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT>,
+                    DelayConstructorT>;
+
   /// SM350
   struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
   {
     // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
-    typedef AgentScanPolicy<128,
-                            12, ///< Threads per block, items per thread
-                            AccumT,
-                            BLOCK_LOAD_DIRECT,
-                            LOAD_CA,
-                            BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
-                            BLOCK_SCAN_RAKING>
-      ScanPolicyT;
+    using ScanPolicyT = policy_t<128,
+                                 12, ///< Threads per block, items per thread
+                                 AccumT,
+                                 BLOCK_LOAD_DIRECT,
+                                 LOAD_CA,
+                                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
+                                 BLOCK_SCAN_RAKING,
+                                 detail::default_delay_constructor_t<AccumT>>;
   };
 
   /// SM520
   struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
   {
     // Titan X: 32.47B items/s @ 48M 32-bit T
-    typedef AgentScanPolicy<128,
-                            12, ///< Threads per block, items per thread
-                            AccumT,
-                            BLOCK_LOAD_DIRECT,
-                            LOAD_CA,
-                            ScanTransposedStore,
-                            BLOCK_SCAN_WARP_SCANS>
-      ScanPolicyT;
+    using ScanPolicyT = policy_t<128,
+                                 12, ///< Threads per block, items per thread
+                                 AccumT,
+                                 BLOCK_LOAD_DIRECT,
+                                 LOAD_CA,
+                                 ScanTransposedStore,
+                                 BLOCK_SCAN_WARP_SCANS,
+                                 detail::default_delay_constructor_t<AccumT>>;
   };
 
   /// SM600
   struct Policy600 : ChainedPolicy<600, Policy600, Policy520>
   {
-    typedef AgentScanPolicy<128,
-                            15, ///< Threads per block, items per thread
-                            AccumT,
-                            ScanTransposedLoad,
-                            LOAD_DEFAULT,
-                            ScanTransposedStore,
-                            BLOCK_SCAN_WARP_SCANS>
-      ScanPolicyT;
+    using ScanPolicyT = policy_t<128,
+                                 15, ///< Threads per block, items per thread
+                                 AccumT,
+                                 ScanTransposedLoad,
+                                 LOAD_DEFAULT,
+                                 ScanTransposedStore,
+                                 BLOCK_SCAN_WARP_SCANS,
+                                 detail::default_delay_constructor_t<AccumT>>;
   };
 
-  /// MaxPolicy
-  typedef Policy600 MaxPolicy;
+  using MaxPolicy = Policy600;
 };
 
 /******************************************************************************

@@ -25,18 +25,33 @@
  *
  ******************************************************************************/
 
-#include <cub/device/device_scan.cuh>
-
-#include <type_traits>
-
 #include <nvbench_helper.cuh>
+#include <look_back_helper.cuh>
+#include <cub/device/device_scan.cuh>
 
 // %RANGE% TUNE_ITEMS ipt 7:24:1
 // %RANGE% TUNE_THREADS tpb 128:1024:32
-// %RANGE% CUB_DETAIL_L2_BACKOFF_NS l2b 0:1200:5
-// %RANGE% CUB_DETAIL_L2_WRITE_LATENCY_NS l2w 0:1200:5
+// %RANGE% TUNE_MAGIC_NS ns 0:2048:4
+// %RANGE% TUNE_DELAY_CONSTRUCTOR_ID dcid 0:7:1
+// %RANGE% TUNE_L2_WRITE_LATENCY_NS l2w 0:1200:5
+// %RANGE% TUNE_TRANSPOSE trp 0:1:1
+// %RANGE% TUNE_LOAD ld 0:2:1
 
 #if !TUNE_BASE
+#if TUNE_TRANSPOSE == 0
+#define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_DIRECT
+#define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_DIRECT
+#else // TUNE_TRANSPOSE == 1
+#define TUNE_LOAD_ALGORITHM cub::BLOCK_LOAD_WARP_TRANSPOSE
+#define TUNE_STORE_ALGORITHM cub::BLOCK_STORE_WARP_TRANSPOSE
+#endif // TUNE_TRANSPOSE
+
+#if TUNE_LOAD == 0
+#define TUNE_LOAD_MODIFIER cub::LOAD_DEFAULT
+#else // TUNE_LOAD == 1
+#define TUNE_LOAD_MODIFIER cub::LOAD_CA
+#endif // TUNE_LOAD
+
 struct policy_hub_t
 {
   struct policy_t : cub::ChainedPolicy<300, policy_t, policy_t>
@@ -44,10 +59,11 @@ struct policy_hub_t
     using ScanByKeyPolicyT = cub::AgentScanByKeyPolicy<TUNE_THREADS,
                                                        TUNE_ITEMS,
                                                        // TODO Tune
-                                                       cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                                                       cub::LOAD_CA,
+                                                       TUNE_LOAD_ALGORITHM,
+                                                       TUNE_LOAD_MODIFIER,
                                                        cub::BLOCK_SCAN_WARP_SCANS,
-                                                       cub::BLOCK_STORE_WARP_TRANSPOSE>;
+                                                       TUNE_STORE_ALGORITHM,
+                                                       delay_constructor_t>;
   };
 
   using MaxPolicy = policy_t;

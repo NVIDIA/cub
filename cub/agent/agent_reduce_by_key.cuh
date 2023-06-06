@@ -67,12 +67,17 @@ CUB_NAMESPACE_BEGIN
  *
  * @tparam _SCAN_ALGORITHM
  *   The BlockScan algorithm to use
+ *
+ * @tparam DelayConstructorT 
+ *   Implementation detail, do not specify directly, requirements on the 
+ *   content of this type are subject to breaking change.
  */
 template <int _BLOCK_THREADS,
           int _ITEMS_PER_THREAD,
           BlockLoadAlgorithm _LOAD_ALGORITHM,
           CacheLoadModifier _LOAD_MODIFIER,
-          BlockScanAlgorithm _SCAN_ALGORITHM>
+          BlockScanAlgorithm _SCAN_ALGORITHM,
+          typename DelayConstructorT = detail::fixed_delay_constructor_t<350, 450>>
 struct AgentReduceByKeyPolicy
 {
   ///< Threads per thread block
@@ -89,6 +94,11 @@ struct AgentReduceByKeyPolicy
 
   ///< The BlockScan algorithm to use
   static constexpr const BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+
+  struct detail 
+  {
+    using delay_constructor_t = DelayConstructorT;
+  };
 };
 
 /******************************************************************************
@@ -248,8 +258,9 @@ struct AgentReduceByKey
     BlockScan<OffsetValuePairT, BLOCK_THREADS, AgentReduceByKeyPolicyT::SCAN_ALGORITHM>;
 
   // Callback type for obtaining tile prefix during block scan
+  using DelayConstructorT = typename AgentReduceByKeyPolicyT::detail::delay_constructor_t;
   using TilePrefixCallbackOpT =
-    TilePrefixCallbackOp<OffsetValuePairT, ReduceBySegmentOpT, ScanTileStateT>;
+    TilePrefixCallbackOp<OffsetValuePairT, ReduceBySegmentOpT, ScanTileStateT, 0, DelayConstructorT>;
 
   // Key and value exchange types
   typedef KeyOutputT KeyExchangeT[TILE_ITEMS + 1];
