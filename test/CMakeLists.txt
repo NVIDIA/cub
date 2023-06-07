@@ -18,14 +18,6 @@ CPMAddPackage("gh:brunocodutra/metal@2.1.4")
 
 find_package(CUDAToolkit REQUIRED)
 
-# Some tests always build with RDC, so make sure that the sm_XX flags are
-# compatible. See note in CubCudaConfig.cmake.
-# TODO once we're using CUDA_ARCHITECTURES, we can setup non-rdc fallback
-# tests to build for non-rdc arches. But for now, all files in a given directory
-# must build with the same `CMAKE_CUDA_FLAGS` due to CMake constraints around
-# how CUDA_FLAGS works.
-set(CMAKE_CUDA_FLAGS "${CUB_CUDA_FLAGS_BASE} ${CUB_CUDA_FLAGS_RDC}")
-
 # The function below reads the filepath `src`, extracts the %PARAM% comments,
 # and fills `labels_var` with a list of `label1_value1.label2_value2...`
 # strings, and puts the corresponding `DEFINITION=value1:DEFINITION=value2`
@@ -144,6 +136,11 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   set(config_meta_target ${config_prefix}.tests)
 
   if (is_catch2_test)
+    set(use_rdc_for_catch2_utils OFF)
+  if (CUB_ENABLE_RDC_TESTS OR CUB_FORCE_RDC)
+    set(use_rdc_for_catch2_utils ON)
+  endif()
+
     # Per config helper library:
     set(config_c2h_target ${config_prefix}.test.catch2_helper)
     if (NOT TARGET ${config_c2h_target})
@@ -162,14 +159,11 @@ function(cub_add_test target_name_var test_name test_src cub_target)
       )
 
       cub_clone_target_properties(${config_c2h_target} ${cub_target})
+      cub_configure_cuda_target(${config_c2h_target} RDC ${use_rdc_for_catch2_utils})
       target_link_libraries(${config_c2h_target} PRIVATE CUDA::curand ${cub_target})
 
       if (CUB_IN_THRUST)
         thrust_fix_clang_nvcc_build_for(${config_c2h_target})
-      endif()
-
-      if (CUB_ENABLE_TESTS_WITH_RDC)
-        cub_enable_rdc_for_cuda_target(${config_c2h_target})
       endif()
     endif() # config_c2h_target
 
@@ -191,6 +185,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
           Catch2::Catch2
         )
         cub_clone_target_properties(${config_c2run_target} ${cub_target})
+        cub_configure_cuda_target(${config_c2run_target} RDC ${use_rdc_for_catch2_utils})
         add_dependencies(${config_meta_target} ${config_c2run_target})
         target_include_directories(${config_c2run_target} PRIVATE
           "${CUB_SOURCE_DIR}/test"

@@ -39,7 +39,7 @@ parameter must be `0:1`, with `0` indicating CDP disabled (RDC off) and `1`
 indicating CDP enabled (RDC on).
 
 Tests that do not contain a variant labeled `cdp` will only enable RDC if
-the CMake variable `CUB_ENABLE_TESTS_WITH_RDC` is true.
+the CMake config enables them.
 
 ## Example
 
