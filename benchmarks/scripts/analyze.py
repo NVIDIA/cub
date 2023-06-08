@@ -221,7 +221,7 @@ def iterate_case_dfs(args, callable):
 
                 for gpu in ctk_cub_df['gpu'].unique():
                     target_df = ctk_cub_df[ctk_cub_df['gpu'] == gpu]
-                    target_df.drop(columns=['ctk', 'cub', 'gpu'], inplace=True)
+                    target_df = target_df.drop(columns=['ctk', 'cub', 'gpu'])
                     target_df = compute_speedup(target_df)
 
                     for ct_point in ct_space(target_df):
