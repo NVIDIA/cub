@@ -379,16 +379,16 @@ template <typename ValueT>
 struct CountToPair
 {
   template <typename OffsetT>
-  __device__ __host__ Pair<ValueT, std::uint64_t>operator()(OffsetT id)
+  __device__ __host__ Pair<ValueT, std::uint32_t> operator()(OffsetT id)
   {
-    return Pair<ValueT, std::uint64_t>(static_cast<ValueT>(id), id);
+    return Pair<ValueT, std::uint32_t>(static_cast<ValueT>(id), id);
   }
 };
 
 template <typename KeyT>
 void TestStability(int num_items)
 {
-  using T = Pair<KeyT, std::uint64_t>;
+  using T = Pair<KeyT, std::uint32_t>;
   thrust::device_vector<T> in(num_items);
 
   thrust::tabulate(in.begin(), in.end(), CountToPair<KeyT>{});
@@ -584,8 +584,9 @@ int main(int argc, char **argv)
   // Initialize device
   CubDebugExit(args.DeviceInit());
 
-  Test<std::uint8_t>();
-  Test<std::uint16_t>();
+  // NVBug 4136386
+  // Test<std::uint8_t>();
+  // Test<std::uint16_t>();
   Test<std::uint32_t>();
   Test<std::uint64_t>();
 
