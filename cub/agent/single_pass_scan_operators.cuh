@@ -194,7 +194,12 @@ struct no_delay_constructor_t
 {
   struct delay_t
   {
-    __device__ __forceinline__ void operator()() {}
+    __device__ __forceinline__ void operator()() 
+    {
+      NV_IF_TARGET(NV_PROVIDES_SM_70,
+                  (),
+                  (__threadfence_block();));
+    }
   };
 
   __device__ __forceinline__ no_delay_constructor_t(unsigned int /* seed */)
@@ -997,7 +1002,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     /**
      * Wait for the corresponding tile to become non-invalid
      */
-    template <class DelayT = detail::fixed_delay_constructor_t<350, 450>> 
+    template <class DelayT = detail::fixed_delay_constructor_t<350, 450>::delay_t> 
     __device__ __forceinline__ void WaitForValid(
         int                     tile_idx,
         StatusWord              &status,
