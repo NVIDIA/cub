@@ -37,6 +37,7 @@
 #include <cub/agent/agent_select_if.cuh>
 #include <cub/config.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/device/dispatch/tuning/tuning_select_if.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_deprecated.cuh>
@@ -45,10 +46,10 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-#include <nv/target>
-
 #include <cstdio>
 #include <iterator>
+
+#include <nv/target>
 
 CUB_NAMESPACE_BEGIN
 
@@ -164,34 +165,6 @@ __launch_bounds__(int(ChainedPolicyT::ActivePolicy::SelectIfPolicyT::BLOCK_THREA
 }
 
 
-namespace detail 
-{
-
-template <class InputT, bool MayAlias>
-struct device_select_policy_hub
-{
-    struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
-    {
-      static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 10;
-
-      static constexpr int ITEMS_PER_THREAD =
-        CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
-                CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(InputT))));
-
-      using SelectIfPolicyT = AgentSelectIfPolicy<128,
-                                                  ITEMS_PER_THREAD,
-                                                  BLOCK_LOAD_DIRECT,
-                                                  MayAlias ? LOAD_CA : LOAD_LDG,
-                                                  BLOCK_SCAN_WARP_SCANS,
-                                                  detail::fixed_delay_constructor_t<350, 450>>;
-    };
-
-    using MaxPolicy = Policy350;
-};
-
-} // detail
-
-
 /******************************************************************************
  * Dispatch
  ******************************************************************************/
@@ -236,18 +209,16 @@ template <typename InputIteratorT,
           bool KEEP_REJECTS,
           bool MayAlias = false,
           typename SelectedPolicy =
-            detail::device_select_policy_hub<cub::detail::value_t<InputIteratorT>, MayAlias>>
+            detail::device_select_policy_hub<cub::detail::value_t<InputIteratorT>,
+                                             cub::detail::value_t<FlagsInputIteratorT>,
+                                             OffsetT,
+                                             MayAlias,
+                                             KEEP_REJECTS>>
 struct DispatchSelectIf : SelectedPolicy
 {
     /******************************************************************************
      * Types and constants
      ******************************************************************************/
-
-    // The input value type
-    using InputT = cub::detail::value_t<InputIteratorT>;
-
-    // The flag value type
-    using FlagT = cub::detail::value_t<FlagsInputIteratorT>;
 
     // Tile status descriptor interface type
     using ScanTileStateT = ScanTileState<OffsetT>;
