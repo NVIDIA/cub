@@ -37,6 +37,7 @@
 #include <cub/agent/agent_rle.cuh>
 #include <cub/config.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/device/dispatch/tuning/tuning_run_length_encode.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_device.cuh>
@@ -150,38 +151,6 @@ __launch_bounds__(int(ChainedPolicyT::ActivePolicy::RleSweepPolicyT::BLOCK_THREA
  * Dispatch
  ******************************************************************************/
 
-namespace detail
-{
-
-template <class T>
-struct device_rle_policy_hub
-{
-  /// SM35
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
-  {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 15,
-
-      ITEMS_PER_THREAD = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
-                                 CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
-
-    using RleSweepPolicyT =
-      AgentRlePolicy<96,
-                     ITEMS_PER_THREAD,
-                     BLOCK_LOAD_DIRECT,
-                     LOAD_LDG,
-                     true,
-                     BLOCK_SCAN_WARP_SCANS,
-                     detail::default_reduce_by_key_delay_constructor_t<int, int>>;
-  };
-
-  using MaxPolicy = Policy350;
-};
-
-} // namespace detail
-
 /**
  * Utility class for dispatching the appropriately-tuned kernels for DeviceRle
  *
@@ -213,8 +182,9 @@ template <typename InputIteratorT,
           typename NumRunsOutputIteratorT,
           typename EqualityOpT,
           typename OffsetT,
-          typename SelectedPolicy =
-            detail::device_rle_policy_hub<cub::detail::value_t<InputIteratorT>>>
+          typename SelectedPolicy = detail::device_non_trivial_runs_policy_hub<
+            cub::detail::non_void_value_t<LengthsOutputIteratorT, OffsetT>,
+            cub::detail::value_t<InputIteratorT>>>
 struct DeviceRleDispatch
 {
   /******************************************************************************

@@ -91,6 +91,7 @@ static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
                                               accum_t,
                                               device_reduce_by_key_policy_hub>;
   #else
+  using policy_t = cub::detail::device_run_length_encode_policy_hub<accum_t, T>;
   using dispatch_t = cub::DispatchReduceByKey<keys_input_it_t,
                                               unique_output_it_t,
                                               vals_input_it_t,
@@ -99,7 +100,8 @@ static void rle(nvbench::state &state, nvbench::type_list<T, OffsetT>)
                                               equality_op_t,
                                               reduction_op_t,
                                               offset_t,
-                                              accum_t>;
+                                              accum_t,
+                                              policy_t>;
   #endif
 
   const auto elements = static_cast<std::size_t>(state.get_int64("Elements{io}"));
