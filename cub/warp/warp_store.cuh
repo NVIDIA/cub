@@ -29,21 +29,19 @@
 
 #pragma once
 
-#include <iterator>
-#include <type_traits>
-
 #include <cub/block/block_store.cuh>
 #include <cub/config.cuh>
 #include <cub/util_ptx.cuh>
 #include <cub/util_type.cuh>
 #include <cub/warp/warp_exchange.cuh>
 
+#include <iterator>
+#include <type_traits>
 
 CUB_NAMESPACE_BEGIN
 
-
 //! @rst
-//! ``cub::WarpStoreAlgorithm`` enumerates alternative algorithms for :cpp:struct:`cub::WarpStore` 
+//! ``cub::WarpStoreAlgorithm`` enumerates alternative algorithms for :cpp:struct:`cub::WarpStore`
 //! to write a blocked arrangement of items across a CUDA warp to a linear segment of memory.
 //! @endrst
 enum WarpStoreAlgorithm
@@ -52,7 +50,7 @@ enum WarpStoreAlgorithm
   //! Overview
   //! ++++++++++++++++++++++++++
   //!
-  //! A :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly 
+  //! A :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly
   //! to memory.
   //!
   //! Performance Considerations
@@ -81,15 +79,15 @@ enum WarpStoreAlgorithm
   //! @rst
   //! Overview
   //! ++++++++++++++++++++++++++
-  //! 
+  //!
   //! A :ref:`blocked arrangement <flexible-data-arrangement>` of data is written
   //! directly to memory using CUDA's built-in vectorized stores as a coalescing
   //! optimization. For example, ``st.global.v4.s32`` instructions will be
   //! generated when ``T = int`` and ``ITEMS_PER_THREAD % 4 == 0``.
-  //! 
+  //!
   //! Performance Considerations
   //! ++++++++++++++++++++++++++
-  //! 
+  //!
   //! * The utilization of memory transactions (coalescing) remains high until
   //!   the the access stride between threads (i.e., the number items per thread)
   //!   exceeds the maximum vector store width (typically 4 items or 64B,
@@ -113,7 +111,7 @@ enum WarpStoreAlgorithm
   //! A :ref:`blocked arrangement <flexible-data-arrangement>` is locally
   //! transposed and then efficiently written to memory as a
   //! :ref:`striped arrangement <flexible-data-arrangement>`.
-  //!  
+  //!
   //! Performance Considerations
   //! ++++++++++++++++++++++++++
   //!
@@ -121,17 +119,16 @@ enum WarpStoreAlgorithm
   //!   regardless of items written per thread.
   //! * The local reordering incurs slightly longer latencies and throughput than the
   //!   direct ``cub::WARP_STORE_DIRECT`` and ``cub::WARP_STORE_VECTORIZE`` alternatives.
-  //!  
+  //!
   //! @endrst
   WARP_STORE_TRANSPOSE
 };
 
-
 //! @rst
-//! The WarpStore class provides :ref:`collective <collective-primitives>` 
+//! The WarpStore class provides :ref:`collective <collective-primitives>`
 //! data movement methods for writing a :ref:`blocked arrangement <flexible-data-arrangement>`
 //! of items partitioned across a CUDA warp to a linear segment of memory.
-//! 
+//!
 //! Overview
 //! ++++++++++++++++
 //!
@@ -141,21 +138,21 @@ enum WarpStoreAlgorithm
 //!   data types, granularity sizes, etc.
 //! * WarpStore can be optionally specialized by different data movement strategies:
 //!
-//!   #. :cpp:enumerator:`cub::WARP_STORE_DIRECT`: 
-//!      a :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly to 
-//!      memory. 
-//!   #. :cpp:enumerator:`cub::WARP_STORE_STRIPED`: 
-//!      a :ref:`striped arrangement <flexible-data-arrangement>` of data is written directly to 
-//!      memory. 
-//!   #. :cpp:enumerator:`cub::WARP_STORE_VECTORIZE`: 
-//!      a :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly to 
-//!      memory using CUDA's built-in vectorized stores as a coalescing optimization. 
-//!   #. :cpp:enumerator:`cub::WARP_STORE_TRANSPOSE`: 
-//!      a :ref:`blocked arrangement <flexible-data-arrangement>` is locally transposed into a 
-//!      :ref:`striped arrangement <flexible-data-arrangement>` which is then written to memory. 
+//!   #. :cpp:enumerator:`cub::WARP_STORE_DIRECT`:
+//!      a :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly to
+//!      memory.
+//!   #. :cpp:enumerator:`cub::WARP_STORE_STRIPED`:
+//!      a :ref:`striped arrangement <flexible-data-arrangement>` of data is written directly to
+//!      memory.
+//!   #. :cpp:enumerator:`cub::WARP_STORE_VECTORIZE`:
+//!      a :ref:`blocked arrangement <flexible-data-arrangement>` of data is written directly to
+//!      memory using CUDA's built-in vectorized stores as a coalescing optimization.
+//!   #. :cpp:enumerator:`cub::WARP_STORE_TRANSPOSE`:
+//!      a :ref:`blocked arrangement <flexible-data-arrangement>` is locally transposed into a
+//!      :ref:`striped arrangement <flexible-data-arrangement>` which is then written to memory.
 //!
 //! * @rowmajor
-//! 
+//!
 //! A Simple Example
 //! ++++++++++++++++
 //!
@@ -169,30 +166,30 @@ enum WarpStoreAlgorithm
 //! .. code-block:: c++
 //!
 //!    #include <cub/cub.cuh>   // or equivalently <cub/warp/warp_store.cuh>
-//! 
+//!
 //!    __global__ void ExampleKernel(int *d_data, ...)
 //!    {
 //!        constexpr int warp_threads = 16;
 //!        constexpr int block_threads = 256;
 //!        constexpr int items_per_thread = 4;
-//! 
+//!
 //!        // Specialize WarpStore for a virtual warp of 16 threads owning 4 integer items each
 //!        using WarpStoreT = WarpStore<int,
 //!                                     items_per_thread,
 //!                                     cub::WARP_STORE_TRANSPOSE,
 //!                                     warp_threads>;
-//! 
+//!
 //!        constexpr int warps_in_block = block_threads / warp_threads;
 //!        constexpr int tile_size = items_per_thread * warp_threads;
 //!        const int warp_id = static_cast<int>(threadIdx.x) / warp_threads;
-//! 
+//!
 //!        // Allocate shared memory for WarpStore
 //!        __shared__ typename WarpStoreT::TempStorage temp_storage[warps_in_block];
-//! 
+//!
 //!        // Obtain a segment of consecutive items that are blocked across threads
 //!        int thread_data[4];
 //!        ...
-//! 
+//!
 //!        // Store items to linear memory
 //!        WarpStoreT(temp_storage[warp_id]).Store(d_data + warp_id * tile_size, thread_data);
 //!
@@ -200,30 +197,30 @@ enum WarpStoreAlgorithm
 //! ``{ [0,1,2,3], [4,5,6,7], ..., [60,61,62,63] }``.
 //! The output ``d_data`` will be ``0, 1, 2, 3, 4, 5, ...``.
 //! @endrst
-//! 
+//!
 //! @tparam T
 //!   The type of data to be written.
-//! 
+//!
 //! @tparam ITEMS_PER_THREAD
 //!   The number of consecutive items partitioned onto each thread.
-//! 
+//!
 //! @tparam ALGORITHM
 //!   <b>[optional]</b> cub::WarpStoreAlgorithm tuning policy enumeration.
 //!   default: cub::WARP_STORE_DIRECT.
-//! 
+//!
 //! @tparam LOGICAL_WARP_THREADS
 //!   <b>[optional]</b> The number of threads per "logical" warp (may be less
 //!   than the number of hardware warp threads). Default is the warp size of the
 //!   targeted CUDA compute-capability (e.g., 32 threads for SM86). Must be a
 //!   power of two.
-//! 
+//!
 //! @tparam LEGACY_PTX_ARCH
 //!   Unused.
-template <typename           T,
-          int                ITEMS_PER_THREAD,
-          WarpStoreAlgorithm ALGORITHM            = WARP_STORE_DIRECT,
-          int                LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS,
-          int                LEGACY_PTX_ARCH      = 0>
+template <typename T,
+          int ITEMS_PER_THREAD,
+          WarpStoreAlgorithm ALGORITHM = WARP_STORE_DIRECT,
+          int LOGICAL_WARP_THREADS     = CUB_PTX_WARP_THREADS,
+          int LEGACY_PTX_ARCH          = 0>
 class WarpStore
 {
   static_assert(PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
@@ -232,7 +229,6 @@ class WarpStore
   constexpr static bool IS_ARCH_WARP = LOGICAL_WARP_THREADS == CUB_WARP_THREADS(0);
 
 private:
-
   /// Store helper
   template <WarpStoreAlgorithm _POLICY, int DUMMY>
   struct StoreInternal;
@@ -244,14 +240,12 @@ private:
 
     int linear_tid;
 
-    __device__ __forceinline__ StoreInternal(TempStorage &/*temp_storage*/,
-                                             int linear_tid)
-      : linear_tid(linear_tid)
+    __device__ __forceinline__ StoreInternal(TempStorage & /*temp_storage*/, int linear_tid)
+        : linear_tid(linear_tid)
     {}
 
     template <typename OutputIteratorT>
-    __device__ __forceinline__ void Store(OutputIteratorT block_itr,
-                                          T (&items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void Store(OutputIteratorT block_itr, T (&items)[ITEMS_PER_THREAD])
     {
       StoreDirectBlocked(linear_tid, block_itr, items);
     }
@@ -264,7 +258,6 @@ private:
       StoreDirectBlocked(linear_tid, block_itr, items, valid_items);
     }
   };
-
 
   template <int DUMMY>
   struct StoreInternal<WARP_STORE_STRIPED, DUMMY>
@@ -273,14 +266,12 @@ private:
 
     int linear_tid;
 
-    __device__ __forceinline__ StoreInternal(TempStorage & /*temp_storage*/,
-                                             int linear_tid)
+    __device__ __forceinline__ StoreInternal(TempStorage & /*temp_storage*/, int linear_tid)
         : linear_tid(linear_tid)
     {}
 
     template <typename OutputIteratorT>
-    __device__ __forceinline__ void Store(OutputIteratorT block_itr,
-                                          T (&items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void Store(OutputIteratorT block_itr, T (&items)[ITEMS_PER_THREAD])
     {
       StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid, block_itr, items);
     }
@@ -290,13 +281,9 @@ private:
                                           T (&items)[ITEMS_PER_THREAD],
                                           int valid_items)
     {
-      StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid,
-                                               block_itr,
-                                               items,
-                                               valid_items);
+      StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid, block_itr, items, valid_items);
     }
   };
-
 
   template <int DUMMY>
   struct StoreInternal<WARP_STORE_VECTORIZE, DUMMY>
@@ -305,20 +292,17 @@ private:
 
     int linear_tid;
 
-    __device__ __forceinline__ StoreInternal(TempStorage & /*temp_storage*/,
-                                             int linear_tid)
+    __device__ __forceinline__ StoreInternal(TempStorage & /*temp_storage*/, int linear_tid)
         : linear_tid(linear_tid)
     {}
 
-    __device__ __forceinline__ void Store(T *block_ptr,
-                                          T (&items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void Store(T *block_ptr, T (&items)[ITEMS_PER_THREAD])
     {
       StoreDirectBlockedVectorized(linear_tid, block_ptr, items);
     }
 
     template <typename OutputIteratorT>
-    __device__ __forceinline__ void Store(OutputIteratorT block_itr,
-                                          T (&items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void Store(OutputIteratorT block_itr, T (&items)[ITEMS_PER_THREAD])
     {
       StoreDirectBlocked(linear_tid, block_itr, items);
     }
@@ -332,31 +316,28 @@ private:
     }
   };
 
-
   template <int DUMMY>
   struct StoreInternal<WARP_STORE_TRANSPOSE, DUMMY>
   {
-    using WarpExchangeT =
-      WarpExchange<T, ITEMS_PER_THREAD, LOGICAL_WARP_THREADS>;
+    using WarpExchangeT = WarpExchange<T, ITEMS_PER_THREAD, LOGICAL_WARP_THREADS>;
 
     struct _TempStorage : WarpExchangeT::TempStorage
     {};
 
-    struct TempStorage : Uninitialized<_TempStorage> {};
+    struct TempStorage : Uninitialized<_TempStorage>
+    {};
 
     _TempStorage &temp_storage;
 
     int linear_tid;
 
-    __device__ __forceinline__ StoreInternal(TempStorage &temp_storage,
-                                             int linear_tid)
+    __device__ __forceinline__ StoreInternal(TempStorage &temp_storage, int linear_tid)
         : temp_storage(temp_storage.Alias())
         , linear_tid(linear_tid)
     {}
 
     template <typename OutputIteratorT>
-    __device__ __forceinline__ void Store(OutputIteratorT block_itr,
-                                          T (&items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void Store(OutputIteratorT block_itr, T (&items)[ITEMS_PER_THREAD])
     {
       WarpExchangeT(temp_storage).BlockedToStriped(items, items);
       StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid, block_itr, items);
@@ -368,13 +349,9 @@ private:
                                           int valid_items)
     {
       WarpExchangeT(temp_storage).BlockedToStriped(items, items);
-      StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid,
-                                               block_itr,
-                                               items,
-                                               valid_items);
+      StoreDirectStriped<LOGICAL_WARP_THREADS>(linear_tid, block_itr, items, valid_items);
     }
   };
-
 
   /// Internal load implementation to use
   using InternalStore = StoreInternal<ALGORITHM, 0>;
@@ -382,21 +359,19 @@ private:
   /// Shared memory storage layout type
   using _TempStorage = typename InternalStore::TempStorage;
 
-
-  __device__ __forceinline__ _TempStorage& PrivateStorage()
+  __device__ __forceinline__ _TempStorage &PrivateStorage()
   {
     __shared__ _TempStorage private_storage;
     return private_storage;
   }
-
 
   _TempStorage &temp_storage;
 
   int linear_tid;
 
 public:
-
-  struct TempStorage : Uninitialized<_TempStorage> {};
+  struct TempStorage : Uninitialized<_TempStorage>
+  {};
 
   //! @name Collective constructors
   //! @{
@@ -421,9 +396,9 @@ public:
 
   //! @rst
   //! Store items into a linear segment of memory.
-  //! 
+  //!
   //! @smemwarpreuse
-  //! 
+  //!
   //! Snippet
   //! +++++++
   //!
@@ -437,30 +412,30 @@ public:
   //! .. code-block:: c++
   //!
   //!    #include <cub/cub.cuh>   // or equivalently <cub/warp/warp_store.cuh>
-  //!    
+  //!
   //!    __global__ void ExampleKernel(int *d_data, ...)
   //!    {
   //!        constexpr int warp_threads = 16;
   //!        constexpr int block_threads = 256;
   //!        constexpr int items_per_thread = 4;
-  //!    
+  //!
   //!        // Specialize WarpStore for a virtual warp of 16 threads owning 4 integer items each
   //!        using WarpStoreT = WarpStore<int,
   //!                                     items_per_thread,
   //!                                     cub::WARP_STORE_TRANSPOSE,
   //!                                     warp_threads>;
-  //!    
+  //!
   //!        constexpr int warps_in_block = block_threads / warp_threads;
   //!        constexpr int tile_size = items_per_thread * warp_threads;
   //!        const int warp_id = static_cast<int>(threadIdx.x) / warp_threads;
-  //!    
+  //!
   //!        // Allocate shared memory for WarpStore
   //!        __shared__ typename WarpStoreT::TempStorage temp_storage[warps_in_block];
-  //!    
+  //!
   //!        // Obtain a segment of consecutive items that are blocked across threads
   //!        int thread_data[4];
   //!        ...
-  //!    
+  //!
   //!        // Store items to linear memory
   //!        WarpStoreT(temp_storage[warp_id]).Store(d_data + warp_id * tile_size, thread_data);
   //!
@@ -468,21 +443,20 @@ public:
   //! ``{ [0,1,2,3], [4,5,6,7], ..., [60,61,62,63] }``.
   //! The output ``d_data`` will be ``0, 1, 2, 3, 4, 5, ...``.
   //! @endrst
-  //! 
+  //!
   //! @param[out] block_itr The thread block's base output iterator for storing to
   //! @param[in] items Data to store
   template <typename OutputIteratorT>
-  __device__ __forceinline__ void Store(OutputIteratorT block_itr,
-                                        T (&items)[ITEMS_PER_THREAD])
+  __device__ __forceinline__ void Store(OutputIteratorT block_itr, T (&items)[ITEMS_PER_THREAD])
   {
     InternalStore(temp_storage, linear_tid).Store(block_itr, items);
   }
 
   //! @rst
   //! Store items into a linear segment of memory, guarded by range.
-  //! 
+  //!
   //! @smemwarpreuse
-  //! 
+  //!
   //! Snippet
   //! +++++++
   //!
@@ -496,30 +470,30 @@ public:
   //! .. code-block:: c++
   //!
   //!    #include <cub/cub.cuh>   // or equivalently <cub/warp/warp_store.cuh>
-  //! 
+  //!
   //!    __global__ void ExampleKernel(int *d_data, int valid_items ...)
   //!    {
   //!        constexpr int warp_threads = 16;
   //!        constexpr int block_threads = 256;
   //!        constexpr int items_per_thread = 4;
-  //! 
+  //!
   //!        // Specialize WarpStore for a virtual warp of 16 threads owning 4 integer items each
   //!        using WarpStoreT = WarpStore<int,
   //!                                     items_per_thread,
   //!                                     cub::WARP_STORE_TRANSPOSE,
   //!                                     warp_threads>;
-  //! 
+  //!
   //!        constexpr int warps_in_block = block_threads / warp_threads;
   //!        constexpr int tile_size = items_per_thread * warp_threads;
   //!        const int warp_id = static_cast<int>(threadIdx.x) / warp_threads;
-  //! 
+  //!
   //!        // Allocate shared memory for WarpStore
   //!        __shared__ typename WarpStoreT::TempStorage temp_storage[warps_in_block];
-  //! 
+  //!
   //!        // Obtain a segment of consecutive items that are blocked across threads
   //!        int thread_data[4];
   //!        ...
-  //! 
+  //!
   //!        // Store items to linear memory
   //!        WarpStoreT(temp_storage[warp_id]).Store(
   //!          d_data + warp_id * tile_size, thread_data, valid_items);
@@ -530,11 +504,11 @@ public:
   //! with only the first two threads being unmasked to store portions of valid
   //! data.
   //! @endrst
-  //! 
+  //!
   //! @param[out] block_itr The thread block's base output iterator for storing to
   //! @param[in] items Data to store
   //! @param[in] valid_items Number of valid items to write
-  //! 
+  //!
   template <typename OutputIteratorT>
   __device__ __forceinline__ void Store(OutputIteratorT block_itr,
                                         T (&items)[ITEMS_PER_THREAD],
@@ -545,6 +519,5 @@ public:
 
   //! @}  end member group
 };
-
 
 CUB_NAMESPACE_END
