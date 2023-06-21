@@ -412,7 +412,7 @@ public:
    * @brief Store items into a linear segment of memory.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * @par
@@ -470,7 +470,7 @@ public:
    * @brief Store items into a linear segment of memory, guarded by range.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * @par

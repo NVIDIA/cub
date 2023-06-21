@@ -25,10 +25,7 @@
  *
  ******************************************************************************/
 
-/**
- * @file
- * Operations for reading linear tiles of data into the CUDA warp.
- */
+//! @file Operations for reading linear tiles of data into the CUDA warp.
 
 #pragma once
 
@@ -46,11 +43,10 @@
 CUB_NAMESPACE_BEGIN
 
 
-/**
- * @brief cub::WarpLoadAlgorithm enumerates alternative algorithms for
- *        cub::WarpLoad to read a linear segment of data from memory into a
- *        a CUDA warp.
- */
+//! @rst
+//! ``cub::WarpLoadAlgorithm`` enumerates alternative algorithms for :cpp:struct:`cub::WarpLoad` to 
+//! read a linear segment of data from memory into a CUDA warp.
+//! @endrst
 enum WarpLoadAlgorithm
 {
   /**
@@ -519,7 +515,7 @@ public:
    * @brief Load a linear segment of items from memory.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * @code
@@ -569,7 +565,7 @@ public:
    * @brief Load a linear segment of items from memory, guarded by range.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * @code
@@ -626,7 +622,7 @@ public:
    * @brief Load a linear segment of items from memory, guarded by range.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * @code

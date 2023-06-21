@@ -51,6 +51,7 @@ doxygen_input = [
 # more information on the format can be found at:
 #     https://www.doxygen.nl/manual/config.html#cfg_aliases
 doxygen_aliases = [
+  "smemwarpreuse=A subsequent `__syncwarp()` warp-wide barrier should be invoked after calling this method if the collective's temporary storage (e.g., @p temp_storage) is to be reused or repurposed.",
   "smemreuse=A subsequent `__syncthreads()` threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., @p temp_storage) is to be reused or repurposed.",
   "smemreuse{1}=After any operation, a subsequent `__syncthreads()` barrier is required if the collective's \\1 is to be reused or repurposed",
   "smemstorage{1}=The operations exposed by \\1 require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the `__shared__` keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or `union`'d with other storage allocation types to facilitate memory reuse.",

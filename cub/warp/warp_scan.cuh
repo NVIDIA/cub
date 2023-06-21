@@ -218,7 +218,7 @@ public:
      * \brief Computes an inclusive prefix sum across the calling warp.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
@@ -260,7 +260,7 @@ public:
      * \brief Computes an inclusive prefix sum across the calling warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
@@ -312,7 +312,7 @@ public:
      *
      * \par
      *  - \identityzero
-     *  - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
@@ -357,7 +357,7 @@ public:
      *
      * \par
      *  - \identityzero
-     *  - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
@@ -408,7 +408,7 @@ public:
      * \brief Computes an inclusive prefix scan using the specified binary scan functor across the calling warp.
      *
      * \par
-     *  - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
@@ -454,7 +454,7 @@ public:
      * \brief Computes an inclusive prefix scan using the specified binary scan functor across the calling warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
@@ -511,7 +511,7 @@ public:
      * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
@@ -568,7 +568,7 @@ public:
      * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
@@ -626,7 +626,7 @@ public:
      * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
@@ -687,7 +687,7 @@ public:
      * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
@@ -757,7 +757,7 @@ public:
      * \brief Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p exclusive_output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
@@ -816,7 +816,7 @@ public:
      * \brief Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the calling warp.
      *
      * \par
-     *  - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide prefix max scans within a block of
@@ -884,7 +884,7 @@ public:
      * \brief Broadcast the value \p input from <em>warp-lane</em><sub><tt>src_lane</tt></sub> to all lanes in the warp
      *
      * \par
-     * - \smemreuse
+     * - @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates the warp-wide broadcasts of values from

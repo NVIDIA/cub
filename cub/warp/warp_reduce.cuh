@@ -214,7 +214,7 @@ public:
     /**
      * \brief Computes a warp-wide sum in the calling warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp sum reductions within a block of
@@ -256,7 +256,7 @@ public:
      *
      * All threads across the calling warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a sum reduction within a single, partially-full
@@ -301,7 +301,7 @@ public:
     /**
      * \brief Computes a segmented sum in the calling warp where segments are defined by head-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a head-segmented warp sum
@@ -349,7 +349,7 @@ public:
     /**
      * \brief Computes a segmented sum in the calling warp where segments are defined by tail-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a tail-segmented warp sum
@@ -405,7 +405,7 @@ public:
      *
      * Supports non-commutative reduction operators
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates four concurrent warp max reductions within a block of
@@ -453,7 +453,7 @@ public:
      *
      * Supports non-commutative reduction operators
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a max reduction within a single, partially-full
@@ -502,7 +502,7 @@ public:
      *
      * Supports non-commutative reduction operators
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a head-segmented warp max
@@ -553,7 +553,7 @@ public:
      *
      * Supports non-commutative reduction operators
      *
-     * \smemreuse
+     * @smemwarpreuse
      *
      * \par Snippet
      * The code snippet below illustrates a tail-segmented warp max
