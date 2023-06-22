@@ -8,6 +8,7 @@ CUB
    ${repo_docs_api_path}/CUB_api
    developer_overview
    test_overview
+   tuning
 
 .. the line below can be used to use the README.md file as the index page
 .. .. mdinclude:: ../README.md

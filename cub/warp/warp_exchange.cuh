@@ -185,7 +185,7 @@ public:
    *        <em>striped</em> arrangement.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * The code snippet below illustrates the conversion from a "blocked" to a
@@ -254,7 +254,7 @@ public:
    *        <em>blocked</em> arrangement.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * The code snippet below illustrates the conversion from a "striped" to a
@@ -321,7 +321,7 @@ public:
    *        into <em>striped</em> arrangement.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * The code snippet below illustrates the conversion from a "scatter" to a
@@ -379,7 +379,7 @@ public:
    *        into <em>striped</em> arrangement.
    *
    * @par
-   * \smemreuse
+   * @smemwarpreuse
    *
    * @par Snippet
    * The code snippet below illustrates the conversion from a "scatter" to a
