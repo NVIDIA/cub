@@ -83,7 +83,7 @@ function(cub_build_compiler_targets)
     endif()
   endif()
 
-  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+  if ("NVHPC" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
     list(APPEND cxx_compile_options -Mnodaz)
     # TODO: Managed memory is currently not supported on windows with WSL
     list(APPEND cxx_compile_options -gpu=nomanaged)
@@ -94,7 +94,7 @@ function(cub_build_compiler_targets)
   foreach (cxx_option IN LISTS cxx_compile_options)
     target_compile_options(cub.compiler_interface INTERFACE
       $<$<COMPILE_LANGUAGE:CXX>:${cxx_option}>
-      $<$<COMPILE_LANG_AND_ID:CUDA,NVCXX>:${cxx_option}>
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVHPC>:${cxx_option}>
       # Only use -Xcompiler with NVCC, not NVC++.
       #
       # CMake can't split genexs, so this can't be formatted better :(

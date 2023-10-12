@@ -29,6 +29,7 @@ function(cub_add_header_test label definitions)
     target_link_libraries(${headertest_target} PUBLIC ${cub_target})
     target_compile_definitions(${headertest_target} PRIVATE ${definitions})
     cub_clone_target_properties(${headertest_target} ${cub_target})
+    cub_configure_cuda_target(${headertest_target} RDC ${CUB_FORCE_RDC})
 
     if (CUB_IN_THRUST)
       thrust_fix_clang_nvcc_build_for(${headertest_target})
