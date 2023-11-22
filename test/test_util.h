@@ -1080,6 +1080,7 @@ CUB_NAMESPACE_END
 // Complex data type TestBar (with optimizations for fence-free warp-synchrony)
 //---------------------------------------------------------------------
 
+#define MAGIC 895245
 /**
  * TestBar complex data type
  */
@@ -1087,22 +1088,33 @@ struct TestBar
 {
     long long       x;
     int             y;
+    int             magic;
 
     // Constructor
-    __host__ __device__ __forceinline__ TestBar() : x(0), y(0)
+    __host__ __device__ __forceinline__ TestBar() : x(0), y(0), magic(MAGIC)
     {}
 
     // Constructor
-    __host__ __device__ __forceinline__ TestBar(int b) : x(b), y(b)
+    __host__ __device__ __forceinline__ TestBar(int b) : x(b), y(b), magic(MAGIC)
     {}
 
     // Constructor
-    __host__ __device__ __forceinline__ TestBar(long long x, int y) : x(x), y(y)
+    __host__ __device__ __forceinline__ TestBar(long long x, int y) : x(x), y(y), magic(MAGIC)
     {}
+
+    // Assignment operator
+    __host__ __device__ __forceinline__ TestBar& operator =(const TestBar& that)
+    {
+        assert (magic == MAGIC);
+        x = that.x;
+        y = that.y;
+        return *this;
+    }
 
     // Assignment from int operator
     __host__ __device__ __forceinline__ TestBar& operator =(int b)
     {
+        assert (magic == MAGIC);
         x = b;
         y = b;
         return *this;
